@@ -1,0 +1,633 @@
+# Contributing to PlanAxis
+
+Thank you for your interest in contributing to **PlanAxis**.
+
+PlanAxis is an open-source project for deterministic apartment modeling, validation, 3D visualization, and later AI-assisted redesign based on the Apartment SVG format.
+
+Contributions are welcome in areas such as:
+
+- Apartment SVG parsing;
+- schema, referential, geometric, and topological validation;
+- exact geometry utilities;
+- renderer-independent 2D and 3D domain models;
+- Three.js visualization;
+- browser and server applications;
+- tests and fixtures;
+- documentation;
+- examples;
+- performance improvements;
+- bug fixes;
+- accessibility and developer experience.
+
+Before contributing, please read the relevant project documentation and keep changes focused, testable, and consistent with the existing architecture.
+
+---
+
+## 1. Repository Language
+
+**English is mandatory for repository contributions.**
+
+Use English for:
+
+- source code;
+- identifiers;
+- comments;
+- documentation;
+- tests;
+- fixture descriptions;
+- issue and pull-request content;
+- commit messages;
+- developer-facing validation and error messages.
+
+Localized user-facing resources may use other languages when localization is explicitly part of the contribution.
+
+---
+
+## 2. Read Before You Change Code
+
+Before making a substantive change, read the documents relevant to your work.
+
+Start with:
+
+```text
+README.md
+AGENTS.md
+docs/architecture/overview.md
+docs/development/coding-guidelines.md
+docs/development/testing.md
+```
+
+For Apartment SVG behavior, the normative specification is:
+
+```text
+docs/specifications/apartment-svg/2.1.md
+```
+
+For established architectural decisions, review:
+
+```text
+docs/decisions/
+```
+
+The Apartment SVG specification is normative for format semantics. Implementation convenience is not a reason to reinterpret, weaken, or silently extend it.
+
+---
+
+## 3. Development Philosophy
+
+PlanAxis is built around a few non-negotiable engineering principles:
+
+- Apartment SVG is the canonical external model;
+- validation must complete before 3D model generation;
+- authoritative geometry uses exact decimal arithmetic;
+- parser, validator, domain, renderer, and HTTP responsibilities remain separated;
+- renderer-independent models must not depend on Three.js;
+- invalid input must produce validation errors rather than guessed or silently repaired geometry;
+- deterministic domain logic should be reusable between browser and server environments where practical.
+
+Contributions should preserve these boundaries unless the change explicitly proposes an architectural revision.
+
+---
+
+## 4. Repository Structure
+
+The repository is organized as a pnpm workspace monorepo.
+
+The target structure includes areas similar to:
+
+```text
+apps/
+    server/
+    web/
+
+packages/
+    model/
+    geometry/
+    parser/
+    validator/
+    model-3d/
+
+fixtures/
+    valid/
+    invalid/
+
+examples/
+
+docs/
+    specifications/
+    architecture/
+    development/
+    decisions/
+```
+
+Exact package boundaries may evolve, but architectural responsibilities should remain clear.
+
+Do not move behavior across boundaries merely for convenience.
+
+---
+
+## 5. Setting Up the Development Environment
+
+The repository bootstrap is designed around:
+
+```text
+Node.js 24 LTS
+pnpm
+TypeScript
+```
+
+Once the repository bootstrap is complete, a typical setup is expected to be:
+
+```bash
+pnpm install
+```
+
+Standard repository verification commands are expected to include:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+Always prefer the actual scripts defined by the repository over assumptions in this document.
+
+If the tooling changes, this document should be updated together with the change.
+
+---
+
+## 6. Choosing What to Work On
+
+Good contributions are focused and have a clear purpose.
+
+Examples:
+
+- fix one validator rule;
+- add support for one documented Apartment SVG construct;
+- add a missing regression fixture;
+- improve one package API;
+- add a documented example;
+- fix a rendering adapter bug;
+- improve one section of the documentation.
+
+Avoid combining unrelated changes into one pull request.
+
+For larger work, open or discuss an issue first when practical so the intended direction can be agreed before substantial implementation effort is spent.
+
+---
+
+## 7. Issues
+
+When reporting a bug, include enough information to reproduce it.
+
+Useful information includes:
+
+- what you expected;
+- what happened;
+- relevant PlanAxis version or commit;
+- relevant Apartment SVG version;
+- minimal Apartment SVG input when applicable;
+- validation errors or error codes;
+- operating system and runtime information when relevant;
+- steps to reproduce.
+
+Prefer minimal reproducible examples.
+
+When reporting a validator issue, identify the relevant specification rule or section when possible.
+
+Do not include private apartment data, credentials, API keys, personal file paths, or other sensitive information.
+
+---
+
+## 8. Feature Proposals
+
+A feature proposal should explain:
+
+- the problem being solved;
+- the expected user or developer benefit;
+- whether the feature affects Apartment SVG semantics;
+- whether it affects architecture or only implementation;
+- likely compatibility impact;
+- any relevant alternatives.
+
+Do not implement undocumented extensions to Apartment SVG as ordinary feature work.
+
+If a proposal requires changing the format, treat it as a specification change.
+
+---
+
+## 9. Apartment SVG Specification Changes
+
+Changes to Apartment SVG are different from ordinary implementation changes.
+
+The current normative specification is versioned independently from PlanAxis.
+
+A specification change may require:
+
+- a clear problem statement;
+- updated normative documentation;
+- versioning analysis;
+- compatibility analysis;
+- parser changes;
+- validator changes;
+- updated fixtures;
+- updated examples;
+- updated architecture or ADR documentation where relevant.
+
+Do not modify:
+
+```text
+docs/specifications/apartment-svg/
+```
+
+as a side effect of making existing code easier to implement.
+
+If implementation and specification disagree, first determine whether the implementation is wrong or whether a deliberate specification revision is required.
+
+---
+
+## 10. Architectural Changes
+
+Significant architectural changes should be documented with an ADR.
+
+Examples include:
+
+- replacing the primary runtime or framework;
+- adding another geometry engine;
+- changing the authoritative numeric representation;
+- changing the canonical persistence model;
+- introducing a new cross-cutting infrastructure pattern;
+- moving renderer-specific concepts into core domain packages;
+- splitting or merging major architectural responsibilities.
+
+Architecture documentation describes the current system.
+
+ADRs explain why significant decisions were made.
+
+For an accepted architectural change, update both where appropriate.
+
+---
+
+## 11. Coding Guidelines
+
+Follow:
+
+```text
+docs/development/coding-guidelines.md
+```
+
+Important expectations include:
+
+- use TypeScript;
+- keep strict typing;
+- avoid unnecessary `any`;
+- treat untrusted input as untrusted;
+- use exact decimal arithmetic for authoritative geometry;
+- do not convert authoritative geometry through JavaScript `number`;
+- use domain terminology consistently;
+- keep modules focused;
+- avoid speculative abstractions;
+- avoid hidden global dependencies;
+- do not log directly from core domain libraries;
+- keep environment-specific APIs out of shared core packages;
+- avoid circular dependencies.
+
+Do not weaken compiler or lint rules merely to make new code pass.
+
+---
+
+## 12. Testing Requirements
+
+Follow:
+
+```text
+docs/development/testing.md
+```
+
+Behavior changes should normally include automated test coverage.
+
+For parser and validator work, test both:
+
+```text
+valid input
+invalid input
+```
+
+where relevant.
+
+For Apartment SVG rules, prefer focused fixtures under:
+
+```text
+fixtures/valid/
+fixtures/invalid/
+```
+
+An invalid fixture should ideally violate one primary rule so that the expected failure remains unambiguous.
+
+Bug fixes should include regression tests when practical.
+
+Do not make tests pass by:
+
+- deleting the failing test;
+- weakening assertions;
+- skipping coverage;
+- widening geometric tolerances without normative justification;
+- accepting invalid fixtures;
+- changing expected validation codes arbitrarily.
+
+---
+
+## 13. Examples vs. Fixtures
+
+The repository distinguishes two purposes.
+
+### `fixtures/`
+
+Used by automated tests.
+
+Fixtures may be:
+
+- minimal;
+- synthetic;
+- intentionally malformed;
+- intentionally invalid.
+
+### `examples/`
+
+Used by people learning or demonstrating PlanAxis.
+
+Examples should normally be:
+
+- valid;
+- understandable;
+- documented;
+- suitable for public use.
+
+Do not use large user-facing examples as a substitute for focused test fixtures.
+
+---
+
+## 14. Dependencies
+
+Before adding a dependency:
+
+1. verify that the required capability is not already available;
+2. confirm that the dependency is necessary for the current change;
+3. prefer a focused and actively maintained package;
+4. consider whether the dependency affects architecture;
+5. keep specialized dependencies behind appropriate boundaries.
+
+Do not introduce a second framework or competing core implementation casually.
+
+Examples that require architectural justification include:
+
+- another HTTP framework;
+- another decimal library;
+- another geometry engine;
+- a dependency-injection container;
+- an event bus;
+- a plugin framework;
+- a second renderer abstraction.
+
+---
+
+## 15. Commit Messages
+
+PlanAxis uses **Conventional Commits**.
+
+Use the format:
+
+```text
+<type>[optional scope]: <description>
+```
+
+Examples:
+
+```text
+feat(validator): validate hinged door geometry
+fix(parser): preserve decimal attribute values
+docs(architecture): document renderer boundary
+test(validator): add invalid window fixtures
+refactor(geometry): centralize tolerance comparisons
+chore(repo): configure workspace tooling
+```
+
+Common types include:
+
+```text
+feat
+fix
+docs
+test
+refactor
+perf
+build
+ci
+chore
+```
+
+Use a concise imperative description.
+
+A longer body is encouraged when the change benefits from additional context.
+
+Example:
+
+```text
+fix(validator): reject invalid door hinge positions
+
+Validate hinged door endpoints against the supporting wall centerline
+and opening bounds using the normative geometric tolerance.
+```
+
+Breaking changes must follow the Conventional Commits breaking-change syntax when applicable.
+
+Do not include unrelated changes in the same commit solely to reduce commit count.
+
+---
+
+## 16. Branches
+
+No strict branch naming convention is currently required.
+
+Use short, descriptive branch names when working in a fork or feature branch.
+
+Examples:
+
+```text
+door-validation
+fix-window-overlap
+docs-contributing
+```
+
+If a formal branch policy is introduced later, it should be documented here.
+
+---
+
+## 17. Pull Requests
+
+A pull request should be small enough to review coherently.
+
+A good pull request explains:
+
+- what changed;
+- why it changed;
+- which specification or architectural rule is relevant;
+- how the change was tested;
+- whether documentation changed;
+- whether an ADR or specification update is required.
+
+Keep unrelated refactors out of feature and bug-fix pull requests.
+
+If a refactor is necessary to enable a feature, keep it clearly scoped and explain the relationship.
+
+---
+
+## 18. Pull Request Verification
+
+Before opening or updating a pull request, run the repository verification commands once they are available:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+If a required check cannot be run, state clearly in the pull request:
+
+- which check was not run;
+- why it was not run.
+
+Do not claim that checks passed unless they were actually executed.
+
+CI is expected to run the same repository-level verification.
+
+---
+
+## 19. Documentation Changes
+
+Update documentation when a contribution changes:
+
+- public behavior;
+- domain contracts;
+- architecture;
+- setup instructions;
+- contributor workflow;
+- Apartment SVG semantics;
+- examples;
+- important developer conventions.
+
+Do not duplicate large blocks of documentation in multiple places.
+
+Update the document that owns the relevant rule and link to it elsewhere.
+
+---
+
+## 20. Code Review Expectations
+
+Reviewers should evaluate more than whether the code works.
+
+Important review questions include:
+
+- does the behavior match the Apartment SVG specification?
+- are domain and renderer concerns still separated?
+- is authoritative geometry still exact-decimal based?
+- are invalid inputs rejected rather than guessed or repaired?
+- are package dependencies flowing in the correct direction?
+- is the API appropriately typed?
+- are the tests meaningful and deterministic?
+- are new dependencies justified?
+- is an ADR required?
+- is the documentation still accurate?
+
+Contributors are expected to respond to review feedback constructively and keep follow-up changes focused.
+
+---
+
+## 21. AI-Assisted Contributions
+
+AI-assisted development is allowed.
+
+However, the contributor remains responsible for the submitted result.
+
+AI-generated changes must be reviewed for:
+
+- correctness;
+- security;
+- specification compliance;
+- architecture compliance;
+- dependency quality;
+- test coverage;
+- licensing concerns;
+- accidental unrelated changes.
+
+Do not submit generated code that you have not reviewed and understood.
+
+Coding agents working directly in the repository must follow:
+
+```text
+AGENTS.md
+```
+
+---
+
+## 22. Security and Sensitive Data
+
+Never commit or publish:
+
+- API keys;
+- access tokens;
+- credentials;
+- private keys;
+- passwords;
+- `.env` secrets;
+- personal apartment data that should remain private;
+- machine-specific private paths.
+
+Apartment SVG files contributed as fixtures or examples must be safe for public distribution.
+
+If you discover a security issue, do not include exploit-sensitive private information in a public issue when private reporting is more appropriate.
+
+A formal security-reporting policy may be added as the project gains deployed services and security-sensitive functionality.
+
+---
+
+## 23. Licensing
+
+PlanAxis is licensed under the **Apache License 2.0**.
+
+Contributions submitted to the repository must be compatible with the project's license.
+
+Do not contribute source code, assets, test data, documentation, or other material that you do not have the right to redistribute under compatible terms.
+
+Third-party code or assets must retain required notices and attribution.
+
+If licensing is unclear, resolve it before submitting the contribution.
+
+---
+
+## 24. Definition of Done
+
+A contribution is normally ready for review when:
+
+- the change has one clear purpose;
+- code follows the coding guidelines;
+- Apartment SVG behavior matches the normative specification;
+- architecture boundaries remain intact;
+- tests cover the changed behavior;
+- regression coverage exists for bug fixes where practical;
+- fixtures or examples are updated when relevant;
+- documentation is updated where needed;
+- an ADR is included when the architecture changes significantly;
+- lint, typecheck, test, and build checks pass once available;
+- commit messages follow Conventional Commits;
+- no secrets or unrelated changes are included.
+
+---
+
+## 25. Thank You
+
+PlanAxis aims to combine precise geometry, strong software architecture, interactive visualization, and practical apartment redesign workflows in an open and reusable project.
+
+Thoughtful bug reports, focused pull requests, careful tests, documentation improvements, and architectural discussions are all valuable contributions.
