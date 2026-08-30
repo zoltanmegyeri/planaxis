@@ -104,13 +104,21 @@ Expected dependency policy for this task:
 
 - reuse existing repository dependencies where practical;
 - add a new dependency only when the task genuinely requires it;
-- do not introduce competing frameworks or duplicate core capabilities;
-- document any newly added dependency in the final report.
+- select new or updated versions from current registry metadata at execution time;
+- use the newest stable, non-deprecated, mutually compatible release by default;
+- evaluate the current stable major release rather than defaulting to a familiar older major;
+- do not use prerelease or deprecated releases unless this task explicitly requires them;
+- do not bypass compatibility problems using forced installs, ignored peer-dependency errors, or speculative overrides;
+- keep repeated dependency versions consistent across workspaces, using pnpm catalogs when appropriate;
+- follow the detailed dependency rules in `docs/development/coding-guidelines.md`;
+- document newly added dependencies and every intentional version exception in the final response.
 
-Task-specific dependency requirements:
+If current registry metadata cannot be inspected, the agent must not guess dependency versions from memory and must report the limitation.
+
+Task-specific dependency requirements or version constraints:
 
 ```text
-<dependency or "None.">
+<dependency / constraint / exception, or "None.">
 ```
 
 ## Testing Requirements
@@ -173,6 +181,15 @@ Add focused commands here when the task requires them:
 <focused verification command>
 ```
 
+If this task adds or updates dependency manifests or the lockfile, also require:
+
+```bash
+pnpm outdated --recursive
+pnpm install --frozen-lockfile
+```
+
+`pnpm outdated --recursive` does not need to produce empty output when a newer release is incompatible. Every intentionally unselected newer stable release must instead have an explicit, evidence-backed compatibility justification.
+
 Do not report a verification step as successful unless it was actually executed successfully.
 
 If a required command cannot be run, report exactly which command was not run and why.
@@ -189,6 +206,15 @@ The task is complete only when all applicable criteria below are satisfied:
 6. no unrelated changes are introduced;
 7. no out-of-scope functionality is implemented.
 
+When the task adds or updates dependencies, acceptance criteria SHOULD also require that:
+
+- current registry metadata was inspected for every changed direct dependency;
+- no selected direct dependency is prerelease or deprecated unless explicitly required;
+- the newest mutually compatible stable release was selected, or an evidence-backed exception was documented;
+- repeated dependency versions do not drift across workspaces;
+- package manifests and `pnpm-lock.yaml` represent the same reviewed dependency set;
+- `pnpm install --frozen-lockfile` succeeds.
+
 Acceptance criteria SHOULD be objective enough that a human reviewer can determine whether the task was completed correctly.
 
 ## Final Response
@@ -199,9 +225,10 @@ When finished, provide a concise execution report containing:
 2. the main files or areas changed;
 3. tests added or updated;
 4. verification commands actually run and their results;
-5. deviations from this task description, or `None`;
-6. follow-up work identified during execution, or `None`;
-7. a suggested Conventional Commits message that includes:
+5. dependency versions added or updated, including any intentionally unselected newer stable release and its evidence-backed compatibility reason;
+6. deviations from this task description, or `None`;
+7. follow-up work identified during execution, or `None`;
+8. a suggested Conventional Commits message that includes:
 
 ```text
 Task: TASK-NNN

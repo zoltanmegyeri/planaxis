@@ -787,6 +787,142 @@ For example, decimal behavior should be exposed through consistent project conve
 
 Renderer-specific APIs should remain behind renderer boundaries.
 
+### 16.5. Verify dependency versions from current registry data
+
+Dependency versions must be selected using current package-registry information at implementation time.
+
+Do not choose a version solely because it is:
+
+- present in model memory;
+- used in an old example;
+- copied from a template;
+- familiar from a previous project;
+- known to belong to a compatible historical major version.
+
+For every newly introduced or deliberately updated direct dependency, inspect the information relevant to selection, including where available:
+
+- current distribution tags;
+- the newest stable version;
+- deprecation status;
+- package engine requirements;
+- peer dependency requirements;
+- official compatibility or migration documentation when a major version changed.
+
+A registry command such as `pnpm view` may be used to inspect current metadata.
+
+If current registry information is unavailable, do not invent or guess a supposedly current version. Report the limitation.
+
+### 16.6. Prefer the newest mutually compatible stable release
+
+The default selection rule is:
+
+> use the newest stable, non-deprecated release that is mutually compatible with the repository.
+
+Evaluate the current stable major release first.
+
+Do not remain on an older major merely because it is familiar or because the agent or developer already knows its API.
+
+A version is not considered stable merely because it can be installed.
+
+When semantic versioning is used, versions with prerelease identifiers such as:
+
+```text
+alpha
+beta
+rc
+next
+canary
+nightly
+```
+
+are not stable releases.
+
+The registry `latest` tag may be used as the initial stable-release candidate only when the version it identifies is non-prerelease and non-deprecated.
+
+Do not use a prerelease or deprecated version unless the task explicitly requires it and the reason is documented.
+
+### 16.7. Evaluate compatibility explicitly
+
+Before accepting a dependency version, check compatibility with the parts of the repository that constrain it.
+
+Relevant constraints may include:
+
+- Node.js runtime support;
+- pnpm or package-manager requirements where applicable;
+- peer dependencies;
+- TypeScript or build-tool compatibility;
+- related framework or plugin versions;
+- accepted ADRs and architecture baselines;
+- known regressions documented by the project or dependency maintainers.
+
+Successful installation alone is not sufficient evidence of compatibility.
+
+Do not suppress or bypass incompatibilities using:
+
+- forced installation;
+- ignored peer-dependency errors;
+- arbitrary overrides;
+- speculative resolution rules.
+
+If the newest stable release cannot be used, select the newest mutually compatible stable version.
+
+The implementation or task execution report must identify:
+
+- the dependency;
+- the newest stable version considered;
+- the selected version;
+- the concrete incompatibility;
+- the registry metadata or official documentation supporting the exception.
+
+### 16.8. Dependency declaration policy
+
+For private applications and repository tooling, prefer exact direct dependency versions so that the package manifest communicates the dependency version actually selected and verified.
+
+The committed `pnpm-lock.yaml` remains mandatory and records the complete resolved dependency graph.
+
+Do not use a broad version range in a private application merely to preserve an arbitrary older lower bound while the lockfile resolves a newer version.
+
+Packages intended for publication have a different responsibility.
+
+For published package dependencies, use a semantic version range that accurately expresses the supported compatibility contract. Do not automatically pin an exact version when doing so would unnecessarily restrict consumers.
+
+Peer dependency ranges must describe the compatibility contract rather than only the version used during local development.
+
+### 16.9. Keep workspace versions consistent
+
+When the same external dependency is used in multiple workspaces, avoid duplicated version literals that can drift independently.
+
+Use pnpm catalogs when they provide a useful single source of truth for shared dependency versions.
+
+Do not introduce a catalog entry solely for ceremony when a dependency appears only once.
+
+### 16.10. Verify dependency changes
+
+When a change adds or updates dependencies:
+
+1. install the selected dependency set and update the lockfile;
+2. run the complete repository verification sequence;
+3. run:
+
+```bash
+pnpm install --frozen-lockfile
+```
+
+to verify that the committed manifests and lockfile are consistent;
+4. review:
+
+```bash
+pnpm outdated --recursive
+```
+
+to identify direct dependencies for which newer releases exist.
+
+`pnpm outdated --recursive` is a review signal, not a requirement that its output be empty.
+
+A newer release may legitimately remain unselected when it is incompatible. Such an exception must be explicitly justified with evidence.
+
+The lockfile does not replace dependency-version review. A manifest that names an arbitrary older lower bound while the lockfile happens to resolve a newer release does not accurately communicate the reviewed dependency baseline.
+
 ---
 
 ## 17. Comments and Documentation in Code
@@ -1027,6 +1163,10 @@ Before considering an implementation change complete, verify:
 - no unsupported inference or silent repair was introduced;
 - package boundaries and dependency direction remain valid;
 - new dependencies are justified;
+- new or updated dependency versions were checked against current registry metadata;
+- selected dependencies use the newest mutually compatible stable, non-deprecated releases unless an evidence-backed exception is documented;
+- repeated workspace dependency versions do not drift unnecessarily;
+- dependency manifest changes are consistent with `pnpm-lock.yaml` and a frozen-lockfile installation succeeds;
 - errors preserve useful structured context;
 - automated tests cover behavior changes;
 - lint, typecheck, test, and build checks pass when available;

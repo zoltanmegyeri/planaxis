@@ -382,7 +382,21 @@ Before adding a dependency:
 2. confirm that the dependency is necessary for the current change;
 3. prefer a focused and actively maintained package;
 4. consider whether the dependency affects architecture;
-5. keep specialized dependencies behind appropriate boundaries.
+5. keep specialized dependencies behind appropriate boundaries;
+6. select the version using current registry information rather than memory or an old template;
+7. prefer the newest stable, non-deprecated release that is mutually compatible with the repository.
+
+Do not remain on an older major version merely because it is familiar.
+
+Do not introduce prerelease, beta, release-candidate, canary, nightly, `next`, or deprecated dependency versions unless the contribution explicitly requires them.
+
+If the newest stable release is incompatible, use the newest mutually compatible stable version and document the concrete compatibility reason and supporting source.
+
+For detailed version-selection, declaration, workspace-consistency, and verification rules, follow:
+
+```text
+docs/development/coding-guidelines.md
+```
 
 Do not introduce a second framework or competing core implementation casually.
 
@@ -563,6 +577,8 @@ Important review questions include:
 - is the API appropriately typed?
 - are the tests meaningful and deterministic?
 - are new dependencies justified?
+- were new or updated dependency versions selected from current registry metadata?
+- are dependency versions the newest mutually compatible stable releases, or is an exception documented with evidence?
 - is an ADR required?
 - is the documentation still accurate?
 
@@ -747,6 +763,7 @@ A contribution is normally ready for review when:
 - an ADR is included when the architecture changes significantly;
 - lint, typecheck, test, and build checks pass once available;
 - commit messages follow Conventional Commits;
+- dependency additions or updates follow the current-version and compatibility rules in the coding guidelines;
 - for Mode B work, the formal task lifecycle and human review requirements are satisfied;
 - for completed Mode B work, implementation commits are recorded in the task record and task finalization is committed separately when practical;
 - no secrets or unrelated changes are included.

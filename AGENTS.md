@@ -414,6 +414,41 @@ Before adding a dependency:
 3. prefer small, focused, actively maintained dependencies;
 4. keep dependency usage behind an appropriate project abstraction when it affects core domain behavior.
 
+### Dependency version selection
+
+When adding or updating a third-party dependency:
+
+1. inspect current package-registry metadata during task execution;
+2. evaluate the current stable major release rather than defaulting to a historically familiar release line;
+3. select the newest stable, non-deprecated release that is mutually compatible with:
+   - the repository runtime baseline;
+   - the package-manager baseline where relevant;
+   - declared engine requirements;
+   - relevant peer dependencies;
+   - the other dependency versions selected for the repository;
+   - accepted architectural constraints;
+4. do not select versions solely from model memory, templates, cached knowledge, or familiarity with an older version;
+5. do not use prerelease, beta, release-candidate, canary, nightly, `next`, or equivalent non-stable releases unless the task explicitly requires them;
+6. do not remain on an older major version merely because it is familiar;
+7. if the newest stable release is incompatible, select the newest mutually compatible stable version and report:
+   - the dependency;
+   - the newest stable version considered;
+   - the selected version;
+   - the exact compatibility constraint;
+   - the registry metadata or official compatibility documentation supporting the decision;
+8. do not bypass compatibility problems using forced installations, ignored peer-dependency errors, or speculative package-manager overrides;
+9. if current registry metadata cannot be inspected, do not guess a dependency version from memory; report the limitation.
+
+The registry `latest` tag may be treated as the initial stable-release candidate only when it points to a non-prerelease, non-deprecated version.
+
+For private applications and repository tooling, direct dependency declarations should normally use the exact versions that were selected and verified. The committed lockfile remains mandatory.
+
+For dependencies of packages intended for publication, use a semantic version range that accurately expresses the supported compatibility contract rather than automatically pinning an exact version.
+
+When the same external dependency is declared by multiple workspaces, keep its version centrally consistent using pnpm catalogs when that reduces duplicated version literals and version drift.
+
+If dependency manifests or the lockfile change, verify the resulting dependency set with current registry information, review `pnpm outdated --recursive`, and confirm that `pnpm install --frozen-lockfile` succeeds. Outdated output is not itself a failure when a newer release is incompatible, but every intentional exception must be evidence-backed and reported.
+
 Do not introduce:
 
 - a dependency-injection container;
