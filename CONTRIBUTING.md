@@ -55,6 +55,7 @@ AGENTS.md
 docs/architecture/overview.md
 docs/development/coding-guidelines.md
 docs/development/testing.md
+docs/development/agent-task-workflow.md
 ```
 
 For Apartment SVG behavior, the normative specification is:
@@ -118,9 +119,12 @@ docs/
     architecture/
     development/
     decisions/
+    tasks/
 ```
 
 Exact package boundaries may evolve, but architectural responsibilities should remain clear.
+
+`docs/tasks/` contains formal coding-agent task artifacts and shared task-process documentation. It is part of the repository history rather than an implementation package.
 
 Do not move behavior across boundaries merely for convenience.
 
@@ -174,6 +178,8 @@ Examples:
 Avoid combining unrelated changes into one pull request.
 
 For larger work, open or discuss an issue first when practical so the intended direction can be agreed before substantial implementation effort is spent.
+
+Before implementation begins, decide whether the work will be **human-owned** or **fully delegated to a coding agent**. If the latter, follow the formal Mode B workflow defined in `docs/development/agent-task-workflow.md`.
 
 ---
 
@@ -442,6 +448,23 @@ and opening bounds using the normative geometric tolerance.
 
 Breaking changes must follow the Conventional Commits breaking-change syntax when applicable.
 
+For implementation commits produced through a formal agent-delegated task, the final human-created commit message should identify the task using:
+
+```text
+Task: TASK-NNN
+```
+
+Example:
+
+```text
+feat(parser): implement Apartment SVG XML parsing
+
+Parse the supported Apartment SVG structure into the raw typed
+representation while preserving authoritative decimal lexemes.
+
+Task: TASK-003
+```
+
 Do not include unrelated changes in the same commit solely to reduce commit count.
 
 ---
@@ -475,7 +498,8 @@ A good pull request explains:
 - which specification or architectural rule is relevant;
 - how the change was tested;
 - whether documentation changed;
-- whether an ADR or specification update is required.
+- whether an ADR or specification update is required;
+- when applicable, which formal `TASK-NNN` produced the implementation.
 
 Keep unrelated refactors out of feature and bug-fix pull requests.
 
@@ -514,6 +538,7 @@ Update documentation when a contribution changes:
 - architecture;
 - setup instructions;
 - contributor workflow;
+- formal agent-task workflow;
 - Apartment SVG semantics;
 - examples;
 - important developer conventions.
@@ -545,13 +570,119 @@ Contributors are expected to respond to review feedback constructively and keep 
 
 ---
 
-## 21. AI-Assisted Contributions
+## 21. Development Modes and AI-Assisted Contributions
 
 AI-assisted development is allowed.
 
-However, the contributor remains responsible for the submitted result.
+Before implementation begins, a contributor must distinguish between two development modes:
 
-AI-generated changes must be reviewed for:
+```text
+Mode A — Human-Owned Development
+Mode B — Agent-Delegated Task Execution
+```
+
+The detailed process is defined in:
+
+```text
+docs/development/agent-task-workflow.md
+```
+
+That document is the authoritative source for the human workflow. Do not duplicate or reinterpret its lifecycle rules in pull requests or task descriptions.
+
+### Mode A — Human-Owned Development
+
+Use Mode A when the human contributor owns the implementation.
+
+The contributor may use AI for:
+
+- discussion;
+- explanations;
+- code review;
+- isolated code suggestions;
+- completion;
+- debugging ideas;
+- test ideas;
+- other assistive work.
+
+Formal task artifacts are not required merely because AI was used.
+
+AI-assisted code accepted and integrated under Mode A is treated as part of the human contributor's own implementation.
+
+The contributor remains responsible for understanding and reviewing the submitted result.
+
+### Mode B — Agent-Delegated Task Execution
+
+Use Mode B when a complete, explicitly scoped unit of repository implementation work is delegated to a coding agent.
+
+Mode B requires a formal task under:
+
+```text
+docs/tasks/
+```
+
+with:
+
+```text
+TASK-NNN-record.md
+TASK-NNN-description.md
+```
+
+The task artifacts must conform to:
+
+```text
+docs/tasks/TASK-RECORD-SPECIFICATION.md
+```
+
+The task description should be prepared using:
+
+```text
+docs/tasks/TASK-DESCRIPTION-TEMPLATE.md
+```
+
+A contributor choosing Mode B must follow the complete lifecycle in:
+
+```text
+docs/development/agent-task-workflow.md
+```
+
+This includes the required separation between:
+
+```text
+task preparation
+task authorization
+agent execution
+human review
+implementation commit
+task finalization
+```
+
+Do not start agent execution from uncommitted task artifacts.
+
+Do not combine task preparation, agent implementation, and task finalization into one undifferentiated commit.
+
+### Coding-agent repository rules
+
+Coding agents working directly in the repository must follow:
+
+```text
+AGENTS.md
+```
+
+For formal Mode B tasks, `AGENTS.md` defines agent-side requirements including:
+
+- mandatory repository preflight;
+- Git write and synchronization restrictions;
+- hard-stop behavior for an unclean repository;
+- restricted access under `docs/tasks/`;
+- task-artifact read-only rules.
+
+The human contributor is responsible for preparing a repository state in which those preconditions can succeed.
+
+### Human responsibility
+
+Regardless of mode, the contributor remains responsible for the submitted result.
+
+AI-assisted or agent-produced changes must be reviewed for:
 
 - correctness;
 - security;
@@ -562,13 +693,7 @@ AI-generated changes must be reviewed for:
 - licensing concerns;
 - accidental unrelated changes.
 
-Do not submit generated code that you have not reviewed and understood.
-
-Coding agents working directly in the repository must follow:
-
-```text
-AGENTS.md
-```
+Do not submit generated or delegated code that you have not meaningfully reviewed and understood.
 
 ---
 
@@ -622,6 +747,8 @@ A contribution is normally ready for review when:
 - an ADR is included when the architecture changes significantly;
 - lint, typecheck, test, and build checks pass once available;
 - commit messages follow Conventional Commits;
+- for Mode B work, the formal task lifecycle and human review requirements are satisfied;
+- for completed Mode B work, implementation commits are recorded in the task record and task finalization is committed separately when practical;
 - no secrets or unrelated changes are included.
 
 ---
