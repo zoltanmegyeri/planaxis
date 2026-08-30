@@ -392,7 +392,7 @@ After editing:
 
 ## Required Verification
 
-Once the repository bootstrap provides these scripts, use the root workspace commands as the standard verification sequence:
+Use the root workspace commands as the standard verification sequence:
 
 ```bash
 pnpm lint

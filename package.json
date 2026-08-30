@@ -1,0 +1,29 @@
+{
+  "name": "planaxis",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Deterministic apartment modeling and visualization toolkit",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25",
+    "pnpm": ">=11 <12"
+  },
+  "packageManager": "pnpm@11.24.0",
+  "scripts": {
+    "build": "pnpm --recursive run build",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --max-warnings 0 && prettier --check .",
+    "test": "pnpm --recursive --if-present run test",
+    "typecheck": "pnpm --recursive run typecheck"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.13.3",
+    "eslint": "10.9.1",
+    "prettier": "3.9.6",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.68.0"
+  }
+}

@@ -433,7 +433,7 @@ Environment-specific concerns must remain outside shared core packages.
 
 ## 9. Package Boundaries
 
-The initial target monorepo contains packages similar to:
+The monorepo defines these shared package skeletons:
 
 ```text
 packages/
@@ -709,7 +709,7 @@ ADRs describe **why significant decisions were made**.
 
 ## 16. Current Implementation Phase
 
-PlanAxis is currently in the repository bootstrap and architecture-definition phase.
+The executable repository bootstrap is complete. PlanAxis is now ready for the numeric and geometric foundation work that precedes Apartment SVG parsing and validation.
 
 The intended implementation order is broadly:
 

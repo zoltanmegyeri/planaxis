@@ -1,0 +1,17 @@
+{
+  "name": "@planaxis/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "PlanAxis browser application",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "vite": "8.2.2"
+  }
+}

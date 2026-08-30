@@ -94,7 +94,7 @@ Contributions should preserve these boundaries unless the change explicitly prop
 
 The repository is organized as a pnpm workspace monorepo.
 
-The target structure includes areas similar to:
+The repository is organized around areas such as:
 
 ```text
 apps/
@@ -140,13 +140,13 @@ pnpm
 TypeScript
 ```
 
-Once the repository bootstrap is complete, a typical setup is expected to be:
+Install a fresh checkout with:
 
 ```bash
 pnpm install
 ```
 
-Standard repository verification commands are expected to include:
+Use these standard repository verification commands:
 
 ```bash
 pnpm lint
@@ -523,7 +523,7 @@ If a refactor is necessary to enable a feature, keep it clearly scoped and expla
 
 ## 18. Pull Request Verification
 
-Before opening or updating a pull request, run the repository verification commands once they are available:
+Before opening or updating a pull request, run the repository verification commands:
 
 ```bash
 pnpm lint
@@ -761,7 +761,7 @@ A contribution is normally ready for review when:
 - fixtures or examples are updated when relevant;
 - documentation is updated where needed;
 - an ADR is included when the architecture changes significantly;
-- lint, typecheck, test, and build checks pass once available;
+- lint, typecheck, test, and build checks pass;
 - commit messages follow Conventional Commits;
 - dependency additions or updates follow the current-version and compatibility rules in the coding guidelines;
 - for Mode B work, the formal task lifecycle and human review requirements are satisfied;

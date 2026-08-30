@@ -975,11 +975,11 @@ Code and documentation must evolve together.
 
 Formatting should be automated.
 
-The repository bootstrap is expected to configure a formatter and linter.
+The repository uses Prettier for formatting and ESLint for linting.
 
 Do not manually maintain stylistic differences that automated tooling can normalize.
 
-Once the project configuration exists:
+When changing executable project files:
 
 - follow the repository formatter;
 - follow the repository linter;

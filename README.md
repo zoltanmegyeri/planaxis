@@ -7,7 +7,7 @@
 The project is built around the versioned, normative [Apartment SVG 2.1 specification](docs/specifications/apartment-svg/2.1.md), where an SVG document is not merely a drawing: it is the canonical, machine-readable representation of an apartment's geometry and semantics.
 
 > [!NOTE]
-> PlanAxis is currently in the early architecture and repository bootstrap phase. The Apartment SVG specification is available, while the software implementation is being built incrementally.
+> The executable TypeScript monorepo foundation is in place. Apartment SVG domain behavior has not yet been implemented and will be added incrementally.
 
 ## Project Goals
 
@@ -98,7 +98,7 @@ The exact dependency set may evolve through documented architectural decisions.
 
 ## Repository Structure
 
-PlanAxis is being organized as a pnpm workspace monorepo. During the bootstrap phase, the target repository structure is:
+PlanAxis is a pnpm workspace monorepo organized around the following areas:
 
 ```text
 .
@@ -158,7 +158,7 @@ The current normative format definition is the [Apartment SVG 2.1 specification]
 
 [`docs/architecture/`](docs/architecture/) describes the current software architecture and the responsibilities and boundaries of the major components.
 
-The primary entry point is expected to be:
+The primary entry point is:
 
 ```text
 docs/architecture/overview.md
@@ -246,7 +246,7 @@ Task descriptions should be prepared using:
 docs/tasks/TASK-DESCRIPTION-TEMPLATE.md
 ```
 
-The project is expected to expose standard workspace commands such as:
+The project exposes these standard workspace commands:
 
 ```bash
 pnpm install

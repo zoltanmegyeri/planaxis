@@ -1009,7 +1009,7 @@ A renderer-specific tolerance must not redefine authoritative domain equality.
 
 ## 39. CI Expectations
 
-Once repository bootstrap is complete, the standard verification commands are expected to be:
+The standard verification commands are:
 
 ```bash
 pnpm lint
@@ -1034,7 +1034,7 @@ The standard test command must not require:
 
 During development, run the narrowest useful test first.
 
-Package-scoped or pattern-scoped tests may be used once scripts exist.
+Package-scoped or pattern-scoped tests may be used during development.
 
 Before considering a substantive change complete, run the repository-level verification required by `AGENTS.md`.
 

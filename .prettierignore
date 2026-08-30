@@ -1,0 +1,11 @@
+node_modules/
+**/dist/
+coverage/
+pnpm-lock.yaml
+
+# Existing prose is intentionally outside the bootstrap formatting scope.
+AGENTS.md
+CONTRIBUTING.md
+README.md
+LICENSE
+docs/
