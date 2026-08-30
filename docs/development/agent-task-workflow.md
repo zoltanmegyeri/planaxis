@@ -198,9 +198,12 @@ The normal Mode B lifecycle is:
 5. Commit In Progress state
 6. Refresh and verify repository state
 7. Invoke coding agent
-8. Agent performs repository preflight
+8. Agent performs initial-execution preflight
 9. Agent implements and verifies
 10. Human reviews result
+10a. If needed, human explicitly requests review continuation
+10b. Agent performs continuation preflight, diagnoses or corrects, and re-verifies
+10c. Return to human review until accepted or terminated
 11. Human creates implementation commit
 12. Human finalizes task record
 13. Human commits task finalization
@@ -448,9 +451,9 @@ The invocation prompt MUST NOT override the task description.
 
 If an important requirement is missing, the task description MUST be corrected before issue or the task MUST be superseded after issue.
 
-## 14. Step 8 — Coding-Agent Repository Preflight
+## 14. Step 8 — Coding-Agent Initial-Execution Preflight
 
-Before modifying any project file, the coding agent MUST perform the repository preflight defined by `AGENTS.md`.
+Before the coding agent begins the first implementation pass, it MUST perform the **Initial Execution Preflight** defined by `AGENTS.md`.
 
 The agent MUST verify working tree cleanliness using read-only Git operations.
 
@@ -462,7 +465,7 @@ git status --porcelain=v1 --untracked-files=all
 
 The expected result is empty output.
 
-The agent MAY also inspect the relationship between `HEAD` and the currently known upstream-tracking reference using read-only Git commands.
+The agent MUST also inspect the relationship between `HEAD` and the currently known upstream-tracking reference using read-only Git commands as required by `AGENTS.md`.
 
 However:
 
@@ -470,7 +473,7 @@ However:
 
 Without `git fetch`, the agent cannot know whether the remote repository changed after the human developer's last refresh.
 
-### 14.1. Preflight failure
+### 14.1. Initial-execution preflight failure
 
 If the agent detects:
 
@@ -503,6 +506,16 @@ git rebase
 or equivalent operations.
 
 Repository cleanup belongs to the human developer.
+
+### 14.2. Cleanliness is an initial execution boundary
+
+The clean-working-tree requirement establishes the baseline from which the task begins.
+
+It does **not** require the repository to become clean again between every agent interaction after implementation changes have been produced.
+
+Once the first implementation pass creates uncommitted changes, those changes form the task working set that the human reviews.
+
+Any later agent iteration over that same working set MUST use the review-continuation rules in `AGENTS.md` and Section 20 of this workflow.
 
 ## 15. Step 9 — Task Artifact Access Rules
 
@@ -575,7 +588,7 @@ The agent MAY report information that the human later copies into the task recor
 
 ## 17. Step 10 — Agent Implementation
 
-After successful preflight, the coding agent may modify repository files required by the assigned task.
+After successful initial-execution preflight, the coding agent may modify repository files required by the assigned task.
 
 The agent MUST:
 
@@ -610,6 +623,10 @@ The agent's suggested commit message is advisory.
 
 The human maintainer owns the final commit message.
 
+An agent completion report does not itself end the task or make the current working tree immutable.
+
+Until the human accepts the result and creates the implementation commit, the task MAY remain `In Progress` and MAY return to the agent through an explicit review-continuation cycle.
+
 ## 19. Step 11 — Human Review
 
 After agent execution, the human maintainer MUST review the complete change set before committing it.
@@ -630,13 +647,149 @@ Review SHOULD include:
 
 The human maintainer SHOULD rerun relevant verification where practical.
 
+The developer SHOULD also perform practical manual or runtime checks that are meaningful for the task, even when automated verification passed. Examples include starting an application, exercising a health endpoint, inspecting generated output, or reproducing an integration path.
+
 The developer MUST NOT commit agent output without meaningful human review.
 
-## 20. Human Corrections
+If review discovers a defect, failed verification step, runtime failure, or other evidence that the current implementation does not satisfy the existing task description, the task SHOULD normally remain `In Progress`.
+
+The human MAY then request an explicit review continuation before any implementation commit is created.
+
+## 20. Review Continuation and Human Corrections
+
+Human review is allowed to be iterative.
+
+The expected review loop is:
+
+```text
+agent implementation
+    ↓
+human review
+    ↓
+accepted? ── yes → implementation commit
+    │
+    no
+    ↓
+explicit review-continuation request
+    ↓
+agent continuation preflight
+    ↓
+diagnosis / correction / verification
+    ↓
+human review
+    ↺
+```
+
+The task remains `In Progress` throughout this loop.
+
+### 20.1. Task working set
+
+After the first agent implementation pass, the uncommitted repository changes under review form the **task working set**.
+
+The task working set MAY contain:
+
+- changes produced by the coding agent;
+- later agent corrections;
+- human review corrections;
+- untracked files legitimately created by the task.
+
+A dirty working tree is therefore expected during this phase.
+
+The working tree MUST NOT be cleaned or prematurely committed merely to allow the coding agent to investigate or correct a review finding.
+
+### 20.2. Explicit review continuation
+
+The coding agent MUST NOT infer continuation mode solely from the presence of a dirty repository.
+
+The human maintainer MUST explicitly state that the agent is continuing the same formal task on the current review working tree and MUST identify the same assigned task description.
+
+Recommended pattern:
+
+```text
+Continue TASK-NNN on the current uncommitted review working tree.
+
+Read and continue to follow
+docs/tasks/TASK-NNN-<short-title>/TASK-NNN-description.md.
+
+The human review found:
+<failure, defect, or verification evidence>
+
+Diagnose the issue. If it means the existing task requirements are not
+satisfied, correct it within the existing task scope and rerun the
+relevant verification. Do not introduce new scope.
+```
+
+Unlike the initial invocation prompt, a continuation prompt MAY contain concrete review evidence.
+
+Examples include:
+
+```text
+the documented server-start command fails
+a required endpoint does not respond
+a test fails on the supported runtime
+the built application behaves differently from the existing acceptance criteria
+```
+
+These statements describe observed conformance problems.
+
+They do not modify the authoritative task description.
+
+### 20.3. Review-continuation preflight
+
+Before diagnosing or modifying the existing task working set, the agent MUST perform the **Review Continuation Preflight** defined by `AGENTS.md`.
+
+In review continuation:
+
+- unstaged changes are allowed;
+- untracked task files are allowed;
+- a dirty working tree is not itself a failure;
+- staged changes remain a hard stop;
+- modifications under `docs/tasks/` remain a hard stop;
+- a locally known ahead/behind/diverged upstream relationship remains a hard stop;
+- unrelated or ambiguous working-tree changes remain a hard stop.
+
+The agent MAY inspect and run the current implementation, including commands required to reproduce a human-reported failure.
+
+The agent MUST NOT use Git write operations to repair, clean, reset, or normalize the working tree.
+
+### 20.4. Scope boundary
+
+Review feedback MAY identify evidence that the current implementation does not satisfy the existing task.
+
+That does not make the feedback a new requirement.
+
+For example:
+
+```text
+the server does not start as required
+the validator accepts input the task requires it to reject
+the build fails on the required runtime
+```
+
+may be corrected within the same task when the correction follows directly from the existing description.
+
+By contrast:
+
+```text
+add a new endpoint
+support another file format
+refactor an unrelated package
+add a new feature while fixing the issue
+```
+
+is new scope unless already required by the issued description.
+
+If the requested correction materially changes the issued task definition, the existing task SHOULD be cancelled or superseded, or a follow-up task SHOULD be created.
+
+The issued description MUST NOT be rewritten.
+
+### 20.5. Human corrections
 
 The human maintainer MAY modify the agent output before accepting it.
 
 Such changes remain part of the Mode B task result.
+
+If the agent later continues the task, it MUST inspect the existing diff and MUST NOT assume that all current changes are agent-authored.
 
 Material manual changes MUST later be recorded in:
 
@@ -793,7 +946,7 @@ The conceptual boundaries SHOULD remain clear.
 
 If the coding agent cannot complete the task, the human developer reviews the result.
 
-The task MAY remain `In Progress` if another attempt can be made without changing the authoritative description.
+The task MAY remain `In Progress` if another attempt can be made without changing the authoritative description. If an existing uncommitted task working set remains under review, that attempt MAY use the review-continuation process.
 
 ### 26.2. Human review rejects the implementation
 
@@ -805,7 +958,7 @@ Rejected
 
 The task MAY:
 
-- remain `In Progress` for another execution attempt;
+- remain `In Progress` for another execution attempt or review-continuation cycle;
 - become `Cancelled`;
 - become `Superseded`.
 
@@ -861,7 +1014,13 @@ Working tree cleanliness and remote freshness are separate concepts.
 
 ### 28.1. Working tree cleanliness
 
-The agent can verify this reliably using local read-only Git operations.
+The agent can inspect working tree state reliably using local read-only Git operations.
+
+A completely clean working tree is mandatory for initial task execution.
+
+During an explicitly authorized review continuation, a dirty working tree is expected because it contains the current uncommitted task working set.
+
+Continuation safety is established by inspecting that working set, requiring an empty index, protecting `docs/tasks/`, rejecting unrelated or ambiguous changes, and preserving the locally known upstream relationship as defined by `AGENTS.md`.
 
 ### 28.2. Remote freshness
 
@@ -888,8 +1047,8 @@ A Mode B task description MUST NOT exist only as an uncommitted file when agent 
 
 If task preparation remained uncommitted:
 
-- repository preflight would fail;
-- the agent would start from a dirty repository;
+- initial-execution preflight would fail;
+- the agent would start from a dirty repository without an established task working-set boundary;
 - the historical task definition would not be stable;
 - later review could not prove exactly what was delegated.
 
@@ -948,6 +1107,42 @@ and while you are there refactor the parser too.
 
 If such requirements matter, they belong in the task description before issue.
 
+### Review-continuation prompts
+
+A review-continuation prompt is different from the initial invocation prompt because the human may need to report evidence discovered during review.
+
+It SHOULD still identify the same task and the same authoritative description.
+
+It MAY describe observed failures, diagnostics, or review findings that indicate the existing implementation may not satisfy the issued task.
+
+It MUST NOT introduce new implementation requirements.
+
+Recommended:
+
+```text
+Continue TASK-001 on the current uncommitted review working tree.
+
+Read and continue to follow
+docs/tasks/TASK-001-bootstrap-typescript-monorepo/TASK-001-description.md.
+
+The human review found that the documented server-start command fails.
+Diagnose the failure and, if TASK-001 is not satisfied, correct it within
+the existing scope and rerun the relevant verification. Do not introduce
+new scope.
+```
+
+The distinction is:
+
+```text
+review evidence
+    = information about whether the existing task was implemented correctly
+
+new requirement
+    = a change to what the task is supposed to implement
+```
+
+Only the first belongs in a continuation prompt.
+
 ## 33. Responsibility Summary
 
 ### Human developer
@@ -958,8 +1153,10 @@ Responsible for:
 - task scope;
 - task artifacts;
 - repository freshness;
-- repository cleanliness before invocation;
+- repository cleanliness before initial invocation;
 - execution authorization;
+- explicitly authorizing review continuation when needed;
+- identifying review findings without silently changing task scope;
 - human review;
 - manual corrections;
 - Git write operations;
@@ -970,10 +1167,12 @@ Responsible for:
 
 Responsible for:
 
-- repository preflight;
+- initial-execution preflight;
+- review-continuation preflight when explicitly authorized;
 - reading the assigned description;
+- inspecting the current task working set during continuation;
 - following repository instructions;
-- implementation;
+- implementation and in-scope review corrections;
 - tests;
 - verification;
 - execution reporting;
@@ -989,31 +1188,39 @@ Responsible for:
 - pulling;
 - fetching;
 - cleaning a dirty repository;
+- deciding on its own that a dirty repository represents a valid review continuation;
 - proving remote freshness.
 
 ## 34. Process Integrity
 
-The Mode B process is designed to preserve four guarantees:
+The Mode B process is designed to preserve five guarantees:
 
 ### 34.1. Stable input
 
 The exact delegated task is committed before execution.
 
-### 34.2. Clean execution boundary
+### 34.2. Clean initial execution boundary
 
-The agent begins only from a clean repository.
+The agent begins the first implementation pass only from a clean repository prepared by the human maintainer.
 
-### 34.3. Human-controlled history
+### 34.3. Controlled review continuation
+
+After implementation begins, the uncommitted task working set may remain dirty during human review and agent correction cycles.
+
+Continuation is explicit, remains bound to the same immutable task description, protects Git history and task artifacts, and does not permit unrelated scope.
+
+### 34.4. Human-controlled history
 
 No agent creates or rewrites Git history.
 
-### 34.4. Auditable result
+### 34.5. Auditable result
 
 The final task record connects:
 
 ```text
 task definition
 agent execution
+review-continuation iterations
 verification
 human review
 implementation commits
@@ -1044,11 +1251,17 @@ refresh and verify repository
     ↓
 invoke agent
     ↓
-agent preflight
+initial-execution preflight
     ↓
 agent implementation
     ↓
 human review
+    ↕
+explicit review continuation when needed
+    ↕
+continuation preflight + diagnosis/correction/re-verification
+    ↓
+human acceptance
     ↓
 implementation commit
     ↓
@@ -1057,4 +1270,4 @@ record finalization
 finalization commit
 ```
 
-This workflow intentionally keeps task definition, agent execution, human acceptance, and Git history under clear and separate responsibility boundaries.
+This workflow intentionally keeps task definition, clean initial execution, iterative review correction, human acceptance, and Git history under clear and separate responsibility boundaries.

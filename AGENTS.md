@@ -336,19 +336,30 @@ The agent may report execution information for a human maintainer to record late
 
 ## Working on a Task
 
-After this `AGENTS.md` has been loaded, the agent's first repository action must be the mandatory Git repository preflight defined below.
+After this `AGENTS.md` has been loaded, determine which repository-entry mode applies before inspecting task-specific repository content:
 
-Do not inspect task-specific repository content and do not modify files until the preflight succeeds.
+```text
+initial execution
+review continuation
+```
 
-For a formal delegated task, after successful preflight:
+Use the corresponding Git safety check defined under `Git Repository Preflight and Review Continuation`.
+
+An **initial execution** is the first coding-agent execution of a task or other unit of repository work. It requires the repository to satisfy the clean initial-execution preflight.
+
+A **review continuation** is a deliberately resumed iteration of the same already-issued formal task while its uncommitted task working set is still under human review. It is allowed only when the human explicitly identifies the continuation and the same assigned task description. A dirty working tree is expected in this mode and is not, by itself, a failure.
+
+Do not infer review-continuation mode merely because the repository is dirty.
+
+For a formal delegated task after the applicable safety check succeeds:
 
 1. Read only the exact assigned `TASK-NNN-description.md` under `docs/tasks/`.
 2. Read the non-task repository documents explicitly required by that description.
 3. Read the normative Apartment SVG sections relevant to the task when applicable.
 4. Read relevant architecture, coding, testing, and ADR documents.
-5. Inspect existing implementation and tests before introducing new structures.
+5. Inspect the existing implementation, tests, and, during review continuation, the current task working set before introducing further changes.
 
-For other coding-agent work, after successful preflight:
+For other coding-agent work, after the initial-execution preflight succeeds:
 
 1. Read the user instructions carefully.
 2. Read the authoritative repository documents relevant to the work.
@@ -364,6 +375,14 @@ While editing:
 - avoid unrelated refactors;
 - avoid adding dependencies when the standard library or an existing dependency is sufficient;
 - do not weaken types merely to make code compile.
+
+During review continuation:
+
+- treat human-reported failures, test results, runtime errors, and review findings as evidence that the existing task may not yet satisfy its authoritative description;
+- diagnose and correct such problems when the correction remains within the existing task scope;
+- do not treat review feedback as permission to add new requirements or unrelated scope;
+- preserve human review corrections already present in the task working set unless they conflict with the authoritative task description;
+- do not revert or overwrite changes whose relationship to the task cannot be established safely.
 
 After editing:
 
@@ -479,13 +498,26 @@ Do not duplicate large sections of one document into another. Link to the author
 
 When behavior changes, update the documentation that owns that behavior.
 
-## Mandatory Git Repository Preflight
+## Git Repository Preflight and Review Continuation
 
-**Every coding agent must perform this preflight before reading task-specific repository content or modifying any project file.**
+Repository cleanliness is a mandatory boundary for **initial execution**, not a requirement that must be restored between every agent interaction within the same in-progress formal task.
+
+The two supported modes are:
+
+```text
+Initial Execution Preflight
+Review Continuation Preflight
+```
+
+The agent MUST NOT choose review-continuation mode merely because uncommitted changes exist.
+
+### Initial Execution Preflight
+
+**Every coding agent must perform this preflight before the first task-specific repository inspection or project-file modification for a new execution.**
 
 The agent must begin from a repository state prepared by a human maintainer.
 
-### 1. Verify repository context
+#### 1. Verify repository context
 
 Confirm that the current working directory is inside a Git working tree using a read-only command such as:
 
@@ -495,7 +527,7 @@ git rev-parse --is-inside-work-tree
 
 If this cannot be confirmed, stop and report the problem.
 
-### 2. Verify working tree and index cleanliness
+#### 2. Verify working tree and index cleanliness
 
 Run:
 
@@ -518,15 +550,15 @@ This includes:
 
 If the output is not empty, stop immediately and make no task changes.
 
-Report that repository preflight failed because the working tree or index is not clean.
+Report that initial-execution preflight failed because the working tree or index is not clean.
 
 Do not attempt to repair the repository state.
 
-### 3. Verify the locally known upstream relationship
+#### 3. Verify the locally known upstream relationship
 
 Determine the current branch's configured upstream using read-only Git inspection.
 
-If no upstream is configured, or the upstream relationship cannot be inspected, stop and report that the preflight cannot be completed safely.
+If no upstream is configured, or the upstream relationship cannot be inspected, stop and report that the initial-execution preflight cannot be completed safely.
 
 Compare `HEAD` with the currently known local upstream-tracking reference using a read-only command such as:
 
@@ -534,13 +566,13 @@ Compare `HEAD` with the currently known local upstream-tracking reference using 
 git rev-list --left-right --count HEAD...@{upstream}
 ```
 
-For a valid preflight, both counts must be zero.
+For a valid initial-execution preflight, both counts must be zero.
 
 Any locally known ahead, behind, or diverged state is a preflight failure.
 
 If the counts are not both zero, stop immediately and make no task changes.
 
-### 4. Remote freshness limitation
+#### 4. Remote freshness limitation
 
 The agent must not run:
 
@@ -559,9 +591,9 @@ Remote freshness is exclusively the human maintainer's responsibility.
 
 The agent must not claim that the remote repository is current merely because the local upstream comparison succeeds.
 
-### 5. Preflight failure behavior
+#### 5. Initial-execution preflight failure behavior
 
-If any preflight requirement fails, the agent must:
+If any initial-execution preflight requirement fails, the agent must:
 
 - stop before task execution;
 - make no project-file changes;
@@ -569,6 +601,147 @@ If any preflight requirement fails, the agent must:
 - report the exact failed condition to the user.
 
 The agent must not use Git or other tooling to clean, synchronize, repair, stash, reset, restore, switch, merge, rebase, or otherwise alter repository state.
+
+### Review Continuation Preflight
+
+A formal delegated task may require multiple agent iterations before human acceptance.
+
+After the agent has produced an uncommitted implementation, the resulting dirty working tree is the **task working set**:
+
+> the uncommitted repository changes produced or deliberately adjusted while the same issued formal task remains under human review.
+
+A review continuation MAY proceed on that dirty working tree only when the human explicitly instructs the agent to continue the same formal task and identifies the same assigned `TASK-NNN-description.md`.
+
+A typical continuation instruction is:
+
+```text
+Continue TASK-NNN on the current uncommitted review working tree.
+Read and continue to follow
+docs/tasks/TASK-NNN-<short-title>/TASK-NNN-description.md.
+```
+
+The human may additionally provide review evidence such as:
+
+- a failing command;
+- a runtime error;
+- a test failure;
+- an observed behavior that contradicts the existing acceptance criteria;
+- a specific defect in the current implementation.
+
+Such review evidence does not modify the authoritative task description and does not create new scope.
+
+#### 1. Verify repository context
+
+Confirm that the current working directory is inside the same Git working tree using read-only Git inspection.
+
+If this cannot be confirmed, stop and report the problem.
+
+#### 2. Inspect the current task working set
+
+Run read-only inspection commands sufficient to understand the current repository state, including:
+
+```bash
+git status --porcelain=v1 --untracked-files=all
+git diff --name-only
+git diff
+git diff --cached --name-only
+```
+
+Unstaged and untracked changes are allowed during review continuation.
+
+They must be treated as the current review working set, not as a cleanliness failure.
+
+The agent must inspect them before further modification and must not assume that every current change was produced by the agent. Human review corrections may already be present.
+
+#### 3. Staged changes remain a hard stop
+
+The output of:
+
+```bash
+git diff --cached --name-only
+```
+
+must be empty.
+
+If staged changes exist, stop and report that review continuation cannot proceed safely.
+
+The agent must not unstage, reset, restore, commit, or otherwise alter the index.
+
+#### 4. Task artifacts remain protected
+
+If the current working set contains any modification under:
+
+```text
+docs/tasks/
+```
+
+stop and report the conflict.
+
+The agent must not continue over modified task artifacts and must not attempt to repair or revert them.
+
+#### 5. Verify the locally known upstream relationship
+
+Compare `HEAD` with the currently known upstream-tracking reference using:
+
+```bash
+git rev-list --left-right --count HEAD...@{upstream}
+```
+
+Both counts must remain zero.
+
+A locally known ahead, behind, or diverged state is a review-continuation hard stop.
+
+This guards against silently continuing after an implementation commit or other branch-history change has occurred.
+
+The remote freshness limitation from the initial-execution preflight still applies.
+
+#### 6. Check working-set coherence
+
+Review the changed paths and relevant diff before making further changes.
+
+If the working set contains changes that are clearly unrelated to the assigned task, or if the agent cannot safely distinguish the task working set from unrelated repository work, stop and report the ambiguity.
+
+Do not delete, revert, overwrite, or normalize unrelated changes in order to make continuation possible.
+
+Human changes that are clearly review corrections within the existing task scope MAY remain and should be preserved unless they conflict with the authoritative task description.
+
+#### 7. Scope boundary during continuation
+
+Review continuation exists to bring the current implementation into conformance with the already-issued task description.
+
+The agent MAY:
+
+- reproduce a human-reported failure;
+- run diagnostic commands;
+- run the application or relevant tools;
+- inspect logs and runtime behavior;
+- modify implementation files within the original task scope;
+- add or correct tests required by the original task;
+- rerun focused and repository-level verification.
+
+The agent MUST NOT:
+
+- interpret review feedback as a new task requirement;
+- add unrelated functionality;
+- expand the task merely because adjacent work is convenient;
+- modify the task description;
+- modify any other file under `docs/tasks/`.
+
+If satisfying the human request would materially change the issued task definition, stop and report that a new, superseding, or follow-up task is required.
+
+#### 8. Review-continuation completion
+
+After diagnosis or correction:
+
+- review the resulting diff;
+- rerun the relevant verification;
+- report what was diagnosed or changed;
+- report verification results;
+- return control to the human maintainer for another review cycle.
+
+A completion report does not end the formal task by itself.
+
+The task working set may continue through additional explicit review-continuation cycles until the human accepts the implementation or terminates the task.
 
 ## Git Operation Policy
 
@@ -626,7 +799,7 @@ Read-only Git commands may be used for the mandatory preflight and for reviewing
 An agent may:
 
 - inspect repository state and history using read-only Git operations;
-- modify project files directly as required by the task after successful preflight;
+- modify project files directly as required by the task after the applicable initial-execution or review-continuation safety check succeeds;
 - review and report the resulting diff;
 - suggest a Conventional Commits message for the completed change.
 
