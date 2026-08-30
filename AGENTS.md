@@ -241,6 +241,7 @@ docs/
     architecture/
     development/
     decisions/
+    tasks/
 ```
 
 The exact package structure may evolve. Preserve architectural boundaries rather than mechanically preserving directory names.
@@ -253,15 +254,105 @@ The exact package structure may evolve. Preserve architectural boundaries rather
 
 Do not use user-facing examples as a substitute for focused test fixtures.
 
+## Formal Delegated Task Execution
+
+When a coding agent is invoked to execute a formal delegated task, the invocation prompt must identify exactly one assigned task description under:
+
+```text
+docs/tasks/
+```
+
+The assigned `TASK-NNN-description.md` is the authoritative task-specific instruction document.
+
+The invocation prompt may identify the task and point to the assigned description, but it must not act as a second source of implementation requirements.
+
+### Restricted access under `docs/tasks/`
+
+For a formal delegated task, the agent may read **only the exact task description path explicitly assigned by the invocation prompt** under `docs/tasks/`.
+
+For example, if the invocation prompt assigns:
+
+```text
+docs/tasks/TASK-001-bootstrap-typescript-monorepo/TASK-001-description.md
+```
+
+that file is the only file under `docs/tasks/` that the agent may read.
+
+The agent must not read, inspect, enumerate, search, or browse any other content under `docs/tasks/`, including:
+
+- the assigned task's `TASK-NNN-record.md`;
+- any other task record;
+- any other task description;
+- `docs/tasks/TASK-RECORD-SPECIFICATION.md`;
+- `docs/tasks/TASK-RECORD-EXAMPLE.md`;
+- `docs/tasks/TASK-DESCRIPTION-TEMPLATE.md`;
+- any other file or directory under `docs/tasks/`.
+
+Do not run commands or searches that enumerate or inspect the restricted task area, including broad operations such as:
+
+```text
+ls docs/tasks
+find docs/tasks
+grep -R ... docs/tasks
+rg ... docs/tasks
+```
+
+The exact assigned description path is a whitelist, not a starting point for browsing the task archive.
+
+### The restriction applies only to `docs/tasks/`
+
+The restriction above does **not** prohibit reading relevant repository documentation outside `docs/tasks/`.
+
+In particular, the agent may and, when relevant, must read authoritative documents such as:
+
+```text
+AGENTS.md
+docs/specifications/apartment-svg/2.1.md
+docs/architecture/overview.md
+docs/development/coding-guidelines.md
+docs/development/testing.md
+docs/decisions/
+```
+
+The Apartment SVG specification and other non-task specifications remain valid sources of truth and are not affected by the `docs/tasks/` access restriction.
+
+If the assigned task description references a relevant repository document outside `docs/tasks/`, read it as required.
+
+If the assigned task description attempts to require reading another file under `docs/tasks/`, stop and report the conflict instead of reading that file.
+
+### Task artifacts are read-only
+
+Coding agents must not modify any file under:
+
+```text
+docs/tasks/
+```
+
+This includes the assigned task description itself.
+
+Task records, task descriptions, shared task specifications, examples, templates, and lifecycle status changes are human-controlled repository artifacts.
+
+The agent may report execution information for a human maintainer to record later.
+
 ## Working on a Task
 
-Before editing:
+After this `AGENTS.md` has been loaded, the agent's first repository action must be the mandatory Git repository preflight defined below.
 
-1. Read this file.
-2. Read the user/task instructions carefully.
-3. Read the normative Apartment SVG sections relevant to the task.
-4. Read the relevant architecture, coding, testing, and ADR documents.
+Do not inspect task-specific repository content and do not modify files until the preflight succeeds.
+
+For a formal delegated task, after successful preflight:
+
+1. Read only the exact assigned `TASK-NNN-description.md` under `docs/tasks/`.
+2. Read the non-task repository documents explicitly required by that description.
+3. Read the normative Apartment SVG sections relevant to the task when applicable.
+4. Read relevant architecture, coding, testing, and ADR documents.
 5. Inspect existing implementation and tests before introducing new structures.
+
+For other coding-agent work, after successful preflight:
+
+1. Read the user instructions carefully.
+2. Read the authoritative repository documents relevant to the work.
+3. Inspect existing implementation and tests before introducing new structures.
 
 While editing:
 
@@ -346,11 +437,103 @@ Keep documentation close to its purpose:
 - `docs/specifications/` contains normative external format specifications;
 - `docs/architecture/` describes the current architecture;
 - `docs/development/` contains implementation and contribution guidance;
-- `docs/decisions/` contains ADRs explaining significant decisions.
+- `docs/decisions/` contains ADRs explaining significant decisions;
+- `docs/tasks/` contains formal agent-task artifacts and shared task-process documents.
 
 Do not duplicate large sections of one document into another. Link to the authoritative document instead.
 
 When behavior changes, update the documentation that owns that behavior.
+
+## Mandatory Git Repository Preflight
+
+**Every coding agent must perform this preflight before reading task-specific repository content or modifying any project file.**
+
+The agent must begin from a repository state prepared by a human maintainer.
+
+### 1. Verify repository context
+
+Confirm that the current working directory is inside a Git working tree using a read-only command such as:
+
+```bash
+git rev-parse --is-inside-work-tree
+```
+
+If this cannot be confirmed, stop and report the problem.
+
+### 2. Verify working tree and index cleanliness
+
+Run:
+
+```bash
+git status --porcelain=v1 --untracked-files=all
+```
+
+The required output is empty.
+
+Any output means the repository is not clean.
+
+This includes:
+
+- staged changes;
+- unstaged changes;
+- untracked files;
+- deleted files;
+- renamed files;
+- any other pending working-tree or index change.
+
+If the output is not empty, stop immediately and make no task changes.
+
+Report that repository preflight failed because the working tree or index is not clean.
+
+Do not attempt to repair the repository state.
+
+### 3. Verify the locally known upstream relationship
+
+Determine the current branch's configured upstream using read-only Git inspection.
+
+If no upstream is configured, or the upstream relationship cannot be inspected, stop and report that the preflight cannot be completed safely.
+
+Compare `HEAD` with the currently known local upstream-tracking reference using a read-only command such as:
+
+```bash
+git rev-list --left-right --count HEAD...@{upstream}
+```
+
+For a valid preflight, both counts must be zero.
+
+Any locally known ahead, behind, or diverged state is a preflight failure.
+
+If the counts are not both zero, stop immediately and make no task changes.
+
+### 4. Remote freshness limitation
+
+The agent must not run:
+
+```text
+git fetch
+git pull
+```
+
+or any equivalent synchronization operation.
+
+Therefore the agent cannot prove that the remote repository has not changed since the human maintainer last refreshed remote-tracking information.
+
+The upstream comparison above validates only the relationship against **locally available Git metadata**.
+
+Remote freshness is exclusively the human maintainer's responsibility.
+
+The agent must not claim that the remote repository is current merely because the local upstream comparison succeeds.
+
+### 5. Preflight failure behavior
+
+If any preflight requirement fails, the agent must:
+
+- stop before task execution;
+- make no project-file changes;
+- make no Git-state changes;
+- report the exact failed condition to the user.
+
+The agent must not use Git or other tooling to clean, synchronize, repair, stash, reset, restore, switch, merge, rebase, or otherwise alter repository state.
 
 ## Git Operation Policy
 
@@ -398,20 +581,25 @@ git diff
 git log
 git show
 git rev-parse
+git rev-list
 git ls-files
 git branch --show-current
 ```
 
+Read-only Git commands may be used for the mandatory preflight and for reviewing the resulting changes.
+
 An agent may:
 
 - inspect repository state and history using read-only Git operations;
-- modify project files directly as required by the task;
+- modify project files directly as required by the task after successful preflight;
 - review and report the resulting diff;
 - suggest a Conventional Commits message for the completed change.
 
-An agent must not stage, commit, push, pull, synchronize, rewrite, or otherwise mutate Git state.
+An agent must not stage, commit, push, pull, fetch, synchronize, rewrite, or otherwise mutate Git state.
 
-This restriction applies even if a task asks the agent to commit or push changes. In that case, complete the requested file changes, provide the proposed commit message or human-executable Git instructions if useful, and leave all Git write operations to a human reviewer.
+This restriction applies even if a task or user instruction asks the agent to perform a prohibited Git operation.
+
+In that case, do not perform the prohibited operation. Complete only the permitted work and leave all Git-state changes to a human maintainer.
 
 The purpose of this policy is to ensure that every repository change is reviewed by a human before it becomes staged history or is synchronized with a remote repository.
 
@@ -431,11 +619,13 @@ Do not rewrite unrelated code for stylistic preference.
 
 Prefer, in this order:
 
-1. the explicit task requirements;
-2. the normative Apartment SVG specification for format semantics;
-3. accepted ADRs for established architectural decisions;
-4. current architecture documentation;
-5. coding and testing guidelines;
-6. existing local conventions.
+1. this repository-level `AGENTS.md` and any more specific applicable `AGENTS.md`;
+2. for a formal delegated task, the exact assigned task description;
+3. for other coding-agent work, the explicit user/task requirements;
+4. the normative Apartment SVG specification for format semantics;
+5. accepted ADRs for established architectural decisions;
+6. current architecture documentation;
+7. coding and testing guidelines;
+8. existing local conventions.
 
 If these sources materially conflict, do not silently choose a new interpretation. Preserve the normative behavior where applicable and clearly surface the conflict in the task result.
