@@ -2,9 +2,9 @@
 
 ## Task Metadata
 
-- **Status:** Ready
+- **Status:** In Progress
 - **Created:** 2026-08-30
-- **Issued:** —
+- **Issued:** 2026-08-30
 - **Completed:** —
 - **Agent:** Codex
 - **Repository:** PlanAxis
