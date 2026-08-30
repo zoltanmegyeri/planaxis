@@ -128,7 +128,8 @@ PlanAxis is being organized as a pnpm workspace monorepo. During the bootstrap p
 │   │   └── apartment-svg/
 │   ├── architecture/
 │   ├── development/
-│   └── decisions/
+│   ├── decisions/
+│   └── tasks/
 │
 ├── AGENTS.md
 ├── CONTRIBUTING.md
@@ -170,6 +171,7 @@ docs/architecture/overview.md
 ```text
 docs/development/coding-guidelines.md
 docs/development/testing.md
+docs/development/agent-task-workflow.md
 ```
 
 ### Architectural Decision Records
@@ -177,6 +179,18 @@ docs/development/testing.md
 [`docs/decisions/`](docs/decisions/) contains Architectural Decision Records (ADRs).
 
 ADRs document significant technical decisions, their context, considered alternatives, and consequences. They preserve the reasoning behind the architecture without turning the current architecture documentation into a historical log.
+
+### Formal Agent Tasks
+
+[`docs/tasks/`](docs/tasks/) contains the repository artifacts used for formally delegated coding-agent tasks.
+
+A formal task consists of a task record and an authoritative task description. Shared task-process documents define the record format and provide task-description guidance.
+
+The human-facing workflow for creating, executing, reviewing, and finalizing delegated tasks is documented in:
+
+```text
+docs/development/agent-task-workflow.md
+```
 
 ## Repository Language
 
@@ -203,7 +217,36 @@ Each implementation phase should have explicit acceptance criteria and automated
 
 ## Development Workflow
 
-Once the repository bootstrap is complete, the project is expected to expose standard workspace commands such as:
+PlanAxis distinguishes between two development modes:
+
+```text
+Mode A — Human-Owned Development
+Mode B — Agent-Delegated Task Execution
+```
+
+In **Mode A**, a human developer owns the implementation. AI may be used for assistance, review, explanations, code suggestions, debugging, or similar support without requiring formal task artifacts.
+
+In **Mode B**, a complete unit of implementation work is formally delegated to a coding agent. The task is defined and tracked in committed artifacts under `docs/tasks/`, execution begins only from a clean human-prepared repository state, the resulting changes receive human review, and Git history remains human-controlled.
+
+The complete Mode B process is defined in:
+
+```text
+docs/development/agent-task-workflow.md
+```
+
+Formal task record structure is defined in:
+
+```text
+docs/tasks/TASK-RECORD-SPECIFICATION.md
+```
+
+Task descriptions should be prepared using:
+
+```text
+docs/tasks/TASK-DESCRIPTION-TEMPLATE.md
+```
+
+The project is expected to expose standard workspace commands such as:
 
 ```bash
 pnpm install
@@ -213,18 +256,22 @@ pnpm test
 pnpm build
 ```
 
-These commands must remain reliable because they are part of both the human and coding-agent development workflow.
+These commands must remain reliable because they are part of both human development and formal coding-agent verification.
 
-Detailed development rules belong in the documentation under `docs/development/` rather than in this README.
+Detailed development rules belong under `docs/development/` rather than in this README.
 
 ## Coding Agents
 
-Coding agents working in this repository must read and follow [`AGENTS.md`](AGENTS.md).
+Coding agents working directly in this repository must read and follow [`AGENTS.md`](AGENTS.md).
 
-`AGENTS.md` is the agent-facing map of the repository. It points to the relevant specifications, architectural documentation, coding rules, testing requirements, and architectural decisions.
+`AGENTS.md` defines repository-level agent behavior, including architectural constraints, mandatory Git preflight, Git write restrictions, verification expectations, and the access rules for formal task artifacts.
 
-Agents must not reinterpret normative specifications, silently change architectural decisions, or introduce new cross-cutting abstractions without a concrete need.
+For a formal Mode B task, the coding agent receives one authoritative `TASK-NNN-description.md` under `docs/tasks/`. The short invocation prompt points to that committed description rather than redefining the task in chat.
+
+Task records, task lifecycle changes, Git operations, implementation acceptance, and task finalization remain human responsibilities.
 
 ## License
 
-PlanAxis is licensed under the [Apache License 2.0](LICENSE).
+PlanAxis is licensed under the **Apache License 2.0**.
+
+See [`LICENSE`](LICENSE) for the full license text.
