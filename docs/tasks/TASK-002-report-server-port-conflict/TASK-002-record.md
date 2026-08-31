@@ -2,17 +2,17 @@
 
 ## Task Metadata
 
-- **Status:** In Progress
+- **Status:** Completed
 - **Created:** 2026-08-31
 - **Issued:** 2026-08-31
-- **Completed:** —
+- **Completed:** 2026-08-31
 - **Agent:** Codex
 - **Repository:** PlanAxis
 - **Description:** `TASK-002-description.md`
 - **Related tasks:** TASK-001
 - **Related ADRs:** ADR-001
 - **Related specifications:** —
-- **Implementation commits:** —
+- **Implementation commits:** `b7c2495ec82ed0f8b42e92cf8a78063044190dd2`
 
 ## Purpose
 
@@ -26,17 +26,40 @@ The authoritative task description is stored in:
 
 `TASK-002-description.md`
 
-The task is currently `Ready` and has not yet been issued.
+The description was formally issued on 2026-08-31 and remained unchanged after issue.
 
 ## Execution Record
 
 ### Result
 
-Pending.
+Codex successfully improved the PlanAxis server startup failure path for occupied HTTP ports.
+
+The accepted implementation:
+
+- introduced a focused, testable server-startup boundary;
+- detects `EADDRINUSE` using runtime-safe error narrowing;
+- reports a clear human-readable diagnostic identifying the affected port as already in use;
+- preserves useful diagnostic information for unexpected startup failures without misclassifying them as port conflicts;
+- preserves a non-zero process exit outcome for startup failures;
+- keeps the production host at `0.0.0.0` and the production port at `3000`;
+- adds deterministic regression coverage using an operating-system-assigned local port that is deliberately occupied during the test;
+- adds regression coverage confirming that unrelated startup failures are not reported as port conflicts.
+
+No dependencies were added or updated.
 
 ### Verification
 
-Pending.
+The required TASK-002 verification completed successfully:
+
+```text
+PASS  pnpm --filter @planaxis/server test
+PASS  pnpm lint
+PASS  pnpm typecheck
+PASS  pnpm test
+PASS  pnpm build
+```
+
+Dependency-specific verification was not required because dependency manifests and `pnpm-lock.yaml` were unchanged.
 
 ### Deviations from Description
 
@@ -50,7 +73,7 @@ None.
 
 ### Review Status
 
-Pending
+Accepted
 
 ### Review Notes
 
@@ -64,11 +87,19 @@ None.
 
 ### Implementation Commits
 
-—
+`b7c2495ec82ed0f8b42e92cf8a78063044190dd2`
 
 ### Commit Messages
 
-—
+```text
+fix(server): report port conflicts at startup
+
+Detect EADDRINUSE when the Fastify server cannot bind its port and
+emit a clear diagnostic containing the affected port number.
+
+Preserve unexpected startup errors and return a non-zero exit outcome.
+Add deterministic regression coverage using an occupied local port.
+```
 
 ### Supersession
 
