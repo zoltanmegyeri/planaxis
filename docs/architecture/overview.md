@@ -709,7 +709,7 @@ ADRs describe **why significant decisions were made**.
 
 ## 16. Current Implementation Phase
 
-The executable repository bootstrap is complete. PlanAxis is now ready for the numeric and geometric foundation work that precedes Apartment SVG parsing and validation.
+The executable repository bootstrap, authoritative numeric and geometric foundations, and Apartment SVG XML parsing boundary are complete. PlanAxis is now ready for Apartment SVG schema validation.
 
 The intended implementation order is broadly:
 
