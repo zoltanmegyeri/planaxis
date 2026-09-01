@@ -14,7 +14,17 @@
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@planaxis/geometry": "workspace:*",
+    "@planaxis/parser": "workspace:*",
+    "lossless-json": "4.3.1",
+    "tzdata": "1.0.50"
+  },
+  "devDependencies": {
+    "vitest": "catalog:"
   }
 }

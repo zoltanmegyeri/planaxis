@@ -1,0 +1,40 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 500 400"
+  data-schema="apartment-svg"
+  data-schema-version="2.1"
+  data-unit="cm"
+>
+  <metadata><![CDATA[
+    {
+      "schema": "apartment-svg/2.1",
+      "project": {
+        "name": "Missing cameras group fixture",
+        "units": "cm"
+      },
+      "coordinateSystem": {
+        "x": "right",
+        "y": "down",
+        "z": "up",
+        "headingDegrees": {
+          "0": "+x",
+          "90": "+y",
+          "180": "-x",
+          "270": "-y"
+        }
+      },
+      "level": {
+        "id": "level-0",
+        "baseZ": 0,
+        "defaultCeilingHeight": 242
+      }
+    }
+  ]]></metadata>
+  <g id="spaces" />
+  <g id="walls" />
+  <g id="windows" />
+  <g id="doors" />
+  <g id="fixed-elements" />
+  <g id="utilities" />
+  <g id="annotations" />
+</svg>

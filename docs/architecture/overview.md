@@ -179,6 +179,15 @@ It also does not construct 3D geometry.
 
 Schema validation verifies structural conformance to the Apartment SVG specification.
 
+The currently implemented schema-validation slice consumes the parser-owned `ParsedApartmentSvgDocument` representation and validates:
+
+- Apartment SVG scalar lexical and value types needed at document level;
+- the canonical root element, namespace, schema attributes, and `viewBox`;
+- metadata multiplicity, CDATA/JSON form, required metadata structure, exact numeric values, optional location data, and extension keys;
+- required top-level groups, permitted root-level elements, extension groups, and core-group transform restrictions.
+
+This stage returns structured `APSVG-*` validation errors for ordinary schema failures. Passing it means only that the document-level schema slice is conformant; it does not produce `ValidatedApartment2D` or imply semantic-element, reference, geometric, or topological conformance.
+
 Typical responsibilities include:
 
 - required root attributes;
@@ -709,7 +718,7 @@ ADRs describe **why significant decisions were made**.
 
 ## 16. Current Implementation Phase
 
-The executable repository bootstrap, authoritative numeric and geometric foundations, and Apartment SVG XML parsing boundary are complete. PlanAxis is now ready for Apartment SVG schema validation.
+The executable repository bootstrap, authoritative numeric and geometric foundations, Apartment SVG XML parsing boundary, and the document-level schema-validation slice are complete. The validator now covers root structure, metadata, required top-level groups, and the scalar types required by that work. Semantic-element schema validation is the next schema-validation slice; reference resolution, geometric/topological validation, and `ValidatedApartment2D` remain unimplemented.
 
 The intended implementation order is broadly:
 
@@ -720,7 +729,9 @@ numeric and geometric foundations
     ↓
 Apartment SVG parsing
     ↓
-schema validation
+document-level schema validation
+    ↓
+semantic-element schema validation
     ↓
 reference resolution
     ↓

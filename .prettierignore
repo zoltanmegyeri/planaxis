@@ -2,6 +2,7 @@ node_modules/
 **/dist/
 coverage/
 pnpm-lock.yaml
+fixtures/**/*.svg
 
 # Existing prose is intentionally outside the bootstrap formatting scope.
 AGENTS.md

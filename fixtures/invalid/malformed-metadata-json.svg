@@ -1,0 +1,17 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 500 400"
+  data-schema="apartment-svg"
+  data-schema-version="2.1"
+  data-unit="cm"
+>
+  <metadata><![CDATA[{ "schema": "apartment-svg/2.1", definitely-invalid }]]></metadata>
+  <g id="spaces" />
+  <g id="walls" />
+  <g id="windows" />
+  <g id="doors" />
+  <g id="fixed-elements" />
+  <g id="utilities" />
+  <g id="cameras" />
+  <g id="annotations" />
+</svg>
