@@ -47,13 +47,22 @@ export const APARTMENT_SVG_VALIDATION_CODES = Object.freeze({
     conditionalAttribute: "APSVG-ZONE-104",
   }),
   wall: Object.freeze({
+    invalidAxisGeometry: "APSVG-WALL-001",
     invalidAttributeValue: "APSVG-WALL-101",
   }),
   window: Object.freeze({
+    invalidWallThicknessCoverage: "APSVG-WINDOW-001",
+    outsideWallLongitudinalExtent: "APSVG-WINDOW-002",
+    exceedsWallHeight: "APSVG-WINDOW-003",
     invalidAttributeValue: "APSVG-WINDOW-101",
     conditionalAttribute: "APSVG-WINDOW-102",
   }),
   door: Object.freeze({
+    invalidHingePoint: "APSVG-DOOR-001",
+    invalidOpenLeafPoint: "APSVG-DOOR-002",
+    invalidWallThicknessCoverage: "APSVG-DOOR-003",
+    outsideWallLongitudinalExtent: "APSVG-DOOR-004",
+    exceedsWallHeight: "APSVG-DOOR-005",
     invalidAttributeValue: "APSVG-DOOR-101",
     conditionalAttribute: "APSVG-DOOR-102",
   }),

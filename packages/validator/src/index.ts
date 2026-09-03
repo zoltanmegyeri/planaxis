@@ -25,6 +25,12 @@ export type {
   ApartmentSvgReferenceValidationResult,
   ApartmentSvgReferenceValidationSuccess,
 } from "./validate-apartment-svg-references.js";
+export { validateApartmentSvgWallAndOpeningGeometry } from "./validate-apartment-svg-wall-and-opening-geometry.js";
+export type {
+  ApartmentSvgWallAndOpeningGeometryValidationFailure,
+  ApartmentSvgWallAndOpeningGeometryValidationResult,
+  ApartmentSvgWallAndOpeningGeometryValidationSuccess,
+} from "./validate-apartment-svg-wall-and-opening-geometry.js";
 export { validateApartmentSvgSchema } from "./validate-apartment-svg-schema.js";
 export type {
   ApartmentSvgSchemaValidationFailure,
