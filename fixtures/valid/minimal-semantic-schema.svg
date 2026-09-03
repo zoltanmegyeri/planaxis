@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 500 400"
+  data-schema="apartment-svg"
+  data-schema-version="2.1"
+  data-unit="cm"
+>
+  <metadata><![CDATA[
+    {
+      "schema": "apartment-svg/2.1",
+      "project": { "name": "Semantic schema fixture", "units": "cm" },
+      "coordinateSystem": {
+        "x": "right",
+        "y": "down",
+        "z": "up",
+        "headingDegrees": { "0": "+x", "90": "+y", "180": "-x", "270": "-y" }
+      },
+      "level": { "id": "level-0", "baseZ": 0, "defaultCeilingHeight": 242 }
+    }
+  ]]></metadata>
+  <g id="spaces">
+    <polygon
+      id="space-1"
+      points="0,0 100,0 100,100 0,100"
+      data-kind="zone"
+      data-name="Living room"
+      data-function="living-room"
+      data-enclosure="closed"
+    />
+  </g>
+  <g id="walls">
+    <rect
+      id="wall-1"
+      x="0"
+      y="0"
+      width="100"
+      height="10"
+      data-kind="wall"
+      data-axis="x"
+      data-class="interior"
+      data-status="fixed"
+    />
+  </g>
+  <g id="windows">
+    <rect
+      id="window-1"
+      x="10"
+      y="0"
+      width="30"
+      height="10"
+      data-kind="window"
+      data-wall="wall-1"
+      data-sill-height="80"
+      data-opening-height="120"
+      data-status="fixed"
+    />
+  </g>
+  <g id="doors">
+    <rect
+      id="door-1"
+      x="50"
+      y="0"
+      width="30"
+      height="10"
+      data-kind="door"
+      data-wall="wall-1"
+      data-door-type="opening-only"
+      data-opening-height="210"
+      data-status="fixed"
+    />
+  </g>
+  <g id="fixed-elements">
+    <rect
+      id="column-1"
+      x="120"
+      y="20"
+      width="20"
+      height="20"
+      data-kind="column"
+      data-base-z="0"
+      data-height="242"
+      data-status="fixed"
+    />
+  </g>
+  <g id="utilities">
+    <circle
+      id="light-1"
+      cx="50"
+      cy="50"
+      r="2"
+      data-kind="ceiling-light"
+      data-z="240"
+    />
+  </g>
+  <g id="cameras">
+    <circle
+      id="camera-1"
+      cx="50"
+      cy="50"
+      r="4"
+      data-kind="camera"
+      data-z="160"
+      data-heading="270"
+      data-pitch="0"
+      data-horizontal-fov="70"
+    />
+  </g>
+  <g id="annotations">
+    <g transform="translate(1 2)"><text x="0" y="0">Note</text></g>
+  </g>
+</svg>

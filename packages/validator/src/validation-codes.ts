@@ -27,6 +27,47 @@ export const APARTMENT_SVG_VALIDATION_CODES = Object.freeze({
     unknownGroup: "APSVG-GROUP-005",
     prohibitedTransform: "APSVG-GROUP-006",
   }),
+  semantic: Object.freeze({
+    invalidElementType: "APSVG-SEMANTIC-001",
+    invalidNamespace: "APSVG-SEMANTIC-002",
+    missingAttribute: "APSVG-SEMANTIC-003",
+    prohibitedAttribute: "APSVG-SEMANTIC-004",
+    unknownAttribute: "APSVG-SEMANTIC-005",
+    nestedSemanticElement: "APSVG-SEMANTIC-006",
+  }),
+  id: Object.freeze({
+    missing: "APSVG-ID-001",
+    invalid: "APSVG-ID-002",
+    duplicate: "APSVG-ID-003",
+  }),
+  zone: Object.freeze({
+    invalidAttributeValue: "APSVG-ZONE-101",
+    malformedPoints: "APSVG-ZONE-102",
+    invalidPointNumber: "APSVG-ZONE-103",
+    conditionalAttribute: "APSVG-ZONE-104",
+  }),
+  wall: Object.freeze({
+    invalidAttributeValue: "APSVG-WALL-101",
+  }),
+  window: Object.freeze({
+    invalidAttributeValue: "APSVG-WINDOW-101",
+    conditionalAttribute: "APSVG-WINDOW-102",
+  }),
+  door: Object.freeze({
+    invalidAttributeValue: "APSVG-DOOR-101",
+    conditionalAttribute: "APSVG-DOOR-102",
+  }),
+  fixedElement: Object.freeze({
+    invalidAttributeValue: "APSVG-FIXED-101",
+    conditionalAttribute: "APSVG-FIXED-102",
+  }),
+  utility: Object.freeze({
+    invalidAttributeValue: "APSVG-UTILITY-101",
+    conditionalAttribute: "APSVG-UTILITY-102",
+  }),
+  camera: Object.freeze({
+    invalidAttributeValue: "APSVG-CAMERA-101",
+  }),
 } as const);
 
 type Values<T> = T[keyof T];
@@ -34,6 +75,27 @@ type Values<T> = T[keyof T];
 export type ApartmentSvgValidationCode =
   | Values<typeof APARTMENT_SVG_VALIDATION_CODES.root>
   | Values<typeof APARTMENT_SVG_VALIDATION_CODES.metadata>
-  | Values<typeof APARTMENT_SVG_VALIDATION_CODES.group>;
+  | Values<typeof APARTMENT_SVG_VALIDATION_CODES.group>
+  | Values<typeof APARTMENT_SVG_VALIDATION_CODES.semantic>
+  | Values<typeof APARTMENT_SVG_VALIDATION_CODES.id>
+  | Values<typeof APARTMENT_SVG_VALIDATION_CODES.zone>
+  | Values<typeof APARTMENT_SVG_VALIDATION_CODES.wall>
+  | Values<typeof APARTMENT_SVG_VALIDATION_CODES.window>
+  | Values<typeof APARTMENT_SVG_VALIDATION_CODES.door>
+  | Values<typeof APARTMENT_SVG_VALIDATION_CODES.fixedElement>
+  | Values<typeof APARTMENT_SVG_VALIDATION_CODES.utility>
+  | Values<typeof APARTMENT_SVG_VALIDATION_CODES.camera>;
 
-export type ApartmentSvgValidationCategory = "root" | "metadata" | "group";
+export type ApartmentSvgValidationCategory =
+  | "root"
+  | "metadata"
+  | "group"
+  | "semantic"
+  | "id"
+  | "zone"
+  | "wall"
+  | "window"
+  | "door"
+  | "fixed-element"
+  | "utility"
+  | "camera";

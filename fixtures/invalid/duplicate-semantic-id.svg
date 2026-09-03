@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 500 400"
+  data-schema="apartment-svg"
+  data-schema-version="2.1"
+  data-unit="cm"
+>
+  <metadata><![CDATA[
+    {
+      "schema": "apartment-svg/2.1",
+      "project": { "name": "Duplicate semantic ID fixture", "units": "cm" },
+      "coordinateSystem": {
+        "x": "right",
+        "y": "down",
+        "z": "up",
+        "headingDegrees": { "0": "+x", "90": "+y", "180": "-x", "270": "-y" }
+      },
+      "level": { "id": "level-0", "baseZ": 0, "defaultCeilingHeight": 242 }
+    }
+  ]]></metadata>
+  <g id="spaces">
+    <polygon
+      id="duplicate"
+      points="0,0 100,0 100,100"
+      data-kind="zone"
+      data-name="Living room"
+      data-function="living-room"
+      data-enclosure="closed"
+    />
+  </g>
+  <g id="walls">
+    <rect
+      id="duplicate"
+      x="0"
+      y="0"
+      width="100"
+      height="10"
+      data-kind="wall"
+      data-axis="x"
+      data-class="interior"
+      data-status="fixed"
+    />
+  </g>
+  <g id="windows" />
+  <g id="doors" />
+  <g id="fixed-elements" />
+  <g id="utilities" />
+  <g id="cameras" />
+  <g id="annotations" />
+</svg>

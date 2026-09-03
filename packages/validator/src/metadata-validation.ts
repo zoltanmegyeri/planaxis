@@ -1,3 +1,4 @@
+import type { Decimal } from "@planaxis/geometry";
 import type { ParsedApartmentSvgDocument, ParsedXmlElement } from "@planaxis/parser";
 
 import {
@@ -18,6 +19,10 @@ import {
   validateApartmentSvgTimeZoneId,
 } from "./scalar-validation.js";
 import type { ScalarValidationResult } from "./scalar-validation.js";
+import type {
+  SchemaValidApartmentSvgLocation,
+  SchemaValidApartmentSvgMetadata,
+} from "./schema-valid-apartment-svg.js";
 import { APARTMENT_SVG_VALIDATION_CODES } from "./validation-codes.js";
 import type { ApartmentSvgValidationError } from "./validation-result.js";
 
@@ -36,12 +41,24 @@ const LOCATION_KEYS = new Set([
   "northHeading",
 ]);
 
-type NumericScalarValidator = (value: string) => ScalarValidationResult<unknown>;
+type NumericScalarValidator = (value: string) => ScalarValidationResult<Decimal>;
+
+export interface ApartmentSvgMetadataValidationWithValues {
+  readonly errors: readonly ApartmentSvgValidationError[];
+  readonly metadata?: SchemaValidApartmentSvgMetadata;
+}
 
 export function validateApartmentSvgMetadata(
   document: ParsedApartmentSvgDocument,
   rootDataUnit: string | undefined,
 ): readonly ApartmentSvgValidationError[] {
+  return validateApartmentSvgMetadataWithValues(document, rootDataUnit).errors;
+}
+
+export function validateApartmentSvgMetadataWithValues(
+  document: ParsedApartmentSvgDocument,
+  rootDataUnit: string | undefined,
+): ApartmentSvgMetadataValidationWithValues {
   const errors: ApartmentSvgValidationError[] = [];
   const metadataElements = document.metadataElements;
 
@@ -54,7 +71,7 @@ export function validateApartmentSvgMetadata(
         "The Apartment SVG root must contain exactly one metadata element.",
       ),
     );
-    return errors;
+    return metadataValidationResult(errors);
   }
 
   if (metadataElements.length > 1) {
@@ -67,7 +84,7 @@ export function validateApartmentSvgMetadata(
         { actual: String(metadataElements.length) },
       ),
     );
-    return errors;
+    return metadataValidationResult(errors);
   }
 
   const metadataElement = metadataElements[0];
@@ -77,7 +94,7 @@ export function validateApartmentSvgMetadata(
 
   const payload = readMetadataPayload(metadataElement, errors);
   if (payload === undefined) {
-    return errors;
+    return metadataValidationResult(errors);
   }
 
   let metadataValue: unknown;
@@ -97,7 +114,7 @@ export function validateApartmentSvgMetadata(
         { actual: error.message },
       ),
     );
-    return errors;
+    return metadataValidationResult(errors);
   }
 
   if (!isJsonObject(metadataValue)) {
@@ -110,11 +127,11 @@ export function validateApartmentSvgMetadata(
         { path: "$", actual: describeJsonType(metadataValue) },
       ),
     );
-    return errors;
+    return metadataValidationResult(errors);
   }
 
-  validateMetadataObject(metadataValue, rootDataUnit, errors);
-  return errors;
+  const metadata = validateMetadataObject(metadataValue, rootDataUnit, errors);
+  return metadataValidationResult(errors, metadata);
 }
 
 function readMetadataPayload(
@@ -148,9 +165,10 @@ function validateMetadataObject(
   metadata: Record<string, unknown>,
   rootDataUnit: string | undefined,
   errors: ApartmentSvgValidationError[],
-): void {
+): SchemaValidApartmentSvgMetadata | undefined {
+  const initialErrorCount = errors.length;
   validateExtensionKeys(metadata, ROOT_KEYS, "$", errors);
-  validateRequiredString(
+  const schema = validateRequiredString(
     metadata,
     "schema",
     "$",
@@ -160,24 +178,24 @@ function validateMetadataObject(
   );
 
   const project = validateRequiredObject(metadata, "project", "$", errors);
-  const projectUnits = project === undefined ? undefined : validateProject(project, errors);
+  const validatedProject = project === undefined ? undefined : validateProject(project, errors);
+  const projectUnits =
+    project !== undefined && typeof project.units === "string" ? project.units : undefined;
 
   const coordinateSystem = validateRequiredObject(metadata, "coordinateSystem", "$", errors);
-  if (coordinateSystem !== undefined) {
-    validateCoordinateSystem(coordinateSystem, errors);
-  }
+  const validatedCoordinateSystem =
+    coordinateSystem === undefined ? undefined : validateCoordinateSystem(coordinateSystem, errors);
 
   const level = validateRequiredObject(metadata, "level", "$", errors);
-  if (level !== undefined) {
-    validateLevel(level, errors);
-  }
+  const validatedLevel = level === undefined ? undefined : validateLevel(level, errors);
 
+  let validatedLocation: SchemaValidApartmentSvgLocation | undefined;
   if (Object.hasOwn(metadata, "location")) {
     const location = metadata.location;
     if (!isJsonObject(location)) {
       errors.push(invalidPropertyType("$.location", "object", location));
     } else {
-      validateLocation(location, errors);
+      validatedLocation = validateLocation(location, errors);
     }
   }
 
@@ -196,14 +214,33 @@ function validateMetadataObject(
       ),
     );
   }
+
+  if (
+    errors.length !== initialErrorCount ||
+    schema === undefined ||
+    validatedProject === undefined ||
+    validatedCoordinateSystem === undefined ||
+    validatedLevel === undefined
+  ) {
+    return undefined;
+  }
+
+  return Object.freeze({
+    schema: "apartment-svg/2.1",
+    project: validatedProject,
+    coordinateSystem: validatedCoordinateSystem,
+    level: validatedLevel,
+    ...(validatedLocation === undefined ? {} : { location: validatedLocation }),
+  });
 }
 
 function validateProject(
   project: Record<string, unknown>,
   errors: ApartmentSvgValidationError[],
-): string | undefined {
+): SchemaValidApartmentSvgMetadata["project"] | undefined {
+  const initialErrorCount = errors.length;
   validateExtensionKeys(project, PROJECT_KEYS, "$.project", errors);
-  validateRequiredString(
+  const name = validateRequiredString(
     project,
     "name",
     "$.project",
@@ -212,7 +249,7 @@ function validateProject(
     errors,
   );
 
-  return validateRequiredString(
+  const units = validateRequiredString(
     project,
     "units",
     "$.project",
@@ -220,16 +257,41 @@ function validateProject(
     (value) => value === "cm",
     errors,
   );
+
+  if (errors.length !== initialErrorCount || name === undefined || units === undefined) {
+    return undefined;
+  }
+
+  return Object.freeze({ name, units: "cm" });
 }
 
 function validateCoordinateSystem(
   coordinateSystem: Record<string, unknown>,
   errors: ApartmentSvgValidationError[],
-): void {
+): SchemaValidApartmentSvgMetadata["coordinateSystem"] | undefined {
+  const initialErrorCount = errors.length;
   validateExtensionKeys(coordinateSystem, COORDINATE_SYSTEM_KEYS, "$.coordinateSystem", errors);
-  validateRequiredStringConstant(coordinateSystem, "x", "$.coordinateSystem", "right", errors);
-  validateRequiredStringConstant(coordinateSystem, "y", "$.coordinateSystem", "down", errors);
-  validateRequiredStringConstant(coordinateSystem, "z", "$.coordinateSystem", "up", errors);
+  const x = validateRequiredStringConstant(
+    coordinateSystem,
+    "x",
+    "$.coordinateSystem",
+    "right",
+    errors,
+  );
+  const y = validateRequiredStringConstant(
+    coordinateSystem,
+    "y",
+    "$.coordinateSystem",
+    "down",
+    errors,
+  );
+  const z = validateRequiredStringConstant(
+    coordinateSystem,
+    "z",
+    "$.coordinateSystem",
+    "up",
+    errors,
+  );
 
   const headings = validateRequiredObject(
     coordinateSystem,
@@ -238,65 +300,116 @@ function validateCoordinateSystem(
     errors,
   );
   if (headings === undefined) {
-    return;
+    return undefined;
   }
 
   validateExtensionKeys(headings, HEADING_KEYS, "$.coordinateSystem.headingDegrees", errors);
-  validateRequiredStringConstant(headings, "0", "$.coordinateSystem.headingDegrees", "+x", errors);
-  validateRequiredStringConstant(headings, "90", "$.coordinateSystem.headingDegrees", "+y", errors);
-  validateRequiredStringConstant(
+  const heading0 = validateRequiredStringConstant(
+    headings,
+    "0",
+    "$.coordinateSystem.headingDegrees",
+    "+x",
+    errors,
+  );
+  const heading90 = validateRequiredStringConstant(
+    headings,
+    "90",
+    "$.coordinateSystem.headingDegrees",
+    "+y",
+    errors,
+  );
+  const heading180 = validateRequiredStringConstant(
     headings,
     "180",
     "$.coordinateSystem.headingDegrees",
     "-x",
     errors,
   );
-  validateRequiredStringConstant(
+  const heading270 = validateRequiredStringConstant(
     headings,
     "270",
     "$.coordinateSystem.headingDegrees",
     "-y",
     errors,
   );
+
+  if (
+    errors.length !== initialErrorCount ||
+    x === undefined ||
+    y === undefined ||
+    z === undefined ||
+    heading0 === undefined ||
+    heading90 === undefined ||
+    heading180 === undefined ||
+    heading270 === undefined
+  ) {
+    return undefined;
+  }
+
+  return Object.freeze({
+    x: "right",
+    y: "down",
+    z: "up",
+    headingDegrees: Object.freeze({ 0: "+x", 90: "+y", 180: "-x", 270: "-y" }),
+  });
 }
 
 function validateLevel(
   level: Record<string, unknown>,
   errors: ApartmentSvgValidationError[],
-): void {
+): SchemaValidApartmentSvgMetadata["level"] | undefined {
+  const initialErrorCount = errors.length;
   validateExtensionKeys(level, LEVEL_KEYS, "$.level", errors);
-  validateRequiredIdProperty(level, "id", "$.level", errors);
+  const id = validateRequiredIdProperty(level, "id", "$.level", errors);
 
-  validateRequiredNumericProperty(level, "baseZ", "$.level", validateApartmentSvgNumber, errors);
-  validateRequiredNumericProperty(
+  const baseZ = validateRequiredNumericProperty(
+    level,
+    "baseZ",
+    "$.level",
+    validateApartmentSvgNumber,
+    errors,
+  );
+  const defaultCeilingHeight = validateRequiredNumericProperty(
     level,
     "defaultCeilingHeight",
     "$.level",
     validateApartmentSvgPositiveNumber,
     errors,
   );
+
+  if (
+    errors.length !== initialErrorCount ||
+    id === undefined ||
+    baseZ === undefined ||
+    defaultCeilingHeight === undefined
+  ) {
+    return undefined;
+  }
+
+  return Object.freeze({ id, baseZ, defaultCeilingHeight });
 }
 
 function validateLocation(
   location: Record<string, unknown>,
   errors: ApartmentSvgValidationError[],
-): void {
+): SchemaValidApartmentSvgLocation | undefined {
+  const initialErrorCount = errors.length;
   validateExtensionKeys(location, LOCATION_KEYS, "$.location", errors);
-  validateRequiredNumericProperty(
+  const latitude = validateRequiredNumericProperty(
     location,
     "latitude",
     "$.location",
     validateApartmentSvgLatitude,
     errors,
   );
-  validateRequiredNumericProperty(
+  const longitude = validateRequiredNumericProperty(
     location,
     "longitude",
     "$.location",
     validateApartmentSvgLongitude,
     errors,
   );
-  validateRequiredNumericProperty(
+  const northHeading = validateRequiredNumericProperty(
     location,
     "northHeading",
     "$.location",
@@ -304,8 +417,9 @@ function validateLocation(
     errors,
   );
 
+  let elevationMeters: Decimal | undefined;
   if (Object.hasOwn(location, "elevationMeters")) {
-    validatePresentNumericProperty(
+    elevationMeters = validatePresentNumericProperty(
       location,
       "elevationMeters",
       "$.location",
@@ -314,17 +428,37 @@ function validateLocation(
     );
   }
 
+  let timeZone: string | undefined;
   if (Object.hasOwn(location, "timeZone")) {
-    const timeZone = location.timeZone;
-    if (typeof timeZone !== "string") {
-      errors.push(invalidPropertyType("$.location.timeZone", "string", timeZone));
+    const timeZoneValue = location.timeZone;
+    if (typeof timeZoneValue !== "string") {
+      errors.push(invalidPropertyType("$.location.timeZone", "string", timeZoneValue));
     } else {
-      const result = validateApartmentSvgTimeZoneId(timeZone);
+      const result = validateApartmentSvgTimeZoneId(timeZoneValue);
       if (!result.valid) {
-        errors.push(invalidPropertyValue("$.location.timeZone", result.expected, timeZone));
+        errors.push(invalidPropertyValue("$.location.timeZone", result.expected, timeZoneValue));
+      } else {
+        timeZone = result.value;
       }
     }
   }
+
+  if (
+    errors.length !== initialErrorCount ||
+    latitude === undefined ||
+    longitude === undefined ||
+    northHeading === undefined
+  ) {
+    return undefined;
+  }
+
+  return Object.freeze({
+    latitude,
+    longitude,
+    northHeading,
+    ...(elevationMeters === undefined ? {} : { elevationMeters }),
+    ...(timeZone === undefined ? {} : { timeZone }),
+  });
 }
 
 function validateRequiredObject(
@@ -354,8 +488,8 @@ function validateRequiredStringConstant(
   parentPath: string,
   expectedValue: string,
   errors: ApartmentSvgValidationError[],
-): void {
-  validateRequiredString(
+): string | undefined {
+  return validateRequiredString(
     object,
     key,
     parentPath,
@@ -387,6 +521,7 @@ function validateRequiredString(
 
   if (!isValid(value)) {
     errors.push(invalidPropertyValue(path, expected, value));
+    return undefined;
   }
 
   return value;
@@ -398,16 +533,16 @@ function validateRequiredNumericProperty(
   parentPath: string,
   validateScalar: NumericScalarValidator,
   errors: ApartmentSvgValidationError[],
-): void {
+): Decimal | undefined {
   const path = `${parentPath}.${key}`;
   if (!Object.hasOwn(object, key)) {
     errors.push(
       missingProperty(path, "a JSON number with the required Apartment SVG value constraints"),
     );
-    return;
+    return undefined;
   }
 
-  validatePresentNumericProperty(object, key, parentPath, validateScalar, errors);
+  return validatePresentNumericProperty(object, key, parentPath, validateScalar, errors);
 }
 
 function validateRequiredIdProperty(
@@ -415,23 +550,26 @@ function validateRequiredIdProperty(
   key: string,
   parentPath: string,
   errors: ApartmentSvgValidationError[],
-): void {
+): string | undefined {
   const path = `${parentPath}.${key}`;
   if (!Object.hasOwn(object, key)) {
     errors.push(missingProperty(path, "an Apartment SVG Id"));
-    return;
+    return undefined;
   }
 
   const value = object[key];
   if (typeof value !== "string") {
     errors.push(invalidPropertyType(path, "string", value));
-    return;
+    return undefined;
   }
 
   const result = validateApartmentSvgId(value);
   if (!result.valid) {
     errors.push(invalidPropertyValue(path, result.expected, value));
+    return undefined;
   }
+
+  return result.value;
 }
 
 function validatePresentNumericProperty(
@@ -440,12 +578,12 @@ function validatePresentNumericProperty(
   parentPath: string,
   validateScalar: NumericScalarValidator,
   errors: ApartmentSvgValidationError[],
-): void {
+): Decimal | undefined {
   const path = `${parentPath}.${key}`;
   const value = object[key];
   if (!(value instanceof JsonNumberLexeme)) {
     errors.push(invalidPropertyType(path, "number", value));
-    return;
+    return undefined;
   }
 
   const result = validateScalar(value.lexicalValue);
@@ -459,7 +597,22 @@ function validatePresentNumericProperty(
         { path, actual: value.lexicalValue },
       ),
     );
+    return undefined;
   }
+
+  return result.value;
+}
+
+function metadataValidationResult(
+  errors: ApartmentSvgValidationError[],
+  metadata?: SchemaValidApartmentSvgMetadata,
+): ApartmentSvgMetadataValidationWithValues {
+  const frozenErrors = Object.freeze(errors);
+  if (frozenErrors.length > 0 || metadata === undefined) {
+    return Object.freeze({ errors: frozenErrors });
+  }
+
+  return Object.freeze({ errors: frozenErrors, metadata });
 }
 
 function validateExtensionKeys(

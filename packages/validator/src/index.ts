@@ -19,6 +19,45 @@ export type {
   ScalarValidationSuccess,
 } from "./scalar-validation.js";
 export { validateApartmentSvgDocumentSchema } from "./validate-apartment-svg-document-schema.js";
+export { validateApartmentSvgSchema } from "./validate-apartment-svg-schema.js";
+export type {
+  ApartmentSvgSchemaValidationFailure,
+  ApartmentSvgSchemaValidationResult,
+  ApartmentSvgSchemaValidationSuccess,
+} from "./validate-apartment-svg-schema.js";
+export type {
+  ApartmentSvgDoorType,
+  ApartmentSvgFixedElementKind,
+  ApartmentSvgSpaceEnclosure,
+  ApartmentSvgSpaceFunction,
+  ApartmentSvgStatus,
+  ApartmentSvgUtilityKind,
+  ApartmentSvgWallAxis,
+  ApartmentSvgWallClass,
+  ApartmentSvgWindowFrameMaterial,
+  ApartmentSvgWindowGlassType,
+  ApartmentSvgWindowOpeningType,
+  SchemaValidApartmentSvgDocument,
+  SchemaValidApartmentSvgLocation,
+  SchemaValidApartmentSvgMetadata,
+  SchemaValidApartmentSvgViewBox,
+  SchemaValidCamera,
+  SchemaValidCeilingLight,
+  SchemaValidDoor,
+  SchemaValidFixedElement,
+  SchemaValidFixedObject,
+  SchemaValidHingedDoor,
+  SchemaValidOpeningOnlyDoor,
+  SchemaValidOtherFixedElement,
+  SchemaValidRadiator,
+  SchemaValidSemanticElement,
+  SchemaValidSlidingDoor,
+  SchemaValidSpace,
+  SchemaValidUtility,
+  SchemaValidWall,
+  SchemaValidWallUtility,
+  SchemaValidWindow,
+} from "./schema-valid-apartment-svg.js";
 export { APARTMENT_SVG_VALIDATION_CODES } from "./validation-codes.js";
 export type {
   ApartmentSvgValidationCategory,

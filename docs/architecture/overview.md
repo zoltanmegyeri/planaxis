@@ -179,14 +179,16 @@ It also does not construct 3D geometry.
 
 Schema validation verifies structural conformance to the Apartment SVG specification.
 
-The currently implemented schema-validation slice consumes the parser-owned `ParsedApartmentSvgDocument` representation and validates:
+The implemented schema-validation phase consumes the parser-owned `ParsedApartmentSvgDocument` representation and validates:
 
 - Apartment SVG scalar lexical and value types needed at document level;
 - the canonical root element, namespace, schema attributes, and `viewBox`;
 - metadata multiplicity, CDATA/JSON form, required metadata structure, exact numeric values, optional location data, and extension keys;
-- required top-level groups, permitted root-level elements, extension groups, and core-group transform restrictions.
+- required top-level groups, permitted root-level elements, extension groups, and core-group transform restrictions;
+- common semantic-element structure, attributes, IDs, presentation/extension boundaries, and prohibited transforms or redundant geometry;
+- the complete schema tables, enum values, scalar values, and conditional attributes for spaces, walls, windows, doors, fixed elements, utilities, and cameras.
 
-This stage returns structured `APSVG-*` validation errors for ordinary schema failures. Passing it means only that the document-level schema slice is conformant; it does not produce `ValidatedApartment2D` or imply semantic-element, reference, geometric, or topological conformance.
+The public full-schema entry point returns structured `APSVG-*` validation errors for ordinary schema failures. On success it produces a validator-owned `SchemaValidApartmentSvgDocument` containing exact-decimal document and semantic values, raw unresolved reference IDs, and a unique core semantic ID index. This intermediate representation establishes schema conformance only: it is deliberately distinct from `ValidatedApartment2D` and does not imply reference, geometric, or topological conformance. The earlier document-level validation entry point remains available for callers that need only the root, metadata, and group-structure slice.
 
 Typical responsibilities include:
 
@@ -718,7 +720,7 @@ ADRs describe **why significant decisions were made**.
 
 ## 16. Current Implementation Phase
 
-The executable repository bootstrap, authoritative numeric and geometric foundations, Apartment SVG XML parsing boundary, and the document-level schema-validation slice are complete. The validator now covers root structure, metadata, required top-level groups, and the scalar types required by that work. Semantic-element schema validation is the next schema-validation slice; reference resolution, geometric/topological validation, and `ValidatedApartment2D` remain unimplemented.
+The executable repository bootstrap, authoritative numeric and geometric foundations, Apartment SVG XML parsing boundary, document-level schema validation, and semantic-element schema validation are complete. The validator now produces a typed, exact-decimal `SchemaValidApartmentSvgDocument` with unresolved reference strings and a unique core semantic ID index. Reference resolution and referential validation are the next implementation stage; geometric/topological validation and `ValidatedApartment2D` remain unimplemented.
 
 The intended implementation order is broadly:
 

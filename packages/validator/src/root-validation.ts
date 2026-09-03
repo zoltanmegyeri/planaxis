@@ -1,6 +1,7 @@
 import { createDecimal } from "@planaxis/geometry";
 import type { ParsedApartmentSvgDocument } from "@planaxis/parser";
 
+import type { SchemaValidApartmentSvgViewBox } from "./schema-valid-apartment-svg.js";
 import { isApartmentSvgNumberLexeme } from "./scalar-validation.js";
 import { APARTMENT_SVG_VALIDATION_CODES } from "./validation-codes.js";
 import type { ApartmentSvgValidationError } from "./validation-result.js";
@@ -18,6 +19,17 @@ const REQUIRED_ROOT_ATTRIBUTE_VALUES = Object.freeze({
 export function validateApartmentSvgRoot(
   document: ParsedApartmentSvgDocument,
 ): readonly ApartmentSvgValidationError[] {
+  return validateApartmentSvgRootWithValues(document).errors;
+}
+
+export interface ApartmentSvgRootValidationWithValues {
+  readonly errors: readonly ApartmentSvgValidationError[];
+  readonly viewBox?: SchemaValidApartmentSvgViewBox;
+}
+
+export function validateApartmentSvgRootWithValues(
+  document: ParsedApartmentSvgDocument,
+): ApartmentSvgRootValidationWithValues {
   const errors: ApartmentSvgValidationError[] = [];
   const root = document.rootElement;
 
@@ -60,8 +72,11 @@ export function validateApartmentSvgRoot(
   }
 
   validateRequiredRootConstants(document, errors);
-  validateViewBox(document, errors);
-  return errors;
+  const viewBox = validateViewBox(document, errors);
+  return Object.freeze({
+    errors: Object.freeze(errors),
+    ...(viewBox === undefined ? {} : { viewBox }),
+  });
 }
 
 function validateRequiredRootConstants(
@@ -92,11 +107,11 @@ function validateRequiredRootConstants(
 function validateViewBox(
   document: ParsedApartmentSvgDocument,
   errors: ApartmentSvgValidationError[],
-): void {
+): SchemaValidApartmentSvgViewBox | undefined {
   const viewBox = getParsedAttribute(document.rootElement, "viewBox");
   if (viewBox === undefined) {
     errors.push(missingRootAttribute("viewBox", "exactly four Apartment SVG Number values"));
-    return;
+    return undefined;
   }
 
   const values = viewBox.trim() === "" ? [] : viewBox.trim().split(/\s+/u);
@@ -110,7 +125,7 @@ function validateViewBox(
         { attribute: "viewBox", actual: viewBox },
       ),
     );
-    return;
+    return undefined;
   }
 
   if (!values.every(isApartmentSvgNumberLexeme)) {
@@ -123,7 +138,7 @@ function validateViewBox(
         { attribute: "viewBox", actual: viewBox },
       ),
     );
-    return;
+    return undefined;
   }
 
   const widthLexeme = values[2];
@@ -162,6 +177,18 @@ function validateViewBox(
       ),
     );
   }
+
+  if (width.lessThanOrEqualTo(ZERO) || height.lessThanOrEqualTo(ZERO)) {
+    return undefined;
+  }
+
+  const minX = decimalValues[0];
+  const minY = decimalValues[1];
+  if (minX === undefined || minY === undefined) {
+    throw new Error("Exact viewBox construction did not expose minimum coordinate values.");
+  }
+
+  return Object.freeze({ minX, minY, width, height });
 }
 
 function missingRootAttribute(attribute: string, expected: string): ApartmentSvgValidationError {

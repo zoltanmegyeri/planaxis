@@ -57,6 +57,47 @@ describe("validateApartmentSvgDocumentSchema public contract", () => {
         unknownGroup: "APSVG-GROUP-005",
         prohibitedTransform: "APSVG-GROUP-006",
       },
+      semantic: {
+        invalidElementType: "APSVG-SEMANTIC-001",
+        invalidNamespace: "APSVG-SEMANTIC-002",
+        missingAttribute: "APSVG-SEMANTIC-003",
+        prohibitedAttribute: "APSVG-SEMANTIC-004",
+        unknownAttribute: "APSVG-SEMANTIC-005",
+        nestedSemanticElement: "APSVG-SEMANTIC-006",
+      },
+      id: {
+        missing: "APSVG-ID-001",
+        invalid: "APSVG-ID-002",
+        duplicate: "APSVG-ID-003",
+      },
+      zone: {
+        invalidAttributeValue: "APSVG-ZONE-101",
+        malformedPoints: "APSVG-ZONE-102",
+        invalidPointNumber: "APSVG-ZONE-103",
+        conditionalAttribute: "APSVG-ZONE-104",
+      },
+      wall: {
+        invalidAttributeValue: "APSVG-WALL-101",
+      },
+      window: {
+        invalidAttributeValue: "APSVG-WINDOW-101",
+        conditionalAttribute: "APSVG-WINDOW-102",
+      },
+      door: {
+        invalidAttributeValue: "APSVG-DOOR-101",
+        conditionalAttribute: "APSVG-DOOR-102",
+      },
+      fixedElement: {
+        invalidAttributeValue: "APSVG-FIXED-101",
+        conditionalAttribute: "APSVG-FIXED-102",
+      },
+      utility: {
+        invalidAttributeValue: "APSVG-UTILITY-101",
+        conditionalAttribute: "APSVG-UTILITY-102",
+      },
+      camera: {
+        invalidAttributeValue: "APSVG-CAMERA-101",
+      },
     });
   });
 
