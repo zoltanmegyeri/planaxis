@@ -27,7 +27,7 @@ const REQUIRED_GROUP_IDS = [
 ] as const;
 
 describe("validateApartmentSvgDocumentSchema public contract", () => {
-  it("exposes the stable TASK-005 validation codes", () => {
+  it("exposes the stable public validation codes", () => {
     expect(APARTMENT_SVG_VALIDATION_CODES).toEqual({
       root: {
         invalidElementForm: "APSVG-ROOT-001",
@@ -97,6 +97,10 @@ describe("validateApartmentSvgDocumentSchema public contract", () => {
       },
       camera: {
         invalidAttributeValue: "APSVG-CAMERA-101",
+      },
+      reference: {
+        broken: "APSVG-REF-001",
+        wrongKind: "APSVG-REF-002",
       },
     });
   });

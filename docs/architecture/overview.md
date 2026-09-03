@@ -207,6 +207,12 @@ The implementation should preserve the specification's distinction between XML c
 
 References such as `data-wall` and `data-radiator-below` are resolved only after identifiers and element types have been validated sufficiently to make resolution safe.
 
+The implemented reference-validation phase consumes `SchemaValidApartmentSvgDocument` directly, without reparsing XML or repeating schema validation. It validates target existence and required semantic kind for every Apartment SVG 2.1 core reference. Ordinary failures are returned as structured `APSVG-REF-*` errors.
+
+On success it produces a validator-owned `ReferenceValidApartmentSvgDocument`. Windows, doors, radiators, and wall-associated utilities expose typed resolved relationships, and the document's semantic ID index points to the reference-valid element representations. Exact-decimal schema values are preserved unchanged.
+
+This intermediate type establishes referential conformance only. It remains deliberately distinct from `ValidatedApartment2D` and does not imply geometric or topological conformance.
+
 Responsibilities include:
 
 - resolving IDs;
@@ -214,7 +220,7 @@ Responsibilities include:
 - validating referenced element types;
 - producing domain-level reference relationships suitable for later validation.
 
-Downstream layers should not repeatedly parse raw string references from SVG attributes.
+Downstream layers do not need to resolve the same raw reference IDs again.
 
 ### 5.4. Geometric and Topological Validation
 
@@ -720,7 +726,7 @@ ADRs describe **why significant decisions were made**.
 
 ## 16. Current Implementation Phase
 
-The executable repository bootstrap, authoritative numeric and geometric foundations, Apartment SVG XML parsing boundary, document-level schema validation, and semantic-element schema validation are complete. The validator now produces a typed, exact-decimal `SchemaValidApartmentSvgDocument` with unresolved reference strings and a unique core semantic ID index. Reference resolution and referential validation are the next implementation stage; geometric/topological validation and `ValidatedApartment2D` remain unimplemented.
+The executable repository bootstrap, authoritative numeric and geometric foundations, Apartment SVG XML parsing boundary, document-level schema validation, semantic-element schema validation, and reference validation are complete. Schema validation produces a typed, exact-decimal `SchemaValidApartmentSvgDocument` with unresolved reference strings and a unique core semantic ID index. Reference validation consumes that representation and produces a `ReferenceValidApartmentSvgDocument` with typed resolved relationships and a consistent reference-valid semantic ID index. Geometric/topological validation is the next implementation stage; `ValidatedApartment2D` remains unimplemented.
 
 The intended implementation order is broadly:
 

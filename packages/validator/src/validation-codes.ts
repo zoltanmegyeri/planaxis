@@ -68,6 +68,10 @@ export const APARTMENT_SVG_VALIDATION_CODES = Object.freeze({
   camera: Object.freeze({
     invalidAttributeValue: "APSVG-CAMERA-101",
   }),
+  reference: Object.freeze({
+    broken: "APSVG-REF-001",
+    wrongKind: "APSVG-REF-002",
+  }),
 } as const);
 
 type Values<T> = T[keyof T];
@@ -84,7 +88,8 @@ export type ApartmentSvgValidationCode =
   | Values<typeof APARTMENT_SVG_VALIDATION_CODES.door>
   | Values<typeof APARTMENT_SVG_VALIDATION_CODES.fixedElement>
   | Values<typeof APARTMENT_SVG_VALIDATION_CODES.utility>
-  | Values<typeof APARTMENT_SVG_VALIDATION_CODES.camera>;
+  | Values<typeof APARTMENT_SVG_VALIDATION_CODES.camera>
+  | Values<typeof APARTMENT_SVG_VALIDATION_CODES.reference>;
 
 export type ApartmentSvgValidationCategory =
   | "root"
@@ -98,4 +103,5 @@ export type ApartmentSvgValidationCategory =
   | "door"
   | "fixed-element"
   | "utility"
-  | "camera";
+  | "camera"
+  | "reference";
