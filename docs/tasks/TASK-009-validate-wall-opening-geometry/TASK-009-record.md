@@ -2,17 +2,17 @@
 
 ## Task Metadata
 
-- **Status:** In Progress
+- **Status:** Completed
 - **Created:** 2026-09-03
 - **Issued:** 2026-09-03
-- **Completed:** —
+- **Completed:** 2026-09-03
 - **Agent:** Codex
 - **Repository:** PlanAxis
 - **Description:** `TASK-009-description.md`
 - **Related tasks:** TASK-003, TASK-008
 - **Related ADRs:** ADR-001
 - **Related specifications:** Apartment SVG 2.1
-- **Implementation commits:** —
+- **Implementation commits:** 3e7dec46da5a1e754091dafd34837bb57030a2f3
 
 ## Purpose
 
@@ -26,49 +26,77 @@ The authoritative task description is stored in:
 
 `TASK-009-description.md`
 
-The task was formally issued on 2026-09-03 and is now immutable for the duration of execution.
+The task was formally issued on 2026-09-03 and remained immutable throughout execution.
 
 ## Execution Record
 
 ### Result
 
-Pending.
+Codex implemented the wall and opening geometric-validation stage in `@planaxis/validator`.
+
+The implementation:
+
+- validates wall-axis geometry and effective wall heights;
+- validates window and door relationships to their resolved supporting walls;
+- validates window and door vertical opening extents;
+- validates hinged-door hinge and open-leaf geometry;
+- returns structured Apartment SVG geometry errors;
+- uses exact-decimal geometry and normative tolerance behavior;
+- preserves `ReferenceValidApartmentSvgDocument` as the successful stage output rather than introducing another partially trusted document type;
+- keeps topology, placement, collision, and overlap validation deferred;
+- adds focused automated coverage for the implemented rules and stage boundaries.
 
 ### Verification
 
-Pending.
+No verification failures were reported for the completed implementation.
+
+Command-by-command verification results were not separately provided during task-record finalization.
 
 ### Deviations from Description
 
-Pending.
+None.
 
 ### Agent-Reported Follow-up Items
 
-Pending.
+None.
 
 ## Human Review
 
 ### Review Status
 
-Pending
+Accepted
 
 ### Review Notes
 
-Pending.
+The TASK-009 implementation was reviewed and accepted without objections.
+
+No implementation issues, deviations, or additional follow-up items were identified during human review.
 
 ### Human Changes After Agent Execution
 
-Pending.
+None.
 
 ## Finalization
 
 ### Implementation Commits
 
-—
+```text
+3e7dec46da5a1e754091dafd34837bb57030a2f3
+```
 
 ### Commit Messages
 
-—
+```text
+feat(validator): validate wall and opening geometry
+
+Add the reference-valid geometry stage for wall axes, effective wall
+heights, window and door footprints, and hinged-door invariants.
+
+Return structured APSVG geometry errors and cover exact-decimal
+tolerance boundaries and deferred validation-stage behavior.
+
+Task: TASK-009
+```
 
 ### Supersession
 
@@ -76,6 +104,6 @@ Pending.
 
 ## Notes
 
-TASK-009 intentionally covers only wall and opening geometry.
+TASK-009 completed the first geometric-validation slice after reference validation.
 
-Zone topology, overlap validation, utility placement, camera collisions, remaining geometric checks, and construction of `ValidatedApartment2D` remain separate future work.
+The remaining geometric/topological phase covers topology, placement, collision, overlap, and other deferred spatial rules before construction of `ValidatedApartment2D`.
