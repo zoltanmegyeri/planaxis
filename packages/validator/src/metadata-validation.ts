@@ -9,6 +9,13 @@ import {
   parseLosslessJson,
 } from "./lossless-json.js";
 import {
+  APARTMENT_SVG_ATTRIBUTES,
+  APARTMENT_SVG_DOCUMENT_VALUES,
+  APARTMENT_SVG_ELEMENT_NAMES,
+  APARTMENT_SVG_METADATA_COORDINATE_VALUES,
+  SVG_NAMESPACE_URI,
+} from "./schema-vocabulary.js";
+import {
   validateApartmentSvgAngle360,
   validateApartmentSvgElevationMeters,
   validateApartmentSvgId,
@@ -25,8 +32,6 @@ import type {
 } from "./schema-valid-apartment-svg.js";
 import { APARTMENT_SVG_VALIDATION_CODES } from "./validation-codes.js";
 import type { ApartmentSvgValidationError } from "./validation-result.js";
-
-const SVG_NAMESPACE_URI = "http://www.w3.org/2000/svg";
 
 const ROOT_KEYS = new Set(["schema", "project", "coordinateSystem", "level", "location"]);
 const PROJECT_KEYS = new Set(["name", "units"]);
@@ -143,7 +148,7 @@ function readMetadataPayload(
     (node) => node.kind !== "cdata" && !(node.kind === "text" && node.value.trim() === ""),
   );
   const hasValidElementName =
-    metadataElement.name.localName === "metadata" &&
+    metadataElement.name.localName === APARTMENT_SVG_ELEMENT_NAMES.metadata &&
     metadataElement.name.namespaceUri === SVG_NAMESPACE_URI;
 
   if (!hasValidElementName || cdataNodes.length !== 1 || hasInvalidContent) {
@@ -173,7 +178,7 @@ function validateMetadataObject(
     "schema",
     "$",
     'exactly "apartment-svg/2.1"',
-    (value) => value === "apartment-svg/2.1",
+    (value) => value === APARTMENT_SVG_DOCUMENT_VALUES.metadataSchema,
     errors,
   );
 
@@ -208,7 +213,7 @@ function validateMetadataObject(
         "Metadata project units do not match the root data-unit value.",
         {
           path: "$.project.units",
-          attribute: "data-unit",
+          attribute: APARTMENT_SVG_ATTRIBUTES.dataUnit,
           actual: `${JSON.stringify(projectUnits)} != ${JSON.stringify(rootDataUnit)}`,
         },
       ),
@@ -226,7 +231,7 @@ function validateMetadataObject(
   }
 
   return Object.freeze({
-    schema: "apartment-svg/2.1",
+    schema: APARTMENT_SVG_DOCUMENT_VALUES.metadataSchema,
     project: validatedProject,
     coordinateSystem: validatedCoordinateSystem,
     level: validatedLevel,
@@ -254,7 +259,7 @@ function validateProject(
     "units",
     "$.project",
     'exactly "cm"',
-    (value) => value === "cm",
+    (value) => value === APARTMENT_SVG_DOCUMENT_VALUES.unit,
     errors,
   );
 
@@ -262,7 +267,7 @@ function validateProject(
     return undefined;
   }
 
-  return Object.freeze({ name, units: "cm" });
+  return Object.freeze({ name, units: APARTMENT_SVG_DOCUMENT_VALUES.unit });
 }
 
 function validateCoordinateSystem(
@@ -275,21 +280,21 @@ function validateCoordinateSystem(
     coordinateSystem,
     "x",
     "$.coordinateSystem",
-    "right",
+    APARTMENT_SVG_METADATA_COORDINATE_VALUES.x,
     errors,
   );
   const y = validateRequiredStringConstant(
     coordinateSystem,
     "y",
     "$.coordinateSystem",
-    "down",
+    APARTMENT_SVG_METADATA_COORDINATE_VALUES.y,
     errors,
   );
   const z = validateRequiredStringConstant(
     coordinateSystem,
     "z",
     "$.coordinateSystem",
-    "up",
+    APARTMENT_SVG_METADATA_COORDINATE_VALUES.z,
     errors,
   );
 
@@ -308,28 +313,28 @@ function validateCoordinateSystem(
     headings,
     "0",
     "$.coordinateSystem.headingDegrees",
-    "+x",
+    APARTMENT_SVG_METADATA_COORDINATE_VALUES.heading0,
     errors,
   );
   const heading90 = validateRequiredStringConstant(
     headings,
     "90",
     "$.coordinateSystem.headingDegrees",
-    "+y",
+    APARTMENT_SVG_METADATA_COORDINATE_VALUES.heading90,
     errors,
   );
   const heading180 = validateRequiredStringConstant(
     headings,
     "180",
     "$.coordinateSystem.headingDegrees",
-    "-x",
+    APARTMENT_SVG_METADATA_COORDINATE_VALUES.heading180,
     errors,
   );
   const heading270 = validateRequiredStringConstant(
     headings,
     "270",
     "$.coordinateSystem.headingDegrees",
-    "-y",
+    APARTMENT_SVG_METADATA_COORDINATE_VALUES.heading270,
     errors,
   );
 
@@ -347,10 +352,15 @@ function validateCoordinateSystem(
   }
 
   return Object.freeze({
-    x: "right",
-    y: "down",
-    z: "up",
-    headingDegrees: Object.freeze({ 0: "+x", 90: "+y", 180: "-x", 270: "-y" }),
+    x: APARTMENT_SVG_METADATA_COORDINATE_VALUES.x,
+    y: APARTMENT_SVG_METADATA_COORDINATE_VALUES.y,
+    z: APARTMENT_SVG_METADATA_COORDINATE_VALUES.z,
+    headingDegrees: Object.freeze({
+      0: APARTMENT_SVG_METADATA_COORDINATE_VALUES.heading0,
+      90: APARTMENT_SVG_METADATA_COORDINATE_VALUES.heading90,
+      180: APARTMENT_SVG_METADATA_COORDINATE_VALUES.heading180,
+      270: APARTMENT_SVG_METADATA_COORDINATE_VALUES.heading270,
+    }),
   });
 }
 

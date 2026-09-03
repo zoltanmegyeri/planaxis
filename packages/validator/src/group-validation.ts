@@ -1,21 +1,18 @@
 import type { ParsedApartmentSvgDocument, ParsedXmlElement } from "@planaxis/parser";
 
+import {
+  APARTMENT_SVG_ATTRIBUTES,
+  APARTMENT_SVG_ELEMENT_NAMES,
+  APARTMENT_SVG_EXTENSION_PREFIXES,
+  APARTMENT_SVG_GROUP_IDS,
+  APARTMENT_SVG_REQUIRED_GROUP_IDS,
+  SVG_NAMESPACE_URI,
+} from "./schema-vocabulary.js";
 import { APARTMENT_SVG_VALIDATION_CODES } from "./validation-codes.js";
 import type { ApartmentSvgValidationError } from "./validation-result.js";
 import { getParsedAttribute } from "./xml-element.js";
 
-const SVG_NAMESPACE_URI = "http://www.w3.org/2000/svg";
-const REQUIRED_GROUP_IDS = Object.freeze([
-  "spaces",
-  "walls",
-  "windows",
-  "doors",
-  "fixed-elements",
-  "utilities",
-  "cameras",
-  "annotations",
-] as const);
-const REQUIRED_GROUP_ID_SET = new Set<string>(REQUIRED_GROUP_IDS);
+const REQUIRED_GROUP_ID_SET = new Set<string>(APARTMENT_SVG_REQUIRED_GROUP_IDS);
 const PERMITTED_ROOT_ELEMENT_NAMES = new Set(["style", "defs", "title", "desc"]);
 
 export function validateApartmentSvgTopLevelStructure(
@@ -23,7 +20,7 @@ export function validateApartmentSvgTopLevelStructure(
 ): readonly ApartmentSvgValidationError[] {
   const errors: ApartmentSvgValidationError[] = [];
 
-  for (const requiredGroupId of REQUIRED_GROUP_IDS) {
+  for (const requiredGroupId of APARTMENT_SVG_REQUIRED_GROUP_IDS) {
     validateRequiredGroup(document, requiredGroupId, errors);
   }
 
@@ -40,10 +37,14 @@ function validateRequiredGroup(
   errors: ApartmentSvgValidationError[],
 ): void {
   const elementsWithId = document.rootElements.filter(
-    (element) => getParsedAttribute(element, "id") === requiredGroupId,
+    (element) => getParsedAttribute(element, APARTMENT_SVG_ATTRIBUTES.id) === requiredGroupId,
   );
-  const canonicalGroups = elementsWithId.filter((element) => isSvgElement(element, "g"));
-  const invalidForms = elementsWithId.filter((element) => !isSvgElement(element, "g"));
+  const canonicalGroups = elementsWithId.filter((element) =>
+    isSvgElement(element, APARTMENT_SVG_ELEMENT_NAMES.group),
+  );
+  const invalidForms = elementsWithId.filter(
+    (element) => !isSvgElement(element, APARTMENT_SVG_ELEMENT_NAMES.group),
+  );
 
   for (const invalidForm of invalidForms) {
     errors.push(
@@ -89,8 +90,13 @@ function validateRequiredGroup(
   }
 
   const group = canonicalGroups[0];
-  const transform = group === undefined ? undefined : getParsedAttribute(group, "transform");
-  if (group !== undefined && requiredGroupId !== "annotations" && transform !== undefined) {
+  const transform =
+    group === undefined ? undefined : getParsedAttribute(group, APARTMENT_SVG_ATTRIBUTES.transform);
+  if (
+    group !== undefined &&
+    requiredGroupId !== APARTMENT_SVG_GROUP_IDS.annotations &&
+    transform !== undefined
+  ) {
     errors.push(
       groupError(
         APARTMENT_SVG_VALIDATION_CODES.group.prohibitedTransform,
@@ -99,7 +105,7 @@ function validateRequiredGroup(
         `Transform is prohibited on core group ${requiredGroupId}.`,
         {
           elementId: requiredGroupId,
-          attribute: "transform",
+          attribute: APARTMENT_SVG_ATTRIBUTES.transform,
           actual: transform,
         },
       ),
@@ -111,7 +117,7 @@ function validateRootElementPermission(
   element: ParsedXmlElement,
   errors: ApartmentSvgValidationError[],
 ): void {
-  if (element.name.localName === "metadata") {
+  if (element.name.localName === APARTMENT_SVG_ELEMENT_NAMES.metadata) {
     return;
   }
 
@@ -123,13 +129,13 @@ function validateRootElementPermission(
     return;
   }
 
-  const elementId = getParsedAttribute(element, "id");
-  if (isSvgElement(element, "g")) {
+  const elementId = getParsedAttribute(element, APARTMENT_SVG_ATTRIBUTES.id);
+  if (isSvgElement(element, APARTMENT_SVG_ELEMENT_NAMES.group)) {
     if (elementId !== undefined && REQUIRED_GROUP_ID_SET.has(elementId)) {
       return;
     }
 
-    if (elementId?.startsWith("x-") === true) {
+    if (elementId?.startsWith(APARTMENT_SVG_EXTENSION_PREFIXES.group) === true) {
       return;
     }
 

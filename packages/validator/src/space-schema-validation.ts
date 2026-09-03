@@ -3,6 +3,14 @@ import type { Point2D } from "@planaxis/geometry";
 import type { ParsedXmlElement } from "@planaxis/parser";
 
 import {
+  APARTMENT_SVG_ATTRIBUTES,
+  APARTMENT_SVG_ELEMENT_NAMES,
+  APARTMENT_SVG_GROUP_IDS,
+  APARTMENT_SVG_SEMANTIC_KINDS,
+  APARTMENT_SVG_SPACE_ENCLOSURE_VALUES,
+  APARTMENT_SVG_SPACE_FUNCTION_VALUES,
+} from "./schema-vocabulary.js";
+import {
   elementError,
   readOptionalAttribute,
   readRequiredEnum,
@@ -21,31 +29,20 @@ import { APARTMENT_SVG_VALIDATION_CODES } from "./validation-codes.js";
 import type { ApartmentSvgValidationError } from "./validation-result.js";
 
 const ALLOWED_ATTRIBUTES = new Set([
-  "points",
-  "data-kind",
-  "data-name",
-  "data-function",
-  "data-function-description",
-  "data-enclosure",
+  APARTMENT_SVG_ATTRIBUTES.points,
+  APARTMENT_SVG_ATTRIBUTES.dataKind,
+  APARTMENT_SVG_ATTRIBUTES.dataName,
+  APARTMENT_SVG_ATTRIBUTES.dataFunction,
+  APARTMENT_SVG_ATTRIBUTES.dataFunctionDescription,
+  APARTMENT_SVG_ATTRIBUTES.dataEnclosure,
 ]);
-const ALLOWED_KINDS = new Set(["zone"]);
-const SPACE_FUNCTIONS = new Set<ApartmentSvgSpaceFunction>([
-  "living-room",
-  "dining",
-  "kitchen",
-  "bedroom",
-  "bathroom",
-  "toilet",
-  "hall",
-  "corridor",
-  "entrance",
-  "home-office",
-  "storage",
-  "utility",
-  "balcony",
-  "other",
-]);
-const SPACE_ENCLOSURES = new Set<ApartmentSvgSpaceEnclosure>(["closed", "partial", "open"]);
+const ALLOWED_KINDS = new Set([APARTMENT_SVG_SEMANTIC_KINDS.zone]);
+const SPACE_FUNCTIONS = new Set<ApartmentSvgSpaceFunction>(
+  Object.values(APARTMENT_SVG_SPACE_FUNCTION_VALUES),
+);
+const SPACE_ENCLOSURES = new Set<ApartmentSvgSpaceEnclosure>(
+  Object.values(APARTMENT_SVG_SPACE_ENCLOSURE_VALUES),
+);
 const COORDINATE_SEPARATOR = "(?:\\s*,\\s*|\\s+)";
 const NUMBER_SOURCE = "-?[0-9]+(?:\\.[0-9]+)?";
 const COORDINATE_LIST_PATTERN = new RegExp(
@@ -65,8 +62,8 @@ export function validateSpaceSchema(
   const context = validateCommonSemanticElement(
     element,
     {
-      groupId: "spaces",
-      elementName: "polygon",
+      groupId: APARTMENT_SVG_GROUP_IDS.spaces,
+      elementName: APARTMENT_SVG_ELEMENT_NAMES.polygon,
       allowedAttributes: ALLOWED_ATTRIBUTES,
       allowedKinds: ALLOWED_KINDS,
       invalidValueCode: APARTMENT_SVG_VALIDATION_CODES.zone.invalidAttributeValue,
@@ -77,14 +74,14 @@ export function validateSpaceSchema(
   const points = readPoints(context);
   const name = readRequiredNonEmptyString(
     context,
-    "data-name",
+    APARTMENT_SVG_ATTRIBUTES.dataName,
     APARTMENT_SVG_VALIDATION_CODES.zone.invalidAttributeValue,
     "zone",
     "zone.data-name",
   );
   const spaceFunction = readRequiredEnum(
     context,
-    "data-function",
+    APARTMENT_SVG_ATTRIBUTES.dataFunction,
     SPACE_FUNCTIONS,
     APARTMENT_SVG_VALIDATION_CODES.zone.invalidAttributeValue,
     "zone",
@@ -93,7 +90,7 @@ export function validateSpaceSchema(
   const functionDescription = validateFunctionDescription(context, spaceFunction);
   const enclosure = readRequiredEnum(
     context,
-    "data-enclosure",
+    APARTMENT_SVG_ATTRIBUTES.dataEnclosure,
     SPACE_ENCLOSURES,
     APARTMENT_SVG_VALIDATION_CODES.zone.invalidAttributeValue,
     "zone",
@@ -117,7 +114,7 @@ export function validateSpaceSchema(
     errors,
     value: Object.freeze({
       id: context.id,
-      kind: "zone",
+      kind: APARTMENT_SVG_SEMANTIC_KINDS.zone,
       points,
       name,
       function: spaceFunction,
@@ -132,7 +129,7 @@ function readPoints(
 ): readonly Point2D[] | undefined {
   const value = readRequiredNonEmptyString(
     context,
-    "points",
+    APARTMENT_SVG_ATTRIBUTES.points,
     APARTMENT_SVG_VALIDATION_CODES.zone.malformedPoints,
     "zone",
     "zone.points-syntax",
@@ -155,7 +152,7 @@ function readPoints(
         "coordinate components matching -?[0-9]+(\\.[0-9]+)?",
         "A space points coordinate is not an Apartment SVG Number.",
         context,
-        { attribute: "points", actual: invalidComponent },
+        { attribute: APARTMENT_SVG_ATTRIBUTES.points, actual: invalidComponent },
       ),
     );
     return undefined;
@@ -170,7 +167,7 @@ function readPoints(
         "one or more SVG coordinate pairs using Apartment SVG Number components",
         "The space points attribute is not a syntactically valid coordinate list.",
         context,
-        { attribute: "points", actual: value },
+        { attribute: APARTMENT_SVG_ATTRIBUTES.points, actual: value },
       ),
     );
     return undefined;
@@ -193,16 +190,16 @@ function validateFunctionDescription(
   context: ReturnType<typeof validateCommonSemanticElement>,
   spaceFunction: ApartmentSvgSpaceFunction | undefined,
 ): string | undefined {
-  const value = readOptionalAttribute(context, "data-function-description");
+  const value = readOptionalAttribute(context, APARTMENT_SVG_ATTRIBUTES.dataFunctionDescription);
   if (spaceFunction === undefined) {
     return undefined;
   }
 
-  if (spaceFunction === "other") {
+  if (spaceFunction === APARTMENT_SVG_SPACE_FUNCTION_VALUES.other) {
     if (value === undefined) {
       reportConditionalAttribute(
         context,
-        "data-function-description",
+        APARTMENT_SVG_ATTRIBUTES.dataFunctionDescription,
         'a non-empty value when data-function="other"',
         APARTMENT_SVG_VALIDATION_CODES.zone.conditionalAttribute,
         "zone",
@@ -219,7 +216,10 @@ function validateFunctionDescription(
           'a non-empty value when data-function="other"',
           "A space with data-function other requires a non-empty description.",
           context,
-          { attribute: "data-function-description", actual: value },
+          {
+            attribute: APARTMENT_SVG_ATTRIBUTES.dataFunctionDescription,
+            actual: value,
+          },
         ),
       );
       return undefined;
@@ -230,7 +230,7 @@ function validateFunctionDescription(
   if (value !== undefined) {
     reportConditionalAttribute(
       context,
-      "data-function-description",
+      APARTMENT_SVG_ATTRIBUTES.dataFunctionDescription,
       'absence unless data-function="other"',
       APARTMENT_SVG_VALIDATION_CODES.zone.conditionalAttribute,
       "zone",

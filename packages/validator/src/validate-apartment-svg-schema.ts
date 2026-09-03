@@ -1,5 +1,6 @@
 import type { ParsedApartmentSvgDocument } from "@planaxis/parser";
 
+import { APARTMENT_SVG_DOCUMENT_VALUES } from "./schema-vocabulary.js";
 import { validateApartmentSvgSemanticSchemas } from "./semantic-schema-validation.js";
 import type {
   SchemaValidApartmentSvgDocument,
@@ -63,9 +64,9 @@ export function validateApartmentSvgSchema(
   }
 
   const schemaValidDocument: SchemaValidApartmentSvgDocument = Object.freeze({
-    schema: "apartment-svg",
-    schemaVersion: "2.1",
-    unit: "cm",
+    schema: APARTMENT_SVG_DOCUMENT_VALUES.schema,
+    schemaVersion: APARTMENT_SVG_DOCUMENT_VALUES.schemaVersion,
+    unit: APARTMENT_SVG_DOCUMENT_VALUES.unit,
     viewBox: documentResult.viewBox,
     metadata: documentResult.metadata,
     spaces: semanticResult.spaces,

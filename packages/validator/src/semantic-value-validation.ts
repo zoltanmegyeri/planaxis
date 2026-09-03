@@ -1,5 +1,6 @@
 import type { Decimal } from "@planaxis/geometry";
 
+import { APARTMENT_SVG_ATTRIBUTES, APARTMENT_SVG_STATUS_VALUES } from "./schema-vocabulary.js";
 import {
   readOptionalEnum,
   readRequiredEnum,
@@ -17,7 +18,7 @@ import type {
   ApartmentSvgValidationCode,
 } from "./validation-codes.js";
 
-const STATUS_VALUES = new Set<ApartmentSvgStatus>(["fixed", "modifiable", "proposal"]);
+const STATUS_VALUES = new Set<ApartmentSvgStatus>(Object.values(APARTMENT_SVG_STATUS_VALUES));
 
 export interface ValidatedRectangleAttributes {
   readonly x: Decimal;
@@ -39,7 +40,7 @@ export function readRequiredRectangleAttributes(
 ): Partial<ValidatedRectangleAttributes> {
   const x = readRequiredScalar(
     context,
-    "x",
+    APARTMENT_SVG_ATTRIBUTES.x,
     validateApartmentSvgNumber,
     code,
     category,
@@ -47,7 +48,7 @@ export function readRequiredRectangleAttributes(
   );
   const y = readRequiredScalar(
     context,
-    "y",
+    APARTMENT_SVG_ATTRIBUTES.y,
     validateApartmentSvgNumber,
     code,
     category,
@@ -55,7 +56,7 @@ export function readRequiredRectangleAttributes(
   );
   const width = readRequiredScalar(
     context,
-    "width",
+    APARTMENT_SVG_ATTRIBUTES.width,
     validateApartmentSvgPositiveNumber,
     code,
     category,
@@ -63,7 +64,7 @@ export function readRequiredRectangleAttributes(
   );
   const height = readRequiredScalar(
     context,
-    "height",
+    APARTMENT_SVG_ATTRIBUTES.height,
     validateApartmentSvgPositiveNumber,
     code,
     category,
@@ -85,7 +86,7 @@ export function readRequiredCircleAttributes(
 ): Partial<ValidatedCircleAttributes> {
   const cx = readRequiredScalar(
     context,
-    "cx",
+    APARTMENT_SVG_ATTRIBUTES.cx,
     validateApartmentSvgNumber,
     code,
     category,
@@ -93,7 +94,7 @@ export function readRequiredCircleAttributes(
   );
   const cy = readRequiredScalar(
     context,
-    "cy",
+    APARTMENT_SVG_ATTRIBUTES.cy,
     validateApartmentSvgNumber,
     code,
     category,
@@ -101,7 +102,7 @@ export function readRequiredCircleAttributes(
   );
   const radius = readRequiredScalar(
     context,
-    "r",
+    APARTMENT_SVG_ATTRIBUTES.radius,
     validateApartmentSvgPositiveNumber,
     code,
     category,
@@ -122,7 +123,7 @@ export function readRequiredStatus(
 ): ApartmentSvgStatus | undefined {
   return readRequiredEnum(
     context,
-    "data-status",
+    APARTMENT_SVG_ATTRIBUTES.dataStatus,
     STATUS_VALUES,
     code,
     category,
@@ -137,7 +138,7 @@ export function readOptionalStatus(
 ): ApartmentSvgStatus | undefined {
   return readOptionalEnum(
     context,
-    "data-status",
+    APARTMENT_SVG_ATTRIBUTES.dataStatus,
     STATUS_VALUES,
     code,
     category,
@@ -147,7 +148,7 @@ export function readOptionalStatus(
 
 export function readRequiredNonNegativeZ(
   context: SemanticElementValidationContext,
-  attribute: "data-base-z" | "data-z",
+  attribute: typeof APARTMENT_SVG_ATTRIBUTES.dataBaseZ | typeof APARTMENT_SVG_ATTRIBUTES.dataZ,
   code: ApartmentSvgValidationCode,
   category: ApartmentSvgValidationCategory,
 ): Decimal | undefined {

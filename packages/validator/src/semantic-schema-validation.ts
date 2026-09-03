@@ -3,7 +3,14 @@ import type { ParsedApartmentSvgDocument, ParsedXmlElement } from "@planaxis/par
 import { validateCameraSchema } from "./camera-schema-validation.js";
 import { validateDoorSchema } from "./door-schema-validation.js";
 import { validateFixedElementSchema } from "./fixed-element-schema-validation.js";
-import { createSemanticIdRegistry, SVG_NAMESPACE_URI } from "./semantic-element-validation.js";
+import {
+  APARTMENT_SVG_ATTRIBUTES,
+  APARTMENT_SVG_ELEMENT_NAMES,
+  APARTMENT_SVG_GROUP_IDS,
+  SVG_NAMESPACE_URI,
+} from "./schema-vocabulary.js";
+import type { ApartmentSvgCoreGroupId } from "./schema-vocabulary.js";
+import { createSemanticIdRegistry } from "./semantic-element-validation.js";
 import type {
   SchemaValidCamera,
   SchemaValidDoor,
@@ -19,9 +26,6 @@ import type { ApartmentSvgValidationError } from "./validation-result.js";
 import { validateWallSchema } from "./wall-schema-validation.js";
 import { validateWindowSchema } from "./window-schema-validation.js";
 import { getParsedAttribute } from "./xml-element.js";
-
-type CoreGroupId =
-  "spaces" | "walls" | "windows" | "doors" | "fixed-elements" | "utilities" | "cameras";
 
 export interface SemanticSchemaValidationResult {
   readonly errors: readonly ApartmentSvgValidationError[];
@@ -47,37 +51,37 @@ export function validateApartmentSvgSemanticSchemas(
   const utilities: SchemaValidUtility[] = [];
   const cameras: SchemaValidCamera[] = [];
 
-  validateGroupElements(document, "spaces", (element) => {
+  validateGroupElements(document, APARTMENT_SVG_GROUP_IDS.spaces, (element) => {
     const result = validateSpaceSchema(element, idRegistry);
     errors.push(...result.errors);
     if (result.value !== undefined) spaces.push(result.value);
   });
-  validateGroupElements(document, "walls", (element) => {
+  validateGroupElements(document, APARTMENT_SVG_GROUP_IDS.walls, (element) => {
     const result = validateWallSchema(element, idRegistry);
     errors.push(...result.errors);
     if (result.value !== undefined) walls.push(result.value);
   });
-  validateGroupElements(document, "windows", (element) => {
+  validateGroupElements(document, APARTMENT_SVG_GROUP_IDS.windows, (element) => {
     const result = validateWindowSchema(element, idRegistry);
     errors.push(...result.errors);
     if (result.value !== undefined) windows.push(result.value);
   });
-  validateGroupElements(document, "doors", (element) => {
+  validateGroupElements(document, APARTMENT_SVG_GROUP_IDS.doors, (element) => {
     const result = validateDoorSchema(element, idRegistry);
     errors.push(...result.errors);
     if (result.value !== undefined) doors.push(result.value);
   });
-  validateGroupElements(document, "fixed-elements", (element) => {
+  validateGroupElements(document, APARTMENT_SVG_GROUP_IDS.fixedElements, (element) => {
     const result = validateFixedElementSchema(element, idRegistry);
     errors.push(...result.errors);
     if (result.value !== undefined) fixedElements.push(result.value);
   });
-  validateGroupElements(document, "utilities", (element) => {
+  validateGroupElements(document, APARTMENT_SVG_GROUP_IDS.utilities, (element) => {
     const result = validateUtilitySchema(element, idRegistry);
     errors.push(...result.errors);
     if (result.value !== undefined) utilities.push(result.value);
   });
-  validateGroupElements(document, "cameras", (element) => {
+  validateGroupElements(document, APARTMENT_SVG_GROUP_IDS.cameras, (element) => {
     const result = validateCameraSchema(element, idRegistry);
     errors.push(...result.errors);
     if (result.value !== undefined) cameras.push(result.value);
@@ -97,14 +101,14 @@ export function validateApartmentSvgSemanticSchemas(
 
 function validateGroupElements(
   document: ParsedApartmentSvgDocument,
-  groupId: CoreGroupId,
+  groupId: ApartmentSvgCoreGroupId,
   validateElement: (element: ParsedXmlElement) => void,
 ): void {
   const matchingGroups = document.rootElements.filter(
     (element) =>
-      element.name.localName === "g" &&
+      element.name.localName === APARTMENT_SVG_ELEMENT_NAMES.group &&
       element.name.namespaceUri === SVG_NAMESPACE_URI &&
-      getParsedAttribute(element, "id") === groupId,
+      getParsedAttribute(element, APARTMENT_SVG_ATTRIBUTES.id) === groupId,
   );
   if (matchingGroups.length !== 1) {
     return;

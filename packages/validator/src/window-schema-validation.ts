@@ -1,6 +1,16 @@
 import type { ParsedXmlElement } from "@planaxis/parser";
 
 import {
+  APARTMENT_SVG_ATTRIBUTES,
+  APARTMENT_SVG_ELEMENT_NAMES,
+  APARTMENT_SVG_GROUP_IDS,
+  APARTMENT_SVG_SEMANTIC_KINDS,
+  APARTMENT_SVG_SHARED_ENUM_VALUES,
+  APARTMENT_SVG_WINDOW_FRAME_MATERIAL_VALUES,
+  APARTMENT_SVG_WINDOW_GLASS_TYPE_VALUES,
+  APARTMENT_SVG_WINDOW_OPENING_TYPE_VALUES,
+} from "./schema-vocabulary.js";
+import {
   elementError,
   readOptionalAttribute,
   readOptionalEnum,
@@ -29,39 +39,33 @@ import { APARTMENT_SVG_VALIDATION_CODES } from "./validation-codes.js";
 import type { ApartmentSvgValidationError } from "./validation-result.js";
 
 const ALLOWED_ATTRIBUTES = new Set([
-  "x",
-  "y",
-  "width",
-  "height",
-  "data-kind",
-  "data-wall",
-  "data-sill-height",
-  "data-opening-height",
-  "data-opening-type",
-  "data-frame-material",
-  "data-frame-material-description",
-  "data-frame-color",
-  "data-glass-type",
-  "data-glass-type-description",
-  "data-radiator-below",
-  "data-status",
+  APARTMENT_SVG_ATTRIBUTES.x,
+  APARTMENT_SVG_ATTRIBUTES.y,
+  APARTMENT_SVG_ATTRIBUTES.width,
+  APARTMENT_SVG_ATTRIBUTES.height,
+  APARTMENT_SVG_ATTRIBUTES.dataKind,
+  APARTMENT_SVG_ATTRIBUTES.dataWall,
+  APARTMENT_SVG_ATTRIBUTES.dataSillHeight,
+  APARTMENT_SVG_ATTRIBUTES.dataOpeningHeight,
+  APARTMENT_SVG_ATTRIBUTES.dataOpeningType,
+  APARTMENT_SVG_ATTRIBUTES.dataFrameMaterial,
+  APARTMENT_SVG_ATTRIBUTES.dataFrameMaterialDescription,
+  APARTMENT_SVG_ATTRIBUTES.dataFrameColor,
+  APARTMENT_SVG_ATTRIBUTES.dataGlassType,
+  APARTMENT_SVG_ATTRIBUTES.dataGlassTypeDescription,
+  APARTMENT_SVG_ATTRIBUTES.dataRadiatorBelow,
+  APARTMENT_SVG_ATTRIBUTES.dataStatus,
 ]);
-const ALLOWED_KINDS = new Set(["window"]);
-const OPENING_TYPES = new Set<ApartmentSvgWindowOpeningType>([
-  "fixed",
-  "casement",
-  "tilt",
-  "tilt-turn",
-  "sliding",
-]);
-const FRAME_MATERIALS = new Set<ApartmentSvgWindowFrameMaterial>([
-  "wood",
-  "plastic",
-  "aluminium",
-  "steel",
-  "other",
-]);
-const GLASS_TYPES = new Set<ApartmentSvgWindowGlassType>(["clear", "frosted", "tinted", "other"]);
+const ALLOWED_KINDS = new Set([APARTMENT_SVG_SEMANTIC_KINDS.window]);
+const OPENING_TYPES = new Set<ApartmentSvgWindowOpeningType>(
+  Object.values(APARTMENT_SVG_WINDOW_OPENING_TYPE_VALUES),
+);
+const FRAME_MATERIALS = new Set<ApartmentSvgWindowFrameMaterial>(
+  Object.values(APARTMENT_SVG_WINDOW_FRAME_MATERIAL_VALUES),
+);
+const GLASS_TYPES = new Set<ApartmentSvgWindowGlassType>(
+  Object.values(APARTMENT_SVG_WINDOW_GLASS_TYPE_VALUES),
+);
 
 export interface WindowSchemaValidationResult {
   readonly errors: readonly ApartmentSvgValidationError[];
@@ -75,8 +79,8 @@ export function validateWindowSchema(
   const context = validateCommonSemanticElement(
     element,
     {
-      groupId: "windows",
-      elementName: "rect",
+      groupId: APARTMENT_SVG_GROUP_IDS.windows,
+      elementName: APARTMENT_SVG_ELEMENT_NAMES.rectangle,
       allowedAttributes: ALLOWED_ATTRIBUTES,
       allowedKinds: ALLOWED_KINDS,
       invalidValueCode: APARTMENT_SVG_VALIDATION_CODES.window.invalidAttributeValue,
@@ -91,14 +95,14 @@ export function validateWindowSchema(
   );
   const wallId = readRequiredRef(
     context,
-    "data-wall",
+    APARTMENT_SVG_ATTRIBUTES.dataWall,
     APARTMENT_SVG_VALIDATION_CODES.window.invalidAttributeValue,
     "window",
     "window.data-wall",
   );
   const sillHeight = readRequiredScalar(
     context,
-    "data-sill-height",
+    APARTMENT_SVG_ATTRIBUTES.dataSillHeight,
     validateApartmentSvgNonNegativeNumber,
     APARTMENT_SVG_VALIDATION_CODES.window.invalidAttributeValue,
     "window",
@@ -106,7 +110,7 @@ export function validateWindowSchema(
   );
   const openingHeight = readRequiredScalar(
     context,
-    "data-opening-height",
+    APARTMENT_SVG_ATTRIBUTES.dataOpeningHeight,
     validateApartmentSvgPositiveNumber,
     APARTMENT_SVG_VALIDATION_CODES.window.invalidAttributeValue,
     "window",
@@ -114,17 +118,20 @@ export function validateWindowSchema(
   );
   const openingType = readOptionalEnum(
     context,
-    "data-opening-type",
+    APARTMENT_SVG_ATTRIBUTES.dataOpeningType,
     OPENING_TYPES,
     APARTMENT_SVG_VALIDATION_CODES.window.invalidAttributeValue,
     "window",
     "window.data-opening-type",
   );
 
-  const rawFrameMaterial = readOptionalAttribute(context, "data-frame-material");
+  const rawFrameMaterial = readOptionalAttribute(
+    context,
+    APARTMENT_SVG_ATTRIBUTES.dataFrameMaterial,
+  );
   const frameMaterial = readOptionalEnum(
     context,
-    "data-frame-material",
+    APARTMENT_SVG_ATTRIBUTES.dataFrameMaterial,
     FRAME_MATERIALS,
     APARTMENT_SVG_VALIDATION_CODES.window.invalidAttributeValue,
     "window",
@@ -134,15 +141,15 @@ export function validateWindowSchema(
     context,
     rawFrameMaterial,
     frameMaterial,
-    "data-frame-material-description",
+    APARTMENT_SVG_ATTRIBUTES.dataFrameMaterialDescription,
     "window.frame-material-description",
   );
-  const frameColor = readOptionalAttribute(context, "data-frame-color");
+  const frameColor = readOptionalAttribute(context, APARTMENT_SVG_ATTRIBUTES.dataFrameColor);
 
-  const rawGlassType = readOptionalAttribute(context, "data-glass-type");
+  const rawGlassType = readOptionalAttribute(context, APARTMENT_SVG_ATTRIBUTES.dataGlassType);
   const glassType = readOptionalEnum(
     context,
-    "data-glass-type",
+    APARTMENT_SVG_ATTRIBUTES.dataGlassType,
     GLASS_TYPES,
     APARTMENT_SVG_VALIDATION_CODES.window.invalidAttributeValue,
     "window",
@@ -152,12 +159,12 @@ export function validateWindowSchema(
     context,
     rawGlassType,
     glassType,
-    "data-glass-type-description",
+    APARTMENT_SVG_ATTRIBUTES.dataGlassTypeDescription,
     "window.glass-type-description",
   );
   const radiatorBelowId = readOptionalRef(
     context,
-    "data-radiator-below",
+    APARTMENT_SVG_ATTRIBUTES.dataRadiatorBelow,
     APARTMENT_SVG_VALIDATION_CODES.window.invalidAttributeValue,
     "window",
     "window.data-radiator-below",
@@ -189,7 +196,7 @@ export function validateWindowSchema(
     errors,
     value: Object.freeze({
       id: context.id,
-      kind: "window",
+      kind: APARTMENT_SVG_SEMANTIC_KINDS.window,
       x: rectangle.x,
       y: rectangle.y,
       width: rectangle.width,
@@ -221,7 +228,7 @@ function validateConditionalDescription<T extends string>(
     return undefined;
   }
 
-  if (discriminator === "other") {
+  if (discriminator === APARTMENT_SVG_SHARED_ENUM_VALUES.other) {
     if (description === undefined) {
       reportConditionalAttribute(
         context,

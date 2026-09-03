@@ -2,6 +2,12 @@ import { createDecimal } from "@planaxis/geometry";
 import type { ParsedXmlElement } from "@planaxis/parser";
 
 import {
+  APARTMENT_SVG_ATTRIBUTES,
+  APARTMENT_SVG_ELEMENT_NAMES,
+  APARTMENT_SVG_GROUP_IDS,
+  APARTMENT_SVG_SEMANTIC_KINDS,
+} from "./schema-vocabulary.js";
+import {
   elementError,
   readRequiredScalar,
   validateCommonSemanticElement,
@@ -22,16 +28,16 @@ import type { ApartmentSvgValidationError } from "./validation-result.js";
 import { getParsedAttribute } from "./xml-element.js";
 
 const ALLOWED_ATTRIBUTES = new Set([
-  "cx",
-  "cy",
-  "r",
-  "data-kind",
-  "data-z",
-  "data-heading",
-  "data-pitch",
-  "data-horizontal-fov",
+  APARTMENT_SVG_ATTRIBUTES.cx,
+  APARTMENT_SVG_ATTRIBUTES.cy,
+  APARTMENT_SVG_ATTRIBUTES.radius,
+  APARTMENT_SVG_ATTRIBUTES.dataKind,
+  APARTMENT_SVG_ATTRIBUTES.dataZ,
+  APARTMENT_SVG_ATTRIBUTES.dataHeading,
+  APARTMENT_SVG_ATTRIBUTES.dataPitch,
+  APARTMENT_SVG_ATTRIBUTES.dataHorizontalFov,
 ]);
-const ALLOWED_KINDS = new Set(["camera"]);
+const ALLOWED_KINDS = new Set([APARTMENT_SVG_SEMANTIC_KINDS.camera]);
 const ZERO = createDecimal("0");
 const ONE_HUNDRED_EIGHTY = createDecimal("180");
 
@@ -47,8 +53,8 @@ export function validateCameraSchema(
   const context = validateCommonSemanticElement(
     element,
     {
-      groupId: "cameras",
-      elementName: "circle",
+      groupId: APARTMENT_SVG_GROUP_IDS.cameras,
+      elementName: APARTMENT_SVG_ELEMENT_NAMES.circle,
       allowedAttributes: ALLOWED_ATTRIBUTES,
       allowedKinds: ALLOWED_KINDS,
       invalidValueCode: APARTMENT_SVG_VALIDATION_CODES.camera.invalidAttributeValue,
@@ -63,13 +69,13 @@ export function validateCameraSchema(
   );
   const z = readRequiredNonNegativeZ(
     context,
-    "data-z",
+    APARTMENT_SVG_ATTRIBUTES.dataZ,
     APARTMENT_SVG_VALIDATION_CODES.camera.invalidAttributeValue,
     "camera",
   );
   const heading = readRequiredScalar(
     context,
-    "data-heading",
+    APARTMENT_SVG_ATTRIBUTES.dataHeading,
     validateApartmentSvgAngle360,
     APARTMENT_SVG_VALIDATION_CODES.camera.invalidAttributeValue,
     "camera",
@@ -77,7 +83,7 @@ export function validateCameraSchema(
   );
   const pitch = readRequiredScalar(
     context,
-    "data-pitch",
+    APARTMENT_SVG_ATTRIBUTES.dataPitch,
     validateApartmentSvgPitchAngle,
     APARTMENT_SVG_VALIDATION_CODES.camera.invalidAttributeValue,
     "camera",
@@ -105,7 +111,7 @@ export function validateCameraSchema(
     errors,
     value: Object.freeze({
       id: context.id,
-      kind: "camera",
+      kind: APARTMENT_SVG_SEMANTIC_KINDS.camera,
       cx: circle.cx,
       cy: circle.cy,
       radius: circle.radius,
@@ -120,7 +126,7 @@ export function validateCameraSchema(
 function readHorizontalFov(context: ReturnType<typeof validateCommonSemanticElement>) {
   const horizontalFov = readRequiredScalar(
     context,
-    "data-horizontal-fov",
+    APARTMENT_SVG_ATTRIBUTES.dataHorizontalFov,
     validateApartmentSvgNumber,
     APARTMENT_SVG_VALIDATION_CODES.camera.invalidAttributeValue,
     "camera",
@@ -134,7 +140,7 @@ function readHorizontalFov(context: ReturnType<typeof validateCommonSemanticElem
     horizontalFov.lessThanOrEqualTo(ZERO) ||
     horizontalFov.greaterThanOrEqualTo(ONE_HUNDRED_EIGHTY)
   ) {
-    const actual = getParsedAttribute(context.element, "data-horizontal-fov");
+    const actual = getParsedAttribute(context.element, APARTMENT_SVG_ATTRIBUTES.dataHorizontalFov);
     context.errors.push(
       elementError(
         APARTMENT_SVG_VALIDATION_CODES.camera.invalidAttributeValue,
@@ -144,7 +150,7 @@ function readHorizontalFov(context: ReturnType<typeof validateCommonSemanticElem
         "Camera horizontal field of view must be strictly between 0 and 180 degrees.",
         context,
         {
-          attribute: "data-horizontal-fov",
+          attribute: APARTMENT_SVG_ATTRIBUTES.dataHorizontalFov,
           ...(actual === undefined ? {} : { actual }),
         },
       ),

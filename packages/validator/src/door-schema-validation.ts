@@ -2,6 +2,13 @@ import type { Decimal, Point2D } from "@planaxis/geometry";
 import type { ParsedXmlElement } from "@planaxis/parser";
 
 import {
+  APARTMENT_SVG_ATTRIBUTES,
+  APARTMENT_SVG_DOOR_TYPE_VALUES,
+  APARTMENT_SVG_ELEMENT_NAMES,
+  APARTMENT_SVG_GROUP_IDS,
+  APARTMENT_SVG_SEMANTIC_KINDS,
+} from "./schema-vocabulary.js";
+import {
   readOptionalAttribute,
   readOptionalScalar,
   readRequiredEnum,
@@ -24,27 +31,27 @@ import { APARTMENT_SVG_VALIDATION_CODES } from "./validation-codes.js";
 import type { ApartmentSvgValidationError } from "./validation-result.js";
 
 const ALLOWED_ATTRIBUTES = new Set([
-  "x",
-  "y",
-  "width",
-  "height",
-  "data-kind",
-  "data-wall",
-  "data-door-type",
-  "data-opening-height",
-  "data-hinge-x",
-  "data-hinge-y",
-  "data-open-leaf-x",
-  "data-open-leaf-y",
-  "data-status",
+  APARTMENT_SVG_ATTRIBUTES.x,
+  APARTMENT_SVG_ATTRIBUTES.y,
+  APARTMENT_SVG_ATTRIBUTES.width,
+  APARTMENT_SVG_ATTRIBUTES.height,
+  APARTMENT_SVG_ATTRIBUTES.dataKind,
+  APARTMENT_SVG_ATTRIBUTES.dataWall,
+  APARTMENT_SVG_ATTRIBUTES.dataDoorType,
+  APARTMENT_SVG_ATTRIBUTES.dataOpeningHeight,
+  APARTMENT_SVG_ATTRIBUTES.dataHingeX,
+  APARTMENT_SVG_ATTRIBUTES.dataHingeY,
+  APARTMENT_SVG_ATTRIBUTES.dataOpenLeafX,
+  APARTMENT_SVG_ATTRIBUTES.dataOpenLeafY,
+  APARTMENT_SVG_ATTRIBUTES.dataStatus,
 ]);
-const ALLOWED_KINDS = new Set(["door"]);
-const DOOR_TYPES = new Set<ApartmentSvgDoorType>(["hinged", "sliding", "opening-only"]);
+const ALLOWED_KINDS = new Set([APARTMENT_SVG_SEMANTIC_KINDS.door]);
+const DOOR_TYPES = new Set<ApartmentSvgDoorType>(Object.values(APARTMENT_SVG_DOOR_TYPE_VALUES));
 const HINGE_ATTRIBUTES = [
-  "data-hinge-x",
-  "data-hinge-y",
-  "data-open-leaf-x",
-  "data-open-leaf-y",
+  APARTMENT_SVG_ATTRIBUTES.dataHingeX,
+  APARTMENT_SVG_ATTRIBUTES.dataHingeY,
+  APARTMENT_SVG_ATTRIBUTES.dataOpenLeafX,
+  APARTMENT_SVG_ATTRIBUTES.dataOpenLeafY,
 ] as const;
 
 export interface DoorSchemaValidationResult {
@@ -59,8 +66,8 @@ export function validateDoorSchema(
   const context = validateCommonSemanticElement(
     element,
     {
-      groupId: "doors",
-      elementName: "rect",
+      groupId: APARTMENT_SVG_GROUP_IDS.doors,
+      elementName: APARTMENT_SVG_ELEMENT_NAMES.rectangle,
       allowedAttributes: ALLOWED_ATTRIBUTES,
       allowedKinds: ALLOWED_KINDS,
       invalidValueCode: APARTMENT_SVG_VALIDATION_CODES.door.invalidAttributeValue,
@@ -75,14 +82,14 @@ export function validateDoorSchema(
   );
   const wallId = readRequiredRef(
     context,
-    "data-wall",
+    APARTMENT_SVG_ATTRIBUTES.dataWall,
     APARTMENT_SVG_VALIDATION_CODES.door.invalidAttributeValue,
     "door",
     "door.data-wall",
   );
   const doorType = readRequiredEnum(
     context,
-    "data-door-type",
+    APARTMENT_SVG_ATTRIBUTES.dataDoorType,
     DOOR_TYPES,
     APARTMENT_SVG_VALIDATION_CODES.door.invalidAttributeValue,
     "door",
@@ -90,7 +97,7 @@ export function validateDoorSchema(
   );
   const openingHeight = readRequiredScalar(
     context,
-    "data-opening-height",
+    APARTMENT_SVG_ATTRIBUTES.dataOpeningHeight,
     validateApartmentSvgPositiveNumber,
     APARTMENT_SVG_VALIDATION_CODES.door.invalidAttributeValue,
     "door",
@@ -122,7 +129,7 @@ export function validateDoorSchema(
 
   const base = {
     id: context.id,
-    kind: "door" as const,
+    kind: APARTMENT_SVG_SEMANTIC_KINDS.door,
     x: rectangle.x,
     y: rectangle.y,
     width: rectangle.width,
@@ -131,7 +138,7 @@ export function validateDoorSchema(
     openingHeight,
     status,
   };
-  if (doorType === "hinged") {
+  if (doorType === APARTMENT_SVG_DOOR_TYPE_VALUES.hinged) {
     if (hingedPoints === undefined) {
       throw new Error("A schema-valid hinged door did not expose its required points.");
     }
@@ -152,7 +159,7 @@ function validateHingedAttributes(
     return undefined;
   }
 
-  if (doorType !== "hinged") {
+  if (doorType !== APARTMENT_SVG_DOOR_TYPE_VALUES.hinged) {
     for (const attribute of HINGE_ATTRIBUTES) {
       if (readOptionalAttribute(context, attribute) !== undefined) {
         reportConditionalAttribute(
@@ -168,10 +175,10 @@ function validateHingedAttributes(
     return undefined;
   }
 
-  const hingeX = readRequiredHingedScalar(context, "data-hinge-x");
-  const hingeY = readRequiredHingedScalar(context, "data-hinge-y");
-  const openLeafX = readRequiredHingedScalar(context, "data-open-leaf-x");
-  const openLeafY = readRequiredHingedScalar(context, "data-open-leaf-y");
+  const hingeX = readRequiredHingedScalar(context, APARTMENT_SVG_ATTRIBUTES.dataHingeX);
+  const hingeY = readRequiredHingedScalar(context, APARTMENT_SVG_ATTRIBUTES.dataHingeY);
+  const openLeafX = readRequiredHingedScalar(context, APARTMENT_SVG_ATTRIBUTES.dataOpenLeafX);
+  const openLeafY = readRequiredHingedScalar(context, APARTMENT_SVG_ATTRIBUTES.dataOpenLeafY);
   if (
     hingeX === undefined ||
     hingeY === undefined ||

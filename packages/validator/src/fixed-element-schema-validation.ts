@@ -1,6 +1,13 @@
 import type { ParsedXmlElement } from "@planaxis/parser";
 
 import {
+  APARTMENT_SVG_ATTRIBUTES,
+  APARTMENT_SVG_ELEMENT_NAMES,
+  APARTMENT_SVG_FIXED_ELEMENT_KIND_VALUES,
+  APARTMENT_SVG_GROUP_IDS,
+  APARTMENT_SVG_SEMANTIC_KINDS,
+} from "./schema-vocabulary.js";
+import {
   elementError,
   readOptionalAttribute,
   readOptionalRef,
@@ -24,29 +31,20 @@ import { APARTMENT_SVG_VALIDATION_CODES } from "./validation-codes.js";
 import type { ApartmentSvgValidationError } from "./validation-result.js";
 
 const ALLOWED_ATTRIBUTES = new Set([
-  "x",
-  "y",
-  "width",
-  "height",
-  "data-kind",
-  "data-base-z",
-  "data-height",
-  "data-wall",
-  "data-type-description",
-  "data-status",
+  APARTMENT_SVG_ATTRIBUTES.x,
+  APARTMENT_SVG_ATTRIBUTES.y,
+  APARTMENT_SVG_ATTRIBUTES.width,
+  APARTMENT_SVG_ATTRIBUTES.height,
+  APARTMENT_SVG_ATTRIBUTES.dataKind,
+  APARTMENT_SVG_ATTRIBUTES.dataBaseZ,
+  APARTMENT_SVG_ATTRIBUTES.dataHeight,
+  APARTMENT_SVG_ATTRIBUTES.dataWall,
+  APARTMENT_SVG_ATTRIBUTES.dataTypeDescription,
+  APARTMENT_SVG_ATTRIBUTES.dataStatus,
 ]);
-const FIXED_ELEMENT_KINDS = new Set<ApartmentSvgFixedElementKind>([
-  "radiator",
-  "column",
-  "shaft",
-  "chimney",
-  "boiler",
-  "built-in",
-  "air-conditioner",
-  "stair",
-  "mechanical-box",
-  "fixed-object",
-]);
+const FIXED_ELEMENT_KINDS = new Set<ApartmentSvgFixedElementKind>(
+  Object.values(APARTMENT_SVG_FIXED_ELEMENT_KIND_VALUES),
+);
 
 export interface FixedElementSchemaValidationResult {
   readonly errors: readonly ApartmentSvgValidationError[];
@@ -60,8 +58,8 @@ export function validateFixedElementSchema(
   const context = validateCommonSemanticElement(
     element,
     {
-      groupId: "fixed-elements",
-      elementName: "rect",
+      groupId: APARTMENT_SVG_GROUP_IDS.fixedElements,
+      elementName: APARTMENT_SVG_ELEMENT_NAMES.rectangle,
       allowedAttributes: ALLOWED_ATTRIBUTES,
       allowedKinds: FIXED_ELEMENT_KINDS,
       invalidValueCode: APARTMENT_SVG_VALIDATION_CODES.fixedElement.invalidAttributeValue,
@@ -77,13 +75,13 @@ export function validateFixedElementSchema(
   const kind = readFixedElementKind(context);
   const baseZ = readRequiredNonNegativeZ(
     context,
-    "data-base-z",
+    APARTMENT_SVG_ATTRIBUTES.dataBaseZ,
     APARTMENT_SVG_VALIDATION_CODES.fixedElement.invalidAttributeValue,
     "fixed-element",
   );
   const elementHeight = readRequiredScalar(
     context,
-    "data-height",
+    APARTMENT_SVG_ATTRIBUTES.dataHeight,
     validateApartmentSvgPositiveNumber,
     APARTMENT_SVG_VALIDATION_CODES.fixedElement.invalidAttributeValue,
     "fixed-element",
@@ -123,7 +121,7 @@ export function validateFixedElementSchema(
     elementHeight,
     status,
   };
-  if (kind === "radiator") {
+  if (kind === APARTMENT_SVG_SEMANTIC_KINDS.radiator) {
     return Object.freeze({
       errors,
       value: Object.freeze({
@@ -133,7 +131,7 @@ export function validateFixedElementSchema(
       }),
     });
   }
-  if (kind === "fixed-object") {
+  if (kind === APARTMENT_SVG_SEMANTIC_KINDS.fixedObject) {
     if (typeDescription === undefined) {
       throw new Error("A schema-valid fixed-object did not expose its required description.");
     }
@@ -149,14 +147,14 @@ export function validateFixedElementSchema(
 function readFixedElementKind(
   context: ReturnType<typeof validateCommonSemanticElement>,
 ): ApartmentSvgFixedElementKind | undefined {
-  const rawKind = readOptionalAttribute(context, "data-kind");
+  const rawKind = readOptionalAttribute(context, APARTMENT_SVG_ATTRIBUTES.dataKind);
   if (rawKind === undefined || context.kind === undefined) {
     return undefined;
   }
 
   return readRequiredEnum(
     context,
-    "data-kind",
+    APARTMENT_SVG_ATTRIBUTES.dataKind,
     FIXED_ELEMENT_KINDS,
     APARTMENT_SVG_VALIDATION_CODES.fixedElement.invalidAttributeValue,
     "fixed-element",
@@ -172,11 +170,11 @@ function validateWallReference(
     return undefined;
   }
 
-  const value = readOptionalAttribute(context, "data-wall");
-  if (kind === "radiator") {
+  const value = readOptionalAttribute(context, APARTMENT_SVG_ATTRIBUTES.dataWall);
+  if (kind === APARTMENT_SVG_SEMANTIC_KINDS.radiator) {
     return readOptionalRef(
       context,
-      "data-wall",
+      APARTMENT_SVG_ATTRIBUTES.dataWall,
       APARTMENT_SVG_VALIDATION_CODES.fixedElement.invalidAttributeValue,
       "fixed-element",
       "fixed-element.data-wall",
@@ -186,7 +184,7 @@ function validateWallReference(
   if (value !== undefined) {
     reportConditionalAttribute(
       context,
-      "data-wall",
+      APARTMENT_SVG_ATTRIBUTES.dataWall,
       'absence unless data-kind="radiator"',
       APARTMENT_SVG_VALIDATION_CODES.fixedElement.conditionalAttribute,
       "fixed-element",
@@ -204,12 +202,12 @@ function validateTypeDescription(
     return undefined;
   }
 
-  const value = readOptionalAttribute(context, "data-type-description");
-  if (kind === "fixed-object") {
+  const value = readOptionalAttribute(context, APARTMENT_SVG_ATTRIBUTES.dataTypeDescription);
+  if (kind === APARTMENT_SVG_SEMANTIC_KINDS.fixedObject) {
     if (value === undefined) {
       reportConditionalAttribute(
         context,
-        "data-type-description",
+        APARTMENT_SVG_ATTRIBUTES.dataTypeDescription,
         'a non-empty value when data-kind="fixed-object"',
         APARTMENT_SVG_VALIDATION_CODES.fixedElement.conditionalAttribute,
         "fixed-element",
@@ -226,7 +224,7 @@ function validateTypeDescription(
           'a non-empty value when data-kind="fixed-object"',
           "A fixed-object requires a non-empty type description.",
           context,
-          { attribute: "data-type-description", actual: value },
+          { attribute: APARTMENT_SVG_ATTRIBUTES.dataTypeDescription, actual: value },
         ),
       );
       return undefined;
@@ -237,7 +235,7 @@ function validateTypeDescription(
   if (value !== undefined) {
     reportConditionalAttribute(
       context,
-      "data-type-description",
+      APARTMENT_SVG_ATTRIBUTES.dataTypeDescription,
       'absence unless data-kind="fixed-object"',
       APARTMENT_SVG_VALIDATION_CODES.fixedElement.conditionalAttribute,
       "fixed-element",

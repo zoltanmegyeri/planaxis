@@ -1,6 +1,14 @@
 import type { ParsedXmlElement } from "@planaxis/parser";
 
 import {
+  APARTMENT_SVG_ATTRIBUTES,
+  APARTMENT_SVG_ELEMENT_NAMES,
+  APARTMENT_SVG_GROUP_IDS,
+  APARTMENT_SVG_SEMANTIC_KINDS,
+  APARTMENT_SVG_WALL_AXIS_VALUES,
+  APARTMENT_SVG_WALL_CLASS_VALUES,
+} from "./schema-vocabulary.js";
+import {
   readOptionalScalar,
   readRequiredEnum,
   validateCommonSemanticElement,
@@ -20,19 +28,19 @@ import { APARTMENT_SVG_VALIDATION_CODES } from "./validation-codes.js";
 import type { ApartmentSvgValidationError } from "./validation-result.js";
 
 const ALLOWED_ATTRIBUTES = new Set([
-  "x",
-  "y",
-  "width",
-  "height",
-  "data-kind",
-  "data-axis",
-  "data-height",
-  "data-class",
-  "data-status",
+  APARTMENT_SVG_ATTRIBUTES.x,
+  APARTMENT_SVG_ATTRIBUTES.y,
+  APARTMENT_SVG_ATTRIBUTES.width,
+  APARTMENT_SVG_ATTRIBUTES.height,
+  APARTMENT_SVG_ATTRIBUTES.dataKind,
+  APARTMENT_SVG_ATTRIBUTES.dataAxis,
+  APARTMENT_SVG_ATTRIBUTES.dataHeight,
+  APARTMENT_SVG_ATTRIBUTES.dataClass,
+  APARTMENT_SVG_ATTRIBUTES.dataStatus,
 ]);
-const ALLOWED_KINDS = new Set(["wall"]);
-const WALL_AXES = new Set<ApartmentSvgWallAxis>(["x", "y"]);
-const WALL_CLASSES = new Set<ApartmentSvgWallClass>(["interior", "exterior"]);
+const ALLOWED_KINDS = new Set([APARTMENT_SVG_SEMANTIC_KINDS.wall]);
+const WALL_AXES = new Set<ApartmentSvgWallAxis>(Object.values(APARTMENT_SVG_WALL_AXIS_VALUES));
+const WALL_CLASSES = new Set<ApartmentSvgWallClass>(Object.values(APARTMENT_SVG_WALL_CLASS_VALUES));
 
 export interface WallSchemaValidationResult {
   readonly errors: readonly ApartmentSvgValidationError[];
@@ -46,8 +54,8 @@ export function validateWallSchema(
   const context = validateCommonSemanticElement(
     element,
     {
-      groupId: "walls",
-      elementName: "rect",
+      groupId: APARTMENT_SVG_GROUP_IDS.walls,
+      elementName: APARTMENT_SVG_ELEMENT_NAMES.rectangle,
       allowedAttributes: ALLOWED_ATTRIBUTES,
       allowedKinds: ALLOWED_KINDS,
       invalidValueCode: APARTMENT_SVG_VALIDATION_CODES.wall.invalidAttributeValue,
@@ -62,7 +70,7 @@ export function validateWallSchema(
   );
   const axis = readRequiredEnum(
     context,
-    "data-axis",
+    APARTMENT_SVG_ATTRIBUTES.dataAxis,
     WALL_AXES,
     APARTMENT_SVG_VALIDATION_CODES.wall.invalidAttributeValue,
     "wall",
@@ -70,7 +78,7 @@ export function validateWallSchema(
   );
   const wallHeight = readOptionalScalar(
     context,
-    "data-height",
+    APARTMENT_SVG_ATTRIBUTES.dataHeight,
     validateApartmentSvgPositiveNumber,
     APARTMENT_SVG_VALIDATION_CODES.wall.invalidAttributeValue,
     "wall",
@@ -78,7 +86,7 @@ export function validateWallSchema(
   );
   const wallClass = readRequiredEnum(
     context,
-    "data-class",
+    APARTMENT_SVG_ATTRIBUTES.dataClass,
     WALL_CLASSES,
     APARTMENT_SVG_VALIDATION_CODES.wall.invalidAttributeValue,
     "wall",
@@ -110,7 +118,7 @@ export function validateWallSchema(
     errors,
     value: Object.freeze({
       id: context.id,
-      kind: "wall",
+      kind: APARTMENT_SVG_SEMANTIC_KINDS.wall,
       x: rectangle.x,
       y: rectangle.y,
       width: rectangle.width,

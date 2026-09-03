@@ -1,5 +1,24 @@
 import type { Decimal, Point2D } from "@planaxis/geometry";
 
+import type {
+  APARTMENT_SVG_DOCUMENT_VALUES,
+  APARTMENT_SVG_DOOR_TYPE_VALUES,
+  APARTMENT_SVG_FIXED_ELEMENT_KIND_VALUES,
+  APARTMENT_SVG_METADATA_COORDINATE_VALUES,
+  APARTMENT_SVG_SEMANTIC_KINDS,
+  APARTMENT_SVG_SPACE_ENCLOSURE_VALUES,
+  APARTMENT_SVG_SPACE_FUNCTION_VALUES,
+  APARTMENT_SVG_STATUS_VALUES,
+  APARTMENT_SVG_UTILITY_KIND_VALUES,
+  APARTMENT_SVG_WALL_AXIS_VALUES,
+  APARTMENT_SVG_WALL_CLASS_VALUES,
+  APARTMENT_SVG_WINDOW_FRAME_MATERIAL_VALUES,
+  APARTMENT_SVG_WINDOW_GLASS_TYPE_VALUES,
+  APARTMENT_SVG_WINDOW_OPENING_TYPE_VALUES,
+} from "./schema-vocabulary.js";
+
+type VocabularyValue<T> = T[keyof T];
+
 export interface SchemaValidApartmentSvgViewBox {
   readonly minX: Decimal;
   readonly minY: Decimal;
@@ -8,20 +27,20 @@ export interface SchemaValidApartmentSvgViewBox {
 }
 
 export interface SchemaValidApartmentSvgMetadata {
-  readonly schema: "apartment-svg/2.1";
+  readonly schema: typeof APARTMENT_SVG_DOCUMENT_VALUES.metadataSchema;
   readonly project: {
     readonly name: string;
-    readonly units: "cm";
+    readonly units: typeof APARTMENT_SVG_DOCUMENT_VALUES.unit;
   };
   readonly coordinateSystem: {
-    readonly x: "right";
-    readonly y: "down";
-    readonly z: "up";
+    readonly x: typeof APARTMENT_SVG_METADATA_COORDINATE_VALUES.x;
+    readonly y: typeof APARTMENT_SVG_METADATA_COORDINATE_VALUES.y;
+    readonly z: typeof APARTMENT_SVG_METADATA_COORDINATE_VALUES.z;
     readonly headingDegrees: {
-      readonly 0: "+x";
-      readonly 90: "+y";
-      readonly 180: "-x";
-      readonly 270: "-y";
+      readonly 0: typeof APARTMENT_SVG_METADATA_COORDINATE_VALUES.heading0;
+      readonly 90: typeof APARTMENT_SVG_METADATA_COORDINATE_VALUES.heading90;
+      readonly 180: typeof APARTMENT_SVG_METADATA_COORDINATE_VALUES.heading180;
+      readonly 270: typeof APARTMENT_SVG_METADATA_COORDINATE_VALUES.heading270;
     };
   };
   readonly level: {
@@ -40,29 +59,17 @@ export interface SchemaValidApartmentSvgLocation {
   readonly timeZone?: string;
 }
 
-export type ApartmentSvgStatus = "fixed" | "modifiable" | "proposal";
+export type ApartmentSvgStatus = VocabularyValue<typeof APARTMENT_SVG_STATUS_VALUES>;
 
-export type ApartmentSvgSpaceFunction =
-  | "living-room"
-  | "dining"
-  | "kitchen"
-  | "bedroom"
-  | "bathroom"
-  | "toilet"
-  | "hall"
-  | "corridor"
-  | "entrance"
-  | "home-office"
-  | "storage"
-  | "utility"
-  | "balcony"
-  | "other";
+export type ApartmentSvgSpaceFunction = VocabularyValue<typeof APARTMENT_SVG_SPACE_FUNCTION_VALUES>;
 
-export type ApartmentSvgSpaceEnclosure = "closed" | "partial" | "open";
+export type ApartmentSvgSpaceEnclosure = VocabularyValue<
+  typeof APARTMENT_SVG_SPACE_ENCLOSURE_VALUES
+>;
 
 export interface SchemaValidSpace {
   readonly id: string;
-  readonly kind: "zone";
+  readonly kind: typeof APARTMENT_SVG_SEMANTIC_KINDS.zone;
   readonly points: readonly Point2D[];
   readonly name: string;
   readonly function: ApartmentSvgSpaceFunction;
@@ -70,12 +77,12 @@ export interface SchemaValidSpace {
   readonly enclosure: ApartmentSvgSpaceEnclosure;
 }
 
-export type ApartmentSvgWallAxis = "x" | "y";
-export type ApartmentSvgWallClass = "interior" | "exterior";
+export type ApartmentSvgWallAxis = VocabularyValue<typeof APARTMENT_SVG_WALL_AXIS_VALUES>;
+export type ApartmentSvgWallClass = VocabularyValue<typeof APARTMENT_SVG_WALL_CLASS_VALUES>;
 
 export interface SchemaValidWall {
   readonly id: string;
-  readonly kind: "wall";
+  readonly kind: typeof APARTMENT_SVG_SEMANTIC_KINDS.wall;
   readonly x: Decimal;
   readonly y: Decimal;
   readonly width: Decimal;
@@ -86,13 +93,19 @@ export interface SchemaValidWall {
   readonly status: ApartmentSvgStatus;
 }
 
-export type ApartmentSvgWindowOpeningType = "fixed" | "casement" | "tilt" | "tilt-turn" | "sliding";
-export type ApartmentSvgWindowFrameMaterial = "wood" | "plastic" | "aluminium" | "steel" | "other";
-export type ApartmentSvgWindowGlassType = "clear" | "frosted" | "tinted" | "other";
+export type ApartmentSvgWindowOpeningType = VocabularyValue<
+  typeof APARTMENT_SVG_WINDOW_OPENING_TYPE_VALUES
+>;
+export type ApartmentSvgWindowFrameMaterial = VocabularyValue<
+  typeof APARTMENT_SVG_WINDOW_FRAME_MATERIAL_VALUES
+>;
+export type ApartmentSvgWindowGlassType = VocabularyValue<
+  typeof APARTMENT_SVG_WINDOW_GLASS_TYPE_VALUES
+>;
 
 export interface SchemaValidWindow {
   readonly id: string;
-  readonly kind: "window";
+  readonly kind: typeof APARTMENT_SVG_SEMANTIC_KINDS.window;
   readonly x: Decimal;
   readonly y: Decimal;
   readonly width: Decimal;
@@ -112,7 +125,7 @@ export interface SchemaValidWindow {
 
 interface SchemaValidDoorBase {
   readonly id: string;
-  readonly kind: "door";
+  readonly kind: typeof APARTMENT_SVG_SEMANTIC_KINDS.door;
   readonly x: Decimal;
   readonly y: Decimal;
   readonly width: Decimal;
@@ -122,36 +135,28 @@ interface SchemaValidDoorBase {
   readonly status: ApartmentSvgStatus;
 }
 
-export type ApartmentSvgDoorType = "hinged" | "sliding" | "opening-only";
+export type ApartmentSvgDoorType = VocabularyValue<typeof APARTMENT_SVG_DOOR_TYPE_VALUES>;
 
 export interface SchemaValidHingedDoor extends SchemaValidDoorBase {
-  readonly doorType: "hinged";
+  readonly doorType: typeof APARTMENT_SVG_DOOR_TYPE_VALUES.hinged;
   readonly hinge: Point2D;
   readonly openLeaf: Point2D;
 }
 
 export interface SchemaValidSlidingDoor extends SchemaValidDoorBase {
-  readonly doorType: "sliding";
+  readonly doorType: typeof APARTMENT_SVG_DOOR_TYPE_VALUES.sliding;
 }
 
 export interface SchemaValidOpeningOnlyDoor extends SchemaValidDoorBase {
-  readonly doorType: "opening-only";
+  readonly doorType: typeof APARTMENT_SVG_DOOR_TYPE_VALUES.openingOnly;
 }
 
 export type SchemaValidDoor =
   SchemaValidHingedDoor | SchemaValidSlidingDoor | SchemaValidOpeningOnlyDoor;
 
-export type ApartmentSvgFixedElementKind =
-  | "radiator"
-  | "column"
-  | "shaft"
-  | "chimney"
-  | "boiler"
-  | "built-in"
-  | "air-conditioner"
-  | "stair"
-  | "mechanical-box"
-  | "fixed-object";
+export type ApartmentSvgFixedElementKind = VocabularyValue<
+  typeof APARTMENT_SVG_FIXED_ELEMENT_KIND_VALUES
+>;
 
 interface SchemaValidFixedElementBase {
   readonly id: string;
@@ -165,24 +170,26 @@ interface SchemaValidFixedElementBase {
 }
 
 export interface SchemaValidRadiator extends SchemaValidFixedElementBase {
-  readonly kind: "radiator";
+  readonly kind: typeof APARTMENT_SVG_SEMANTIC_KINDS.radiator;
   readonly wallId?: string;
 }
 
 export interface SchemaValidFixedObject extends SchemaValidFixedElementBase {
-  readonly kind: "fixed-object";
+  readonly kind: typeof APARTMENT_SVG_SEMANTIC_KINDS.fixedObject;
   readonly typeDescription: string;
 }
 
 export interface SchemaValidOtherFixedElement extends SchemaValidFixedElementBase {
-  readonly kind: Exclude<ApartmentSvgFixedElementKind, "radiator" | "fixed-object">;
+  readonly kind: Exclude<
+    ApartmentSvgFixedElementKind,
+    typeof APARTMENT_SVG_SEMANTIC_KINDS.radiator | typeof APARTMENT_SVG_SEMANTIC_KINDS.fixedObject
+  >;
 }
 
 export type SchemaValidFixedElement =
   SchemaValidRadiator | SchemaValidFixedObject | SchemaValidOtherFixedElement;
 
-export type ApartmentSvgUtilityKind =
-  "socket" | "ethernet" | "tv-coax" | "light-switch" | "ceiling-light" | "wall-light";
+export type ApartmentSvgUtilityKind = VocabularyValue<typeof APARTMENT_SVG_UTILITY_KIND_VALUES>;
 
 interface SchemaValidUtilityBase {
   readonly id: string;
@@ -194,19 +201,19 @@ interface SchemaValidUtilityBase {
 }
 
 export interface SchemaValidWallUtility extends SchemaValidUtilityBase {
-  readonly kind: Exclude<ApartmentSvgUtilityKind, "ceiling-light">;
+  readonly kind: Exclude<ApartmentSvgUtilityKind, typeof APARTMENT_SVG_SEMANTIC_KINDS.ceilingLight>;
   readonly wallId: string;
 }
 
 export interface SchemaValidCeilingLight extends SchemaValidUtilityBase {
-  readonly kind: "ceiling-light";
+  readonly kind: typeof APARTMENT_SVG_SEMANTIC_KINDS.ceilingLight;
 }
 
 export type SchemaValidUtility = SchemaValidWallUtility | SchemaValidCeilingLight;
 
 export interface SchemaValidCamera {
   readonly id: string;
-  readonly kind: "camera";
+  readonly kind: typeof APARTMENT_SVG_SEMANTIC_KINDS.camera;
   readonly cx: Decimal;
   readonly cy: Decimal;
   readonly radius: Decimal;
@@ -230,9 +237,9 @@ export type SchemaValidSemanticElement =
  * geometric or topological conformance is implied by this type.
  */
 export interface SchemaValidApartmentSvgDocument {
-  readonly schema: "apartment-svg";
-  readonly schemaVersion: "2.1";
-  readonly unit: "cm";
+  readonly schema: typeof APARTMENT_SVG_DOCUMENT_VALUES.schema;
+  readonly schemaVersion: typeof APARTMENT_SVG_DOCUMENT_VALUES.schemaVersion;
+  readonly unit: typeof APARTMENT_SVG_DOCUMENT_VALUES.unit;
   readonly viewBox: SchemaValidApartmentSvgViewBox;
   readonly metadata: SchemaValidApartmentSvgMetadata;
   readonly spaces: readonly SchemaValidSpace[];

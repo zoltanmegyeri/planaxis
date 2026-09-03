@@ -3,6 +3,7 @@ import type { ParsedApartmentSvgDocument } from "@planaxis/parser";
 import { validateApartmentSvgTopLevelStructure } from "./group-validation.js";
 import { validateApartmentSvgMetadataWithValues } from "./metadata-validation.js";
 import { validateApartmentSvgRootWithValues } from "./root-validation.js";
+import { APARTMENT_SVG_ATTRIBUTES } from "./schema-vocabulary.js";
 import type {
   SchemaValidApartmentSvgMetadata,
   SchemaValidApartmentSvgViewBox,
@@ -32,7 +33,7 @@ export function validateApartmentSvgDocumentSchemaWithValues(
   document: ParsedApartmentSvgDocument,
 ): ApartmentSvgDocumentSchemaValidationWithValues {
   const rootResult = validateApartmentSvgRootWithValues(document);
-  const rootDataUnit = getParsedAttribute(document.rootElement, "data-unit");
+  const rootDataUnit = getParsedAttribute(document.rootElement, APARTMENT_SVG_ATTRIBUTES.dataUnit);
   const metadataResult = validateApartmentSvgMetadataWithValues(document, rootDataUnit);
   const groupErrors = validateApartmentSvgTopLevelStructure(document);
   const errors = Object.freeze([...rootResult.errors, ...metadataResult.errors, ...groupErrors]);

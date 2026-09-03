@@ -1,19 +1,24 @@
 import { createDecimal } from "@planaxis/geometry";
 import type { ParsedApartmentSvgDocument } from "@planaxis/parser";
 
+import {
+  APARTMENT_SVG_ATTRIBUTES,
+  APARTMENT_SVG_DOCUMENT_VALUES,
+  APARTMENT_SVG_ELEMENT_NAMES,
+  SVG_NAMESPACE_URI,
+} from "./schema-vocabulary.js";
 import type { SchemaValidApartmentSvgViewBox } from "./schema-valid-apartment-svg.js";
 import { isApartmentSvgNumberLexeme } from "./scalar-validation.js";
 import { APARTMENT_SVG_VALIDATION_CODES } from "./validation-codes.js";
 import type { ApartmentSvgValidationError } from "./validation-result.js";
 import { getParsedAttribute } from "./xml-element.js";
 
-const SVG_NAMESPACE_URI = "http://www.w3.org/2000/svg";
 const ZERO = createDecimal("0");
 
 const REQUIRED_ROOT_ATTRIBUTE_VALUES = Object.freeze({
-  "data-schema": "apartment-svg",
-  "data-schema-version": "2.1",
-  "data-unit": "cm",
+  [APARTMENT_SVG_ATTRIBUTES.dataSchema]: APARTMENT_SVG_DOCUMENT_VALUES.schema,
+  [APARTMENT_SVG_ATTRIBUTES.dataSchemaVersion]: APARTMENT_SVG_DOCUMENT_VALUES.schemaVersion,
+  [APARTMENT_SVG_ATTRIBUTES.dataUnit]: APARTMENT_SVG_DOCUMENT_VALUES.unit,
 });
 
 export function validateApartmentSvgRoot(
@@ -34,8 +39,8 @@ export function validateApartmentSvgRootWithValues(
   const root = document.rootElement;
 
   if (
-    root.name.qualifiedName !== "svg" ||
-    root.name.localName !== "svg" ||
+    root.name.qualifiedName !== APARTMENT_SVG_ELEMENT_NAMES.root ||
+    root.name.localName !== APARTMENT_SVG_ELEMENT_NAMES.root ||
     root.name.prefix !== null
   ) {
     errors.push(
@@ -54,7 +59,7 @@ export function validateApartmentSvgRootWithValues(
   );
   if (
     root.name.namespaceUri !== SVG_NAMESPACE_URI ||
-    defaultNamespace?.qualifiedName !== "xmlns" ||
+    defaultNamespace?.qualifiedName !== APARTMENT_SVG_ATTRIBUTES.xmlns ||
     defaultNamespace.namespaceUri !== SVG_NAMESPACE_URI
   ) {
     errors.push(
@@ -64,7 +69,7 @@ export function validateApartmentSvgRootWithValues(
         `an explicit default xmlns declaration equal to ${SVG_NAMESPACE_URI}`,
         "The Apartment SVG root must declare and use the required SVG default namespace.",
         {
-          attribute: "xmlns",
+          attribute: APARTMENT_SVG_ATTRIBUTES.xmlns,
           actual: defaultNamespace?.namespaceUri ?? root.name.namespaceUri ?? "missing",
         },
       ),
@@ -108,9 +113,14 @@ function validateViewBox(
   document: ParsedApartmentSvgDocument,
   errors: ApartmentSvgValidationError[],
 ): SchemaValidApartmentSvgViewBox | undefined {
-  const viewBox = getParsedAttribute(document.rootElement, "viewBox");
+  const viewBox = getParsedAttribute(document.rootElement, APARTMENT_SVG_ATTRIBUTES.viewBox);
   if (viewBox === undefined) {
-    errors.push(missingRootAttribute("viewBox", "exactly four Apartment SVG Number values"));
+    errors.push(
+      missingRootAttribute(
+        APARTMENT_SVG_ATTRIBUTES.viewBox,
+        "exactly four Apartment SVG Number values",
+      ),
+    );
     return undefined;
   }
 
@@ -122,7 +132,7 @@ function validateViewBox(
         "root.viewBox-arity",
         "exactly four whitespace-separated Apartment SVG Number values",
         "The root viewBox must contain exactly four Apartment SVG numbers.",
-        { attribute: "viewBox", actual: viewBox },
+        { attribute: APARTMENT_SVG_ATTRIBUTES.viewBox, actual: viewBox },
       ),
     );
     return undefined;
@@ -135,7 +145,7 @@ function validateViewBox(
         "root.viewBox-number-lexemes",
         "four values matching -?[0-9]+(\\.[0-9]+)?",
         "The root viewBox contains a value that is not an Apartment SVG Number.",
-        { attribute: "viewBox", actual: viewBox },
+        { attribute: APARTMENT_SVG_ATTRIBUTES.viewBox, actual: viewBox },
       ),
     );
     return undefined;
@@ -161,7 +171,7 @@ function validateViewBox(
         "root.viewBox-width",
         "viewBox width > 0",
         "The root viewBox width must be positive.",
-        { attribute: "viewBox", actual: widthLexeme },
+        { attribute: APARTMENT_SVG_ATTRIBUTES.viewBox, actual: widthLexeme },
       ),
     );
   }
@@ -173,7 +183,7 @@ function validateViewBox(
         "root.viewBox-height",
         "viewBox height > 0",
         "The root viewBox height must be positive.",
-        { attribute: "viewBox", actual: heightLexeme },
+        { attribute: APARTMENT_SVG_ATTRIBUTES.viewBox, actual: heightLexeme },
       ),
     );
   }

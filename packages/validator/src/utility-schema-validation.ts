@@ -1,6 +1,13 @@
 import type { ParsedXmlElement } from "@planaxis/parser";
 
 import {
+  APARTMENT_SVG_ATTRIBUTES,
+  APARTMENT_SVG_ELEMENT_NAMES,
+  APARTMENT_SVG_GROUP_IDS,
+  APARTMENT_SVG_SEMANTIC_KINDS,
+  APARTMENT_SVG_UTILITY_KIND_VALUES,
+} from "./schema-vocabulary.js";
+import {
   readOptionalAttribute,
   readRequiredEnum,
   readRequiredRef,
@@ -18,22 +25,17 @@ import { APARTMENT_SVG_VALIDATION_CODES } from "./validation-codes.js";
 import type { ApartmentSvgValidationError } from "./validation-result.js";
 
 const ALLOWED_ATTRIBUTES = new Set([
-  "cx",
-  "cy",
-  "r",
-  "data-kind",
-  "data-z",
-  "data-wall",
-  "data-status",
+  APARTMENT_SVG_ATTRIBUTES.cx,
+  APARTMENT_SVG_ATTRIBUTES.cy,
+  APARTMENT_SVG_ATTRIBUTES.radius,
+  APARTMENT_SVG_ATTRIBUTES.dataKind,
+  APARTMENT_SVG_ATTRIBUTES.dataZ,
+  APARTMENT_SVG_ATTRIBUTES.dataWall,
+  APARTMENT_SVG_ATTRIBUTES.dataStatus,
 ]);
-const UTILITY_KINDS = new Set<ApartmentSvgUtilityKind>([
-  "socket",
-  "ethernet",
-  "tv-coax",
-  "light-switch",
-  "ceiling-light",
-  "wall-light",
-]);
+const UTILITY_KINDS = new Set<ApartmentSvgUtilityKind>(
+  Object.values(APARTMENT_SVG_UTILITY_KIND_VALUES),
+);
 
 export interface UtilitySchemaValidationResult {
   readonly errors: readonly ApartmentSvgValidationError[];
@@ -47,8 +49,8 @@ export function validateUtilitySchema(
   const context = validateCommonSemanticElement(
     element,
     {
-      groupId: "utilities",
-      elementName: "circle",
+      groupId: APARTMENT_SVG_GROUP_IDS.utilities,
+      elementName: APARTMENT_SVG_ELEMENT_NAMES.circle,
       allowedAttributes: ALLOWED_ATTRIBUTES,
       allowedKinds: UTILITY_KINDS,
       invalidValueCode: APARTMENT_SVG_VALIDATION_CODES.utility.invalidAttributeValue,
@@ -64,7 +66,7 @@ export function validateUtilitySchema(
   const kind = readUtilityKind(context);
   const z = readRequiredNonNegativeZ(
     context,
-    "data-z",
+    APARTMENT_SVG_ATTRIBUTES.dataZ,
     APARTMENT_SVG_VALIDATION_CODES.utility.invalidAttributeValue,
     "utility",
   );
@@ -96,7 +98,7 @@ export function validateUtilitySchema(
     z,
     ...(status === undefined ? {} : { status }),
   };
-  if (kind === "ceiling-light") {
+  if (kind === APARTMENT_SVG_SEMANTIC_KINDS.ceilingLight) {
     return Object.freeze({ errors, value: Object.freeze({ ...base, kind }) });
   }
 
@@ -118,7 +120,7 @@ function readUtilityKind(
 
   return readRequiredEnum(
     context,
-    "data-kind",
+    APARTMENT_SVG_ATTRIBUTES.dataKind,
     UTILITY_KINDS,
     APARTMENT_SVG_VALIDATION_CODES.utility.invalidAttributeValue,
     "utility",
@@ -134,12 +136,12 @@ function validateWallReference(
     return undefined;
   }
 
-  const value = readOptionalAttribute(context, "data-wall");
-  if (kind === "ceiling-light") {
+  const value = readOptionalAttribute(context, APARTMENT_SVG_ATTRIBUTES.dataWall);
+  if (kind === APARTMENT_SVG_SEMANTIC_KINDS.ceilingLight) {
     if (value !== undefined) {
       reportConditionalAttribute(
         context,
-        "data-wall",
+        APARTMENT_SVG_ATTRIBUTES.dataWall,
         'absence when data-kind="ceiling-light"',
         APARTMENT_SVG_VALIDATION_CODES.utility.conditionalAttribute,
         "utility",
@@ -152,7 +154,7 @@ function validateWallReference(
   if (value === undefined) {
     reportConditionalAttribute(
       context,
-      "data-wall",
+      APARTMENT_SVG_ATTRIBUTES.dataWall,
       "a non-empty unresolved wall ID for a wall-associated utility",
       APARTMENT_SVG_VALIDATION_CODES.utility.conditionalAttribute,
       "utility",
@@ -163,7 +165,7 @@ function validateWallReference(
 
   return readRequiredRef(
     context,
-    "data-wall",
+    APARTMENT_SVG_ATTRIBUTES.dataWall,
     APARTMENT_SVG_VALIDATION_CODES.utility.invalidAttributeValue,
     "utility",
     "utility.data-wall",
