@@ -16,5 +16,8 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@planaxis/geometry": "workspace:*"
   }
 }

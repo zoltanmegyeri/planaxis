@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@planaxis/geometry": "workspace:*",
+    "@planaxis/model": "workspace:*",
     "@planaxis/parser": "workspace:*",
     "lossless-json": "4.3.1",
     "tzdata": "1.0.50"

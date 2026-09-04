@@ -263,6 +263,10 @@ trusted domain representation
 
 Code receiving `ValidatedApartment2D` may rely on the invariants guaranteed by the validation pipeline.
 
+The implemented `buildValidatedApartment2D` entry point is owned by `@planaxis/validator`, while the model contracts are owned by `@planaxis/model`. Construction creates a normalized, read-only domain object graph with domain-oriented bounds, footprints, positions, and space boundaries. Relationships to walls and radiators point to the corresponding constructed domain instances, and a semantic-element ID index contains those same instances.
+
+The model retains exact-decimal canonical metadata and semantic geometry while adding deterministic derived values required by downstream code, including wall length, thickness, centerline, and effective height; window and door opening widths; and hinged-door leaf length and closed free endpoint. SVG marker radii and raw unresolved reference IDs are not part of this domain representation.
+
 ### 5.6. Construction of `ArchitecturalModel3D`
 
 The 3D model builder transforms validated 2D architectural data and explicit Z-related metadata into renderer-independent 3D geometry.
@@ -729,7 +733,7 @@ ADRs describe **why significant decisions were made**.
 
 ## 16. Current Implementation Phase
 
-The executable repository bootstrap, authoritative numeric and geometric foundations, Apartment SVG XML parsing boundary, complete schema validation, reference validation, and complete geometric/topological validation are implemented. Schema validation produces a typed, exact-decimal `SchemaValidApartmentSvgDocument`; reference validation resolves its core relationships into `ReferenceValidApartmentSvgDocument`; and the full geometry stage validates wall/opening geometry, zone topology, semantic `viewBox` containment, utility placement, camera collisions, and global overlap rules. Its nominal `GeometryValidApartmentSvgDocument` is now the final trusted SVG representation. Construction of `ValidatedApartment2D` is the next unimplemented stage.
+The executable repository bootstrap, authoritative numeric and geometric foundations, Apartment SVG XML parsing boundary, complete schema validation, reference validation, complete geometric/topological validation, and `ValidatedApartment2D` construction are implemented. Schema validation produces a typed, exact-decimal `SchemaValidApartmentSvgDocument`; reference validation resolves its core relationships into `ReferenceValidApartmentSvgDocument`; and the full geometry stage validates wall/opening geometry, zone topology, semantic `viewBox` containment, utility placement, camera collisions, and global overlap rules. Its nominal `GeometryValidApartmentSvgDocument` is the final trusted SVG representation before `@planaxis/validator` constructs the normalized, exact-decimal `ValidatedApartment2D` owned by `@planaxis/model`. The next unimplemented stage is the renderer-independent `ArchitecturalModel3D`.
 
 The intended implementation order is broadly:
 

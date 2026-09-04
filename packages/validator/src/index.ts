@@ -1,3 +1,4 @@
+export { buildValidatedApartment2D } from "./build-validated-apartment-2d.js";
 export {
   isApartmentSvgNumberLexeme,
   validateApartmentSvgAngle360,

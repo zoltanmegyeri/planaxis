@@ -7,7 +7,7 @@
 The project is built around the versioned, normative [Apartment SVG 2.1 specification](docs/specifications/apartment-svg/2.1.md), where an SVG document is not merely a drawing: it is the canonical, machine-readable representation of an apartment's geometry and semantics.
 
 > [!NOTE]
-> The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG parser, complete schema and reference validators, and complete geometric/topological validator are in place. Successful geometric validation now produces the nominal `GeometryValidApartmentSvgDocument`, the final trusted SVG representation before the still-unimplemented `ValidatedApartment2D` domain model.
+> The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG parser, complete schema and reference validators, complete geometric/topological validator, and normalized `ValidatedApartment2D` domain model are in place. Successful geometric validation produces the nominal `GeometryValidApartmentSvgDocument`, from which the validator constructs the trusted exact-decimal model used by future 3D code.
 
 ## Project Goals
 
@@ -211,7 +211,7 @@ Natural-language discussion outside the repository may use any language, but rep
 
 ## Development Status
 
-The initial implementation is being developed incrementally. Apartment SVG parsing, complete schema validation, reference validation, and geometric/topological validation are implemented. `GeometryValidApartmentSvgDocument` now marks the final trusted SVG boundary; construction of the trusted 2D model, 3D generation, rendering, and AI-assisted features remain ahead.
+The initial implementation is being developed incrementally. Apartment SVG parsing, complete schema validation, reference validation, geometric/topological validation, and construction of the trusted `ValidatedApartment2D` model are implemented. `GeometryValidApartmentSvgDocument` marks the final trusted SVG boundary, and the normalized 2D domain model is now the trusted input to the future renderer-independent 3D generation stage. 3D generation, rendering, and AI-assisted features remain ahead.
 
 Each implementation phase should have explicit acceptance criteria and automated tests.
 

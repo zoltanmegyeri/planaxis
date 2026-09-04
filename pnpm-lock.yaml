@@ -59,7 +59,11 @@ importers:
         specifier: 'catalog:'
         version: 4.1.11(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3))
 
-  packages/model: {}
+  packages/model:
+    dependencies:
+      '@planaxis/geometry':
+        specifier: workspace:*
+        version: link:../geometry
 
   packages/model-3d: {}
 
@@ -78,6 +82,9 @@ importers:
       '@planaxis/geometry':
         specifier: workspace:*
         version: link:../geometry
+      '@planaxis/model':
+        specifier: workspace:*
+        version: link:../model
       '@planaxis/parser':
         specifier: workspace:*
         version: link:../parser

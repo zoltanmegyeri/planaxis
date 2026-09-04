@@ -1,20 +1,22 @@
 import type { Decimal, Point2D } from "@planaxis/geometry";
+import type {
+  ApartmentFixedElementKind,
+  ApartmentSpaceEnclosure,
+  ApartmentSpaceFunction,
+  ApartmentStatus,
+  ApartmentUtilityKind,
+  ApartmentWallAxis,
+  ApartmentWallClass,
+  ApartmentWindowFrameMaterial,
+  ApartmentWindowGlassType,
+  ApartmentWindowOpeningType,
+} from "@planaxis/model";
 
 import type {
   APARTMENT_SVG_DOCUMENT_VALUES,
   APARTMENT_SVG_DOOR_TYPE_VALUES,
-  APARTMENT_SVG_FIXED_ELEMENT_KIND_VALUES,
   APARTMENT_SVG_METADATA_COORDINATE_VALUES,
   APARTMENT_SVG_SEMANTIC_KINDS,
-  APARTMENT_SVG_SPACE_ENCLOSURE_VALUES,
-  APARTMENT_SVG_SPACE_FUNCTION_VALUES,
-  APARTMENT_SVG_STATUS_VALUES,
-  APARTMENT_SVG_UTILITY_KIND_VALUES,
-  APARTMENT_SVG_WALL_AXIS_VALUES,
-  APARTMENT_SVG_WALL_CLASS_VALUES,
-  APARTMENT_SVG_WINDOW_FRAME_MATERIAL_VALUES,
-  APARTMENT_SVG_WINDOW_GLASS_TYPE_VALUES,
-  APARTMENT_SVG_WINDOW_OPENING_TYPE_VALUES,
 } from "./schema-vocabulary.js";
 
 type VocabularyValue<T> = T[keyof T];
@@ -59,13 +61,11 @@ export interface SchemaValidApartmentSvgLocation {
   readonly timeZone?: string;
 }
 
-export type ApartmentSvgStatus = VocabularyValue<typeof APARTMENT_SVG_STATUS_VALUES>;
+export type ApartmentSvgStatus = ApartmentStatus;
 
-export type ApartmentSvgSpaceFunction = VocabularyValue<typeof APARTMENT_SVG_SPACE_FUNCTION_VALUES>;
+export type ApartmentSvgSpaceFunction = ApartmentSpaceFunction;
 
-export type ApartmentSvgSpaceEnclosure = VocabularyValue<
-  typeof APARTMENT_SVG_SPACE_ENCLOSURE_VALUES
->;
+export type ApartmentSvgSpaceEnclosure = ApartmentSpaceEnclosure;
 
 export interface SchemaValidSpace {
   readonly id: string;
@@ -77,8 +77,8 @@ export interface SchemaValidSpace {
   readonly enclosure: ApartmentSvgSpaceEnclosure;
 }
 
-export type ApartmentSvgWallAxis = VocabularyValue<typeof APARTMENT_SVG_WALL_AXIS_VALUES>;
-export type ApartmentSvgWallClass = VocabularyValue<typeof APARTMENT_SVG_WALL_CLASS_VALUES>;
+export type ApartmentSvgWallAxis = ApartmentWallAxis;
+export type ApartmentSvgWallClass = ApartmentWallClass;
 
 export interface SchemaValidWall {
   readonly id: string;
@@ -93,15 +93,9 @@ export interface SchemaValidWall {
   readonly status: ApartmentSvgStatus;
 }
 
-export type ApartmentSvgWindowOpeningType = VocabularyValue<
-  typeof APARTMENT_SVG_WINDOW_OPENING_TYPE_VALUES
->;
-export type ApartmentSvgWindowFrameMaterial = VocabularyValue<
-  typeof APARTMENT_SVG_WINDOW_FRAME_MATERIAL_VALUES
->;
-export type ApartmentSvgWindowGlassType = VocabularyValue<
-  typeof APARTMENT_SVG_WINDOW_GLASS_TYPE_VALUES
->;
+export type ApartmentSvgWindowOpeningType = ApartmentWindowOpeningType;
+export type ApartmentSvgWindowFrameMaterial = ApartmentWindowFrameMaterial;
+export type ApartmentSvgWindowGlassType = ApartmentWindowGlassType;
 
 export interface SchemaValidWindow {
   readonly id: string;
@@ -154,9 +148,7 @@ export interface SchemaValidOpeningOnlyDoor extends SchemaValidDoorBase {
 export type SchemaValidDoor =
   SchemaValidHingedDoor | SchemaValidSlidingDoor | SchemaValidOpeningOnlyDoor;
 
-export type ApartmentSvgFixedElementKind = VocabularyValue<
-  typeof APARTMENT_SVG_FIXED_ELEMENT_KIND_VALUES
->;
+export type ApartmentSvgFixedElementKind = ApartmentFixedElementKind;
 
 interface SchemaValidFixedElementBase {
   readonly id: string;
@@ -189,7 +181,7 @@ export interface SchemaValidOtherFixedElement extends SchemaValidFixedElementBas
 export type SchemaValidFixedElement =
   SchemaValidRadiator | SchemaValidFixedObject | SchemaValidOtherFixedElement;
 
-export type ApartmentSvgUtilityKind = VocabularyValue<typeof APARTMENT_SVG_UTILITY_KIND_VALUES>;
+export type ApartmentSvgUtilityKind = ApartmentUtilityKind;
 
 interface SchemaValidUtilityBase {
   readonly id: string;
