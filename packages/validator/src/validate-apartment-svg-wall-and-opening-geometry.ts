@@ -1,4 +1,5 @@
 import {
+  arePointsGeometricallyEqual,
   GEOMETRIC_EPSILON,
   getRectBottomEdge,
   getRectCenterX,
@@ -287,10 +288,6 @@ function isValidOpenLeafPoint(
         isGeometricallyEqual(openLeaf.y.minus(hinge.y).abs(), leafLength)
     : isGeometricallyEqual(openLeaf.y, hinge.y) &&
         isGeometricallyEqual(openLeaf.x.minus(hinge.x).abs(), leafLength);
-}
-
-function arePointsGeometricallyEqual(a: Point2D, b: Point2D): boolean {
-  return isGeometricallyEqual(a.x, b.x) && isGeometricallyEqual(a.y, b.y);
 }
 
 function formatWallThicknessCoverage(wall: ReferenceValidWall): string {

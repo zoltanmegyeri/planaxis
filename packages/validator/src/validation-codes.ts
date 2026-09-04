@@ -6,6 +6,7 @@ export const APARTMENT_SVG_VALIDATION_CODES = Object.freeze({
     invalidAttributeValue: "APSVG-ROOT-004",
     invalidViewBox: "APSVG-ROOT-005",
     invalidViewBoxExtent: "APSVG-ROOT-006",
+    semanticGeometryOutsideViewBox: "APSVG-ROOT-007",
   }),
   metadata: Object.freeze({
     missing: "APSVG-METADATA-001",
@@ -41,6 +42,11 @@ export const APARTMENT_SVG_VALIDATION_CODES = Object.freeze({
     duplicate: "APSVG-ID-003",
   }),
   zone: Object.freeze({
+    selfIntersection: "APSVG-ZONE-001",
+    insufficientDistinctVertices: "APSVG-ZONE-002",
+    nonPositiveArea: "APSVG-ZONE-003",
+    overlapsWall: "APSVG-ZONE-004",
+    overlapsZone: "APSVG-ZONE-005",
     invalidAttributeValue: "APSVG-ZONE-101",
     malformedPoints: "APSVG-ZONE-102",
     invalidPointNumber: "APSVG-ZONE-103",
@@ -54,6 +60,8 @@ export const APARTMENT_SVG_VALIDATION_CODES = Object.freeze({
     invalidWallThicknessCoverage: "APSVG-WINDOW-001",
     outsideWallLongitudinalExtent: "APSVG-WINDOW-002",
     exceedsWallHeight: "APSVG-WINDOW-003",
+    intersectsNonSupportingWall: "APSVG-WINDOW-004",
+    overlapsWindow: "APSVG-WINDOW-005",
     invalidAttributeValue: "APSVG-WINDOW-101",
     conditionalAttribute: "APSVG-WINDOW-102",
   }),
@@ -63,6 +71,9 @@ export const APARTMENT_SVG_VALIDATION_CODES = Object.freeze({
     invalidWallThicknessCoverage: "APSVG-DOOR-003",
     outsideWallLongitudinalExtent: "APSVG-DOOR-004",
     exceedsWallHeight: "APSVG-DOOR-005",
+    intersectsNonSupportingWall: "APSVG-DOOR-006",
+    overlapsDoor: "APSVG-DOOR-007",
+    overlapsWindow: "APSVG-DOOR-008",
     invalidAttributeValue: "APSVG-DOOR-101",
     conditionalAttribute: "APSVG-DOOR-102",
   }),
@@ -71,10 +82,13 @@ export const APARTMENT_SVG_VALIDATION_CODES = Object.freeze({
     conditionalAttribute: "APSVG-FIXED-102",
   }),
   utility: Object.freeze({
+    outsideSupportingWall: "APSVG-UTILITY-001",
     invalidAttributeValue: "APSVG-UTILITY-101",
     conditionalAttribute: "APSVG-UTILITY-102",
   }),
   camera: Object.freeze({
+    insideWall: "APSVG-CAMERA-001",
+    insideFixedElement: "APSVG-CAMERA-002",
     invalidAttributeValue: "APSVG-CAMERA-101",
   }),
   reference: Object.freeze({

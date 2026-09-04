@@ -19,6 +19,13 @@ export type {
   ScalarValidationSuccess,
 } from "./scalar-validation.js";
 export { validateApartmentSvgDocumentSchema } from "./validate-apartment-svg-document-schema.js";
+export type { GeometryValidApartmentSvgDocument } from "./geometry-valid-apartment-svg.js";
+export { validateApartmentSvgGeometry } from "./validate-apartment-svg-geometry.js";
+export type {
+  ApartmentSvgGeometryValidationFailure,
+  ApartmentSvgGeometryValidationResult,
+  ApartmentSvgGeometryValidationSuccess,
+} from "./validate-apartment-svg-geometry.js";
 export { validateApartmentSvgReferences } from "./validate-apartment-svg-references.js";
 export type {
   ApartmentSvgReferenceValidationFailure,

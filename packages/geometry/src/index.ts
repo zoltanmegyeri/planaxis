@@ -6,6 +6,33 @@ export {
   isGreaterThanOrEqualWithinTolerance,
   isLessThanOrEqualWithinTolerance,
 } from "./geometric-comparison.js";
+export {
+  doesPolygonOverlapRectWithPositiveArea,
+  doPolygonsOverlapWithPositiveArea,
+  getPolygonArea,
+  getPolygonSignedDoubleArea,
+  hasPolygonSelfIntersection,
+  locatePointInPolygon,
+} from "./polygon-2d.js";
+export type { PointPolygonLocation } from "./polygon-2d.js";
+export { arePointsExactlyEqual, arePointsGeometricallyEqual } from "./point-2d.js";
 export type { Point2D } from "./point-2d.js";
-export { getRectBottomEdge, getRectCenterX, getRectCenterY, getRectRightEdge } from "./rect-2d.js";
+export {
+  doRectsIntersect,
+  doRectsOverlapWithPositiveArea,
+  getRectBottomEdge,
+  getRectCenterX,
+  getRectCenterY,
+  getRectRightEdge,
+  getRectVertices,
+  isPointInRect,
+  isRectContainedInRect,
+} from "./rect-2d.js";
 export type { Rect2D } from "./rect-2d.js";
+export {
+  doSegmentsProperlyIntersect,
+  getOrientation,
+  getSegmentIntersectionType,
+  isPointOnSegment,
+} from "./segment-2d.js";
+export type { SegmentIntersectionType } from "./segment-2d.js";

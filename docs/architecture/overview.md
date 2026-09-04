@@ -224,9 +224,9 @@ Downstream layers do not need to resolve the same raw reference IDs again.
 
 ### 5.4. Geometric and Topological Validation
 
-This stage validates spatial invariants defined by the Apartment SVG specification.
+The implemented full geometric-validation stage consumes `ReferenceValidApartmentSvgDocument`, first composes the narrower wall/opening geometry validator, and then validates every remaining spatial invariant defined by Apartment SVG 2.1. Wall/opening failures stop the full stage before checks that depend on those invariants.
 
-Examples include:
+The complete stage validates:
 
 - wall-axis consistency;
 - window-to-wall relationships;
@@ -234,17 +234,20 @@ Examples include:
 - hinged-door hinge position;
 - hinged-door open-leaf geometry;
 - zone polygon validity;
-- overlap restrictions;
-- utility placement;
-- camera collisions.
+- semantic geometry containment within the root `viewBox`;
+- wall-associated utility placement;
+- camera collisions with wall and fixed-element volumes;
+- opening, zone, and wall overlap restrictions.
 
 The normative geometric tolerance is defined by the Apartment SVG specification.
 
 Validation must report errors rather than silently repair invalid input.
 
+Successful validation produces a nominal `GeometryValidApartmentSvgDocument`. This type preserves the reference-valid document and its exact-decimal geometry unchanged while establishing the final trusted SVG boundary before domain-model construction. An ordinary `ReferenceValidApartmentSvgDocument` is not assignable to this boundary.
+
 ### 5.5. Construction of `ValidatedApartment2D`
 
-Only a document that has passed the required validation stages may produce a `ValidatedApartment2D`.
+Only a `GeometryValidApartmentSvgDocument` that has passed every required validation stage may produce a `ValidatedApartment2D`.
 
 This boundary is important:
 
@@ -726,7 +729,7 @@ ADRs describe **why significant decisions were made**.
 
 ## 16. Current Implementation Phase
 
-The executable repository bootstrap, authoritative numeric and geometric foundations, Apartment SVG XML parsing boundary, document-level schema validation, semantic-element schema validation, reference validation, and the first wall/opening geometric-validation stage are complete. Schema validation produces a typed, exact-decimal `SchemaValidApartmentSvgDocument` with unresolved reference strings and a unique core semantic ID index. Reference validation consumes that representation and produces a `ReferenceValidApartmentSvgDocument` with typed resolved relationships and a consistent reference-valid semantic ID index. The wall/opening stage consumes that reference-valid representation and validates wall axes, effective wall heights, opening-to-wall geometry, and hinged-door geometry without introducing another partially trusted document type. Remaining topology, placement, collision, and overlap validation is next; `ValidatedApartment2D` remains unimplemented.
+The executable repository bootstrap, authoritative numeric and geometric foundations, Apartment SVG XML parsing boundary, complete schema validation, reference validation, and complete geometric/topological validation are implemented. Schema validation produces a typed, exact-decimal `SchemaValidApartmentSvgDocument`; reference validation resolves its core relationships into `ReferenceValidApartmentSvgDocument`; and the full geometry stage validates wall/opening geometry, zone topology, semantic `viewBox` containment, utility placement, camera collisions, and global overlap rules. Its nominal `GeometryValidApartmentSvgDocument` is now the final trusted SVG representation. Construction of `ValidatedApartment2D` is the next unimplemented stage.
 
 The intended implementation order is broadly:
 

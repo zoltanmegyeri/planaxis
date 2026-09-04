@@ -7,7 +7,7 @@
 The project is built around the versioned, normative [Apartment SVG 2.1 specification](docs/specifications/apartment-svg/2.1.md), where an SVG document is not merely a drawing: it is the canonical, machine-readable representation of an apartment's geometry and semantics.
 
 > [!NOTE]
-> The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG parser, complete document/semantic schema validator, and reference validator are in place. Reference validation now produces a typed intermediate representation with resolved core relationships. Geometric and topological validation remain ahead of the trusted apartment domain model.
+> The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG parser, complete schema and reference validators, and complete geometric/topological validator are in place. Successful geometric validation now produces the nominal `GeometryValidApartmentSvgDocument`, the final trusted SVG representation before the still-unimplemented `ValidatedApartment2D` domain model.
 
 ## Project Goals
 
@@ -211,7 +211,7 @@ Natural-language discussion outside the repository may use any language, but rep
 
 ## Development Status
 
-The initial implementation is being developed incrementally. Apartment SVG parsing, complete document/semantic schema validation, and reference validation are implemented. Geometric and topological validation remain ahead of the trusted 2D model, 3D generation, rendering, and AI-assisted features.
+The initial implementation is being developed incrementally. Apartment SVG parsing, complete schema validation, reference validation, and geometric/topological validation are implemented. `GeometryValidApartmentSvgDocument` now marks the final trusted SVG boundary; construction of the trusted 2D model, 3D generation, rendering, and AI-assisted features remain ahead.
 
 Each implementation phase should have explicit acceptance criteria and automated tests.
 
