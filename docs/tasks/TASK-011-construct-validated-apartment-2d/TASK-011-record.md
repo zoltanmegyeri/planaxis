@@ -2,17 +2,17 @@
 
 ## Task Metadata
 
-- **Status:** In Progress
+- **Status:** Completed
 - **Created:** 2026-09-04
 - **Issued:** 2026-09-04
-- **Completed:** —
+- **Completed:** 2026-09-04
 - **Agent:** Codex
 - **Repository:** PlanAxis
 - **Description:** `TASK-011-description.md`
 - **Related tasks:** TASK-003, TASK-010
 - **Related ADRs:** ADR-001
 - **Related specifications:** Apartment SVG 2.1
-- **Implementation commits:** —
+- **Implementation commits:** c8fb3181b4840955eb61812be14a8f24ccb83cc1
 
 ## Purpose
 
@@ -26,49 +26,81 @@ The authoritative task description is stored in:
 
 `TASK-011-description.md`
 
-The task was formally issued on 2026-09-04 and is now immutable for the duration of execution.
+The task was formally issued on 2026-09-04 and remained immutable throughout execution.
 
 ## Execution Record
 
 ### Result
 
-Pending.
+Codex implemented `ValidatedApartment2D` and deterministic construction from `GeometryValidApartmentSvgDocument`.
+
+The implementation:
+
+- defined normalized exact-decimal domain contracts in `@planaxis/model`;
+- added validator-owned `ValidatedApartment2D` construction;
+- normalized SVG-oriented geometry into domain footprints, positions, and boundaries;
+- resolved relationships to the corresponding constructed domain objects;
+- added deterministic wall, opening, and hinged-door derived geometry;
+- added a semantic-element ID index containing domain-model objects;
+- preserved the geometry-valid type boundary;
+- added focused construction and type-boundary tests;
+- updated current-state architecture documentation.
 
 ### Verification
 
-Pending.
+No verification failures were reported for the completed implementation.
+
+Command-by-command verification results were not separately provided during task-record finalization.
 
 ### Deviations from Description
 
-Pending.
+None.
 
 ### Agent-Reported Follow-up Items
 
-Pending.
+None.
 
 ## Human Review
 
 ### Review Status
 
-Pending
+Accepted
 
 ### Review Notes
 
-Pending.
+The TASK-011 implementation was reviewed and accepted without objections.
+
+No problems, issues, deviations, or additional follow-up items were identified during human review.
 
 ### Human Changes After Agent Execution
 
-Pending.
+None.
 
 ## Finalization
 
 ### Implementation Commits
 
-—
+```text
+c8fb3181b4840955eb61812be14a8f24ccb83cc1
+```
 
 ### Commit Messages
 
-—
+```text
+feat(model): construct validated apartment 2D model
+
+Define the normalized exact-decimal ValidatedApartment2D domain
+contracts and expose them from the model package.
+
+Add validator-owned construction from GeometryValidApartmentSvgDocument,
+including resolved relationships, semantic indexing, and deterministic
+wall, opening, and hinged-door derived geometry.
+
+Add focused construction and type-boundary tests and update current-state
+architecture documentation.
+
+Task: TASK-011
+```
 
 ### Supersession
 
@@ -76,6 +108,4 @@ Pending.
 
 ## Notes
 
-TASK-011 constructs the trusted 2D domain representation only.
-
-`ArchitecturalModel3D`, rendering, simulation, backend, and AI workflows remain future work.
+None.
