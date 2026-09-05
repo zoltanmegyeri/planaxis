@@ -7,7 +7,7 @@
 The project is built around the versioned, normative [Apartment SVG 2.1 specification](docs/specifications/apartment-svg/2.1.md), where an SVG document is not merely a drawing: it is the canonical, machine-readable representation of an apartment's geometry and semantics.
 
 > [!NOTE]
-> The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG parser, complete schema and reference validators, complete geometric/topological validator, and normalized `ValidatedApartment2D` domain model are in place. Successful geometric validation produces the nominal `GeometryValidApartmentSvgDocument`, from which the validator constructs the trusted exact-decimal model used by future 3D code.
+> The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG parser, complete schema and reference validators, complete geometric/topological validator, validation CLI, and normalized `ValidatedApartment2D` domain model are in place. Successful geometric validation produces the nominal `GeometryValidApartmentSvgDocument`, from which the validator constructs the trusted exact-decimal model used by future 3D code.
 
 ## Project Goals
 
@@ -107,6 +107,7 @@ PlanAxis is a pnpm workspace monorepo organized around the following areas:
 │   └── ISSUE_TEMPLATE/
 │
 ├── apps/
+│   ├── cli/
 │   ├── server/
 │   └── web/
 │
@@ -143,6 +144,22 @@ PlanAxis is a pnpm workspace monorepo organized around the following areas:
 The exact package structure may be refined during implementation. Architectural boundaries are more important than preserving a particular directory layout.
 
 `fixtures/` is intended for automated verification and may contain intentionally invalid or synthetic Apartment SVG documents. `examples/` is intended for valid, user-facing samples suitable for learning and demonstration.
+
+## Validate an Apartment SVG
+
+Use the developer CLI from the repository root with exactly one Apartment SVG file path:
+
+```bash
+pnpm validate:svg fixtures/valid/minimal-document-schema.svg
+```
+
+A fully valid document prints:
+
+```text
+Apartment SVG is valid.
+```
+
+The command runs the shared parser, schema validator, reference validator, and geometric/topological validator in order. Parser and validation diagnostics are written to standard error, and invalid invocation, file-read failure, or invalid Apartment SVG input produces a non-zero process status.
 
 ## Documentation
 
@@ -211,7 +228,7 @@ Natural-language discussion outside the repository may use any language, but rep
 
 ## Development Status
 
-The initial implementation is being developed incrementally. Apartment SVG parsing, complete schema validation, reference validation, geometric/topological validation, and construction of the trusted `ValidatedApartment2D` model are implemented. `GeometryValidApartmentSvgDocument` marks the final trusted SVG boundary, and the normalized 2D domain model is now the trusted input to the future renderer-independent 3D generation stage. 3D generation, rendering, and AI-assisted features remain ahead.
+The initial implementation is being developed incrementally. Apartment SVG parsing, complete schema validation, reference validation, geometric/topological validation, the developer validation CLI, and construction of the trusted `ValidatedApartment2D` model are implemented. `GeometryValidApartmentSvgDocument` marks the final trusted SVG boundary, and the normalized 2D domain model is now the trusted input to the future renderer-independent 3D generation stage. 3D generation, rendering, and AI-assisted features remain ahead.
 
 Each implementation phase should have explicit acceptance criteria and automated tests.
 
@@ -254,6 +271,7 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm build
+pnpm validate:svg <path-to-svg>
 ```
 
 These commands must remain reliable because they are part of both human development and formal coding-agent verification.

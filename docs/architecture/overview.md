@@ -429,7 +429,14 @@ The server is expected to handle capabilities such as:
 
 The server should consume the same domain contracts as the browser rather than defining an incompatible parallel apartment model.
 
-### 8.3. Shared Core
+### 8.3. Developer Validation CLI
+
+The repository also provides a Node.js developer CLI under `apps/cli` for validating one
+Apartment SVG file. The CLI owns command-line argument handling, UTF-8 filesystem access,
+console reporting, and process status. It composes the parser and validator public APIs in the
+same ordered stages described above and does not implement validation rules itself.
+
+### 8.4. Shared Core
 
 The architecture intentionally favors shared packages for deterministic logic.
 
@@ -456,6 +463,18 @@ Environment-specific concerns must remain outside shared core packages.
 ---
 
 ## 9. Package Boundaries
+
+The application layer currently includes:
+
+```text
+apps/
+    cli/
+    server/
+    web/
+```
+
+`apps/cli` is a Node.js-only adapter around the shared parser and validator packages. Filesystem,
+console, and process concerns remain there rather than entering the shared core.
 
 The monorepo defines these shared package skeletons:
 
@@ -545,6 +564,7 @@ A conceptual dependency direction is:
           ▲              │
            \             ▼
             └──── validator
+                     ├──────────────► CLI application
                      │
                      ▼
                  model-3d
@@ -733,7 +753,7 @@ ADRs describe **why significant decisions were made**.
 
 ## 16. Current Implementation Phase
 
-The executable repository bootstrap, authoritative numeric and geometric foundations, Apartment SVG XML parsing boundary, complete schema validation, reference validation, complete geometric/topological validation, and `ValidatedApartment2D` construction are implemented. Schema validation produces a typed, exact-decimal `SchemaValidApartmentSvgDocument`; reference validation resolves its core relationships into `ReferenceValidApartmentSvgDocument`; and the full geometry stage validates wall/opening geometry, zone topology, semantic `viewBox` containment, utility placement, camera collisions, and global overlap rules. Its nominal `GeometryValidApartmentSvgDocument` is the final trusted SVG representation before `@planaxis/validator` constructs the normalized, exact-decimal `ValidatedApartment2D` owned by `@planaxis/model`. The next unimplemented stage is the renderer-independent `ArchitecturalModel3D`.
+The executable repository bootstrap, authoritative numeric and geometric foundations, Apartment SVG XML parsing boundary, complete schema validation, reference validation, complete geometric/topological validation, developer validation CLI, and `ValidatedApartment2D` construction are implemented. The Node.js CLI reads one Apartment SVG file and composes the shared parse, schema, reference, and geometry stages while keeping filesystem and process behavior in the application layer. Schema validation produces a typed, exact-decimal `SchemaValidApartmentSvgDocument`; reference validation resolves its core relationships into `ReferenceValidApartmentSvgDocument`; and the full geometry stage validates wall/opening geometry, zone topology, semantic `viewBox` containment, utility placement, camera collisions, and global overlap rules. Its nominal `GeometryValidApartmentSvgDocument` is the final trusted SVG representation before `@planaxis/validator` constructs the normalized, exact-decimal `ValidatedApartment2D` owned by `@planaxis/model`. The next unimplemented stage is the renderer-independent `ArchitecturalModel3D`.
 
 The intended implementation order is broadly:
 

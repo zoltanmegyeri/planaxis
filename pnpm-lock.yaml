@@ -33,6 +33,19 @@ importers:
         specifier: 8.68.0
         version: 8.68.0(eslint@10.9.1)(typescript@6.0.3)
 
+  apps/cli:
+    dependencies:
+      '@planaxis/parser':
+        specifier: workspace:*
+        version: link:../../packages/parser
+      '@planaxis/validator':
+        specifier: workspace:*
+        version: link:../../packages/validator
+    devDependencies:
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.11(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3))
+
   apps/server:
     dependencies:
       fastify:
