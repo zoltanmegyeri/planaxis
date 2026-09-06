@@ -54,7 +54,7 @@ export interface ApartmentLocation {
 }
 
 export interface ApartmentMetadata {
-  readonly schema: "apartment-svg/2.1";
+  readonly schema: "apartment-svg/2.2";
   readonly project: {
     readonly name: string;
     readonly units: "cm";

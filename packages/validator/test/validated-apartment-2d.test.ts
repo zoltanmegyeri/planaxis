@@ -18,8 +18,12 @@ import type {
   ReferenceValidApartmentSvgDocument,
 } from "../src/index.js";
 
+const DEFAULT_FOOTPRINT =
+  '<polygon id="apartment-footprint" points="-200,-200 400,-200 400,400 -200,400" data-kind="footprint" />';
+
 const SVG_NAMESPACE_URI = "http://www.w3.org/2000/svg";
 const GROUP_IDS = [
+  "footprint",
   "spaces",
   "walls",
   "windows",
@@ -53,7 +57,7 @@ describe("buildValidatedApartment2D public contract", () => {
     expect(model.bounds.height.toString()).toBe("499.8");
     expect("viewBox" in model).toBe(false);
 
-    expect(model.metadata.schema).toBe("apartment-svg/2.1");
+    expect(model.metadata.schema).toBe("apartment-svg/2.2");
     expect(model.metadata.project).toEqual({ name: "Normalized apartment", units: "cm" });
     expect(model.metadata.coordinateSystem.headingDegrees).toEqual({
       0: "+x",
@@ -283,6 +287,8 @@ function expectHingedDoorGeometry(
 function comprehensiveSvg(): string {
   return createSvg(
     {
+      footprint:
+        '<polygon id="apartment-footprint" points="0.1,0.2 600,0.2 600,500 0.1,500" data-kind="footprint" />',
       spaces: tag("polygon", {
         id: "space-main",
         points: "50.1,110.4 450,110.4 450,450 50.1,450",
@@ -435,8 +441,10 @@ function createSvg(
   metadata: Record<string, unknown> = minimumMetadata(),
   viewBox = "-200 -200 600 600",
 ): string {
-  const groups = GROUP_IDS.map((id) => `<g id="${id}">${contents[id] ?? ""}</g>`).join("\n");
-  return `<svg xmlns="${SVG_NAMESPACE_URI}" viewBox="${viewBox}" data-schema="apartment-svg" data-schema-version="2.1" data-unit="cm">
+  const groups = GROUP_IDS.map(
+    (id) => `<g id="${id}">${contents[id] ?? (id === "footprint" ? DEFAULT_FOOTPRINT : "")}</g>`,
+  ).join("\n");
+  return `<svg xmlns="${SVG_NAMESPACE_URI}" viewBox="${viewBox}" data-schema="apartment-svg" data-schema-version="2.2" data-unit="cm">
     <metadata><![CDATA[${JSON.stringify(metadata)}]]></metadata>
     ${groups}
   </svg>`;
@@ -554,7 +562,7 @@ function tag(name: string, attributes: AttributeOverrides): string {
 
 function minimumMetadata(): Record<string, unknown> {
   return {
-    schema: "apartment-svg/2.1",
+    schema: "apartment-svg/2.2",
     project: { name: "Validated apartment model test", units: "cm" },
     coordinateSystem: {
       x: "right",

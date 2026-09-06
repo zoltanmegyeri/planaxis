@@ -41,6 +41,12 @@ export const APARTMENT_SVG_VALIDATION_CODES = Object.freeze({
     invalid: "APSVG-ID-002",
     duplicate: "APSVG-ID-003",
   }),
+  footprint: Object.freeze({
+    invalidAttributeValue: "APSVG-FOOTPRINT-101",
+    malformedPoints: "APSVG-FOOTPRINT-102",
+    invalidPointNumber: "APSVG-FOOTPRINT-103",
+    invalidMultiplicity: "APSVG-FOOTPRINT-104",
+  }),
   zone: Object.freeze({
     selfIntersection: "APSVG-ZONE-001",
     insufficientDistinctVertices: "APSVG-ZONE-002",
@@ -105,6 +111,7 @@ export type ApartmentSvgValidationCode =
   | Values<typeof APARTMENT_SVG_VALIDATION_CODES.group>
   | Values<typeof APARTMENT_SVG_VALIDATION_CODES.semantic>
   | Values<typeof APARTMENT_SVG_VALIDATION_CODES.id>
+  | Values<typeof APARTMENT_SVG_VALIDATION_CODES.footprint>
   | Values<typeof APARTMENT_SVG_VALIDATION_CODES.zone>
   | Values<typeof APARTMENT_SVG_VALIDATION_CODES.wall>
   | Values<typeof APARTMENT_SVG_VALIDATION_CODES.window>
@@ -120,6 +127,7 @@ export type ApartmentSvgValidationCategory =
   | "group"
   | "semantic"
   | "id"
+  | "footprint"
   | "zone"
   | "wall"
   | "window"

@@ -13,8 +13,12 @@ import type {
   ReferenceValidApartmentSvgDocument,
 } from "../src/index.js";
 
+const DEFAULT_FOOTPRINT =
+  '<polygon id="apartment-footprint" points="-500,-500 1500,-500 1500,1500 -500,1500" data-kind="footprint" />';
+
 const SVG_NAMESPACE_URI = "http://www.w3.org/2000/svg";
 const GROUP_IDS = [
+  "footprint",
   "spaces",
   "walls",
   "windows",
@@ -541,8 +545,10 @@ function errorIdsForCode(
 }
 
 function createSvg(contents: Partial<Record<GroupId, string>> = {}): string {
-  const groups = GROUP_IDS.map((id) => `<g id="${id}">${contents[id] ?? ""}</g>`).join("\n");
-  return `<svg xmlns="${SVG_NAMESPACE_URI}" viewBox="-500 -500 2000 2000" data-schema="apartment-svg" data-schema-version="2.1" data-unit="cm">
+  const groups = GROUP_IDS.map(
+    (id) => `<g id="${id}">${contents[id] ?? (id === "footprint" ? DEFAULT_FOOTPRINT : "")}</g>`,
+  ).join("\n");
+  return `<svg xmlns="${SVG_NAMESPACE_URI}" viewBox="-500 -500 2000 2000" data-schema="apartment-svg" data-schema-version="2.2" data-unit="cm">
     <metadata><![CDATA[${JSON.stringify(minimumMetadata())}]]></metadata>
     ${groups}
   </svg>`;
@@ -729,7 +735,7 @@ function tag(name: string, attributes: AttributeOverrides): string {
 
 function minimumMetadata(): Record<string, unknown> {
   return {
-    schema: "apartment-svg/2.1",
+    schema: "apartment-svg/2.2",
     project: { name: "Geometry validation test", units: "cm" },
     coordinateSystem: {
       x: "right",

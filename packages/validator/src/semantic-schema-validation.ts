@@ -3,6 +3,7 @@ import type { ParsedApartmentSvgDocument, ParsedXmlElement } from "@planaxis/par
 import { validateCameraSchema } from "./camera-schema-validation.js";
 import { validateDoorSchema } from "./door-schema-validation.js";
 import { validateFixedElementSchema } from "./fixed-element-schema-validation.js";
+import { validateFootprintSchema } from "./footprint-schema-validation.js";
 import {
   APARTMENT_SVG_ATTRIBUTES,
   APARTMENT_SVG_ELEMENT_NAMES,
@@ -15,6 +16,7 @@ import type {
   SchemaValidCamera,
   SchemaValidDoor,
   SchemaValidFixedElement,
+  SchemaValidFootprint,
   SchemaValidSpace,
   SchemaValidUtility,
   SchemaValidWall,
@@ -22,6 +24,7 @@ import type {
 } from "./schema-valid-apartment-svg.js";
 import { validateSpaceSchema } from "./space-schema-validation.js";
 import { validateUtilitySchema } from "./utility-schema-validation.js";
+import { APARTMENT_SVG_VALIDATION_CODES } from "./validation-codes.js";
 import type { ApartmentSvgValidationError } from "./validation-result.js";
 import { validateWallSchema } from "./wall-schema-validation.js";
 import { validateWindowSchema } from "./window-schema-validation.js";
@@ -29,6 +32,7 @@ import { getParsedAttribute } from "./xml-element.js";
 
 export interface SemanticSchemaValidationResult {
   readonly errors: readonly ApartmentSvgValidationError[];
+  readonly footprint?: SchemaValidFootprint;
   readonly spaces: readonly SchemaValidSpace[];
   readonly walls: readonly SchemaValidWall[];
   readonly windows: readonly SchemaValidWindow[];
@@ -43,6 +47,8 @@ export function validateApartmentSvgSemanticSchemas(
 ): SemanticSchemaValidationResult {
   const errors: ApartmentSvgValidationError[] = [];
   const idRegistry = createSemanticIdRegistry(document);
+  let footprint: SchemaValidFootprint | undefined;
+  let footprintCount = 0;
   const spaces: SchemaValidSpace[] = [];
   const walls: SchemaValidWall[] = [];
   const windows: SchemaValidWindow[] = [];
@@ -50,6 +56,30 @@ export function validateApartmentSvgSemanticSchemas(
   const fixedElements: SchemaValidFixedElement[] = [];
   const utilities: SchemaValidUtility[] = [];
   const cameras: SchemaValidCamera[] = [];
+
+  const hasFootprintGroup = validateGroupElements(
+    document,
+    APARTMENT_SVG_GROUP_IDS.footprint,
+    (element) => {
+      footprintCount += 1;
+      const result = validateFootprintSchema(element, idRegistry);
+      errors.push(...result.errors);
+      if (result.value !== undefined) footprint = result.value;
+    },
+  );
+  if (hasFootprintGroup && footprintCount !== 1) {
+    errors.push(
+      Object.freeze({
+        code: APARTMENT_SVG_VALIDATION_CODES.footprint.invalidMultiplicity,
+        category: "footprint",
+        rule: "footprint.element-multiplicity",
+        elementId: APARTMENT_SVG_GROUP_IDS.footprint,
+        actual: String(footprintCount),
+        expected: "exactly one footprint polygon",
+        message: "The footprint group must contain exactly one footprint polygon.",
+      }),
+    );
+  }
 
   validateGroupElements(document, APARTMENT_SVG_GROUP_IDS.spaces, (element) => {
     const result = validateSpaceSchema(element, idRegistry);
@@ -89,6 +119,7 @@ export function validateApartmentSvgSemanticSchemas(
 
   return Object.freeze({
     errors: Object.freeze(errors),
+    ...(footprint === undefined ? {} : { footprint }),
     spaces: Object.freeze(spaces),
     walls: Object.freeze(walls),
     windows: Object.freeze(windows),
@@ -103,7 +134,7 @@ function validateGroupElements(
   document: ParsedApartmentSvgDocument,
   groupId: ApartmentSvgCoreGroupId,
   validateElement: (element: ParsedXmlElement) => void,
-): void {
+): boolean {
   const matchingGroups = document.rootElements.filter(
     (element) =>
       element.name.localName === APARTMENT_SVG_ELEMENT_NAMES.group &&
@@ -111,7 +142,7 @@ function validateGroupElements(
       getParsedAttribute(element, APARTMENT_SVG_ATTRIBUTES.id) === groupId,
   );
   if (matchingGroups.length !== 1) {
-    return;
+    return false;
   }
 
   const group = matchingGroups[0];
@@ -123,4 +154,5 @@ function validateGroupElements(
       validateElement(child);
     }
   }
+  return true;
 }

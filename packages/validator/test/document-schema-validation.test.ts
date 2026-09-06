@@ -16,6 +16,7 @@ import type {
 
 const SVG_NAMESPACE_URI = "http://www.w3.org/2000/svg";
 const REQUIRED_GROUP_IDS = [
+  "footprint",
   "spaces",
   "walls",
   "windows",
@@ -70,6 +71,12 @@ describe("validateApartmentSvgDocumentSchema public contract", () => {
         missing: "APSVG-ID-001",
         invalid: "APSVG-ID-002",
         duplicate: "APSVG-ID-003",
+      },
+      footprint: {
+        invalidAttributeValue: "APSVG-FOOTPRINT-101",
+        malformedPoints: "APSVG-FOOTPRINT-102",
+        invalidPointNumber: "APSVG-FOOTPRINT-103",
+        invalidMultiplicity: "APSVG-FOOTPRINT-104",
       },
       zone: {
         selfIntersection: "APSVG-ZONE-001",
@@ -317,7 +324,7 @@ describe("metadata XML content validation", () => {
 
   it("reports malformed metadata JSON without fabricating property errors", () => {
     const result = validateSource(
-      createSvg({ metadataMarkup: rawMetadataMarkup('{"schema":"apartment-svg/2.1", nope}') }),
+      createSvg({ metadataMarkup: rawMetadataMarkup('{"schema":"apartment-svg/2.2", nope}') }),
     );
 
     expectError(result, APARTMENT_SVG_VALIDATION_CODES.metadata.invalidJson);
@@ -820,6 +827,7 @@ describe("top-level document and group validation", () => {
 describe("document-schema scope boundary", () => {
   it("does not validate semantic child schemas, IDs, references, or geometry", () => {
     const invalidSemanticContent = [
+      group("footprint", "", '<rect id="footprint-bad" data-kind="unknown" />'),
       group("spaces", "", '<rect id="duplicate" data-kind="not-a-zone" transform="scale(2)" />'),
       group("walls", "", '<circle id="duplicate" data-kind="not-a-wall" data-axis="diagonal" />'),
       group("windows", "", '<path id="window-bad" data-kind="unknown" data-wall="missing-wall" />'),
@@ -877,7 +885,7 @@ function createSvg(options: SvgOptions = {}): string {
     namespaceDeclaration,
     attribute("viewBox", optionOrDefault(options.viewBox, "0 0 500 400")),
     attribute("data-schema", optionOrDefault(options.dataSchema, "apartment-svg")),
-    attribute("data-schema-version", optionOrDefault(options.dataSchemaVersion, "2.1")),
+    attribute("data-schema-version", optionOrDefault(options.dataSchemaVersion, "2.2")),
     attribute("data-unit", optionOrDefault(options.dataUnit, "cm")),
   ].filter((value): value is string => value !== null);
   const metadata = optionOrDefault(options.metadataMarkup, metadataMarkup(createMinimumMetadata()));
@@ -899,7 +907,15 @@ function attribute(name: string, value: string | null): string | null {
 }
 
 function defaultGroups(): string[] {
-  return REQUIRED_GROUP_IDS.map((id) => group(id));
+  return REQUIRED_GROUP_IDS.map((id) =>
+    group(
+      id,
+      "",
+      id === "footprint"
+        ? '<polygon id="apartment-footprint" points="0,0 500,0 500,400 0,400" data-kind="footprint" />'
+        : "",
+    ),
+  );
 }
 
 function group(id: string, attributes = "", content = ""): string {
@@ -916,7 +932,7 @@ function metadataMarkup(metadata: Record<string, unknown>): string {
 
 function createMinimumMetadata(): Record<string, unknown> {
   return {
-    schema: "apartment-svg/2.1",
+    schema: "apartment-svg/2.2",
     project: {
       name: "Document schema test apartment",
       units: "cm",

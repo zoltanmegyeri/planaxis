@@ -126,7 +126,7 @@ It is **not** a second persistence format and is **not** a competing source of t
 
 Its purpose is to provide application code with a safe domain model that no longer exposes raw XML or SVG parsing concerns.
 
-The model must retain canonical geometry needed by downstream stages, including the validated apartment footprint and the specification-defined level-local Z values and metadata.
+The full 2.2 model must retain canonical geometry needed by downstream stages, including the validated apartment footprint and the specification-defined level-local Z values and metadata. This alignment is pending: the current domain contract has the 2.2 metadata identifier but does not yet include the apartment footprint.
 
 It may contain derived values that are useful at runtime, for example:
 
@@ -216,7 +216,7 @@ References such as `data-wall` and `data-radiator-below` are resolved only after
 
 The reference-validation phase consumes `SchemaValidApartmentSvgDocument` directly, without reparsing XML or repeating schema validation. It validates target existence and required semantic kind for every core reference. Ordinary failures are returned as structured `APSVG-REF-*` errors.
 
-On success it produces a validator-owned `ReferenceValidApartmentSvgDocument`. Windows, doors, radiators, and wall-associated utilities expose typed resolved relationships, and the document's semantic ID index points to the reference-valid element representations. Exact-decimal schema values are preserved unchanged.
+On success it produces a validator-owned `ReferenceValidApartmentSvgDocument`. Windows, doors, radiators, and wall-associated utilities expose typed resolved relationships, and the document's semantic ID index points to the reference-valid element representations. Exact-decimal schema values are preserved unchanged. The mandatory footprint is carried through as the same `SchemaValidFootprint` object (aliased as `ReferenceValidFootprint`) and indexed by its ID; it introduces no references and is not a valid wall or radiator target.
 
 This intermediate type establishes referential conformance only. It remains deliberately distinct from `ValidatedApartment2D` and does not imply geometric, topological, footprint, or containment conformance.
 
@@ -230,6 +230,8 @@ Responsibilities include:
 Downstream layers do not need to resolve the same raw reference IDs again.
 
 ### 5.4. Geometric and Topological Validation
+
+The complete 2.2 geometric-validation stage described below remains the target; the current implementation retains the earlier spatial checks and does not yet validate footprint geometry, footprint containment, or the clarified level-relative Z semantics.
 
 The full geometric-validation stage consumes `ReferenceValidApartmentSvgDocument` and validates every remaining spatial invariant required by the Apartment SVG specification. Checks may be composed in narrower stages when later checks depend on earlier geometric guarantees.
 
@@ -275,9 +277,9 @@ trusted domain representation
 
 Code receiving `ValidatedApartment2D` may rely on the invariants guaranteed by the validation pipeline.
 
-The `buildValidatedApartment2D` entry point is owned by `@planaxis/validator`, while the model contracts are owned by `@planaxis/model`. Construction creates a normalized, read-only domain object graph with domain-oriented bounds, the canonical apartment footprint, element footprints, positions, and space boundaries. Relationships to walls and radiators point to the corresponding constructed domain instances, and a semantic-element ID index contains those same instances.
+The `buildValidatedApartment2D` entry point is owned by `@planaxis/validator`, while the model contracts are owned by `@planaxis/model`. Construction creates a normalized, read-only domain object graph with domain-oriented bounds, element footprints, positions, and space boundaries. Adding the canonical apartment footprint remains pending. Relationships to walls and radiators point to the corresponding constructed domain instances, and a semantic-element ID index contains those same instances.
 
-The model retains exact-decimal canonical metadata and semantic geometry while adding deterministic derived values required by downstream code, including wall length, thickness, centerline, and effective height; window and door opening widths; and hinged-door leaf length and closed free endpoint. Element-level architectural Z values remain level-relative as defined by the specification; `metadata.level.baseZ` is retained separately as the model-space position of the level-local floor plane. SVG marker radii and raw unresolved reference IDs are not part of this domain representation.
+The model retains exact-decimal canonical metadata and semantic geometry while adding deterministic derived values required by downstream code, including wall length, thickness, centerline, and effective height; window and door opening widths; and hinged-door leaf length and closed free endpoint. Full alignment with the specification's level-relative Z interpretation remains pending; `metadata.level.baseZ` is retained separately. SVG marker radii and raw unresolved reference IDs are not part of this domain representation.
 
 ### 5.6. Construction of `ArchitecturalModel3D`
 
@@ -778,7 +780,7 @@ ADRs describe **why significant decisions were made**.
 
 The executable repository bootstrap, authoritative numeric and geometric foundations, Apartment SVG XML parsing boundary, schema-validation pipeline, reference validation, geometric/topological validation, developer validation CLI, and `ValidatedApartment2D` construction are implemented. The Node.js CLI reads one Apartment SVG file and composes the shared parse, schema, reference, and geometry stages while keeping filesystem and process behavior in the application layer. Schema validation produces a typed, exact-decimal `SchemaValidApartmentSvgDocument`; reference validation resolves its core relationships into `ReferenceValidApartmentSvgDocument`; and the geometry stage establishes the nominal `GeometryValidApartmentSvgDocument` boundary before `@planaxis/validator` constructs the normalized, exact-decimal `ValidatedApartment2D` owned by `@planaxis/model`.
 
-Apartment SVG 2.2 is now the normative external format. The existing implementation predates its mandatory apartment footprint and clarified architectural Z semantics, so the immediate next implementation phase is to bring the parser, schema validation, geometric/topological validation, fixtures, and `ValidatedApartment2D` contract into full 2.2 conformance. This includes parsing and validating the canonical orthogonal footprint, enforcing footprint containment, preserving the footprint in the trusted 2D model, and applying the specification's level-relative Z semantics consistently. The renderer-independent `ArchitecturalModel3D` follows this migration rather than preceding it.
+Apartment SVG 2.2 is the normative external format. Structural/schema/reference support and current fixtures now target 2.2; 2.1 version identifiers are rejected. The generic parser preserves the footprint group and polygon, schema validation enforces exactly one footprint polygon and its common attributes and coordinate-list syntax, and both schema-valid and reference-valid documents expose it as exact-decimal semantic data in their ID indexes. These stages intentionally accept structurally valid footprints with invalid geometry. Full 2.2 conformance remains pending: footprint topology and orthogonality, footprint containment within the viewBox, stationary placement containment, the hinged-door open-leaf containment exception, level-relative Z semantics, and the corresponding `ValidatedApartment2D` footprint contract require follow-up implementation. The current geometry/domain pipeline remains operational but does not establish these new guarantees. The renderer-independent `ArchitecturalModel3D` follows this migration rather than preceding it.
 
 The intended implementation order is broadly:
 

@@ -3,6 +3,7 @@ import type {
   SchemaValidCamera,
   SchemaValidCeilingLight,
   SchemaValidFixedObject,
+  SchemaValidFootprint,
   SchemaValidHingedDoor,
   SchemaValidOpeningOnlyDoor,
   SchemaValidOtherFixedElement,
@@ -14,6 +15,7 @@ import type {
   SchemaValidWindow,
 } from "./schema-valid-apartment-svg.js";
 
+export type ReferenceValidFootprint = SchemaValidFootprint;
 export type ReferenceValidSpace = SchemaValidSpace;
 export type ReferenceValidWall = SchemaValidWall;
 export type ReferenceValidCamera = SchemaValidCamera;
@@ -56,6 +58,7 @@ export interface ReferenceValidWallUtility extends SchemaValidWallUtility {
 export type ReferenceValidUtility = ReferenceValidWallUtility | ReferenceValidCeilingLight;
 
 export type ReferenceValidSemanticElement =
+  | ReferenceValidFootprint
   | ReferenceValidSpace
   | ReferenceValidWall
   | ReferenceValidWindow

@@ -36,7 +36,7 @@ type ReferenceTargetKind =
   typeof APARTMENT_SVG_SEMANTIC_KINDS.wall | typeof APARTMENT_SVG_SEMANTIC_KINDS.radiator;
 
 /**
- * Resolves and validates all Apartment SVG 2.1 core references in an already
+ * Resolves and validates all Apartment SVG 2.2 core references in an already
  * schema-valid document. Geometric and topological rules remain deferred.
  */
 export function validateApartmentSvgReferences(
@@ -230,6 +230,7 @@ function buildReferenceValidDocument(
     }),
   );
   const semanticElements: readonly ReferenceValidSemanticElement[] = [
+    document.footprint,
     ...document.spaces,
     ...document.walls,
     ...windows,

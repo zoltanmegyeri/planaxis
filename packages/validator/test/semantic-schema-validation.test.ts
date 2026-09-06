@@ -16,8 +16,12 @@ import type {
   SchemaValidApartmentSvgDocument,
 } from "../src/index.js";
 
+const DEFAULT_FOOTPRINT =
+  '<polygon id="apartment-footprint" points="0,0 500,0 500,400 0,400" data-kind="footprint" />';
+
 const SVG_NAMESPACE_URI = "http://www.w3.org/2000/svg";
 const GROUP_IDS = [
+  "footprint",
   "spaces",
   "walls",
   "windows",
@@ -44,7 +48,7 @@ describe("validateApartmentSvgSchema public contract", () => {
     expect(result.valid).toBe(true);
     if (!result.valid) return;
     expectTypeOf(result.document).toEqualTypeOf<SchemaValidApartmentSvgDocument>();
-    expect(result.document.semanticElementsById.size).toBe(0);
+    expect(result.document.semanticElementsById.size).toBe(1);
     expect(Object.isFrozen(result)).toBe(true);
     expect(Object.isFrozen(result.document)).toBe(true);
   });
@@ -997,9 +1001,11 @@ function createSvg(
   options: SvgOptions = {},
 ): string {
   const groups = GROUP_IDS.filter((id) => id !== options.omitGroup)
-    .map((id) => `<g id="${id}">${contents[id] ?? ""}</g>`)
+    .map(
+      (id) => `<g id="${id}">${contents[id] ?? (id === "footprint" ? DEFAULT_FOOTPRINT : "")}</g>`,
+    )
     .join("\n");
-  return `<svg xmlns="${SVG_NAMESPACE_URI}" viewBox="${options.viewBox ?? "0 0 500 400"}" data-schema="apartment-svg" data-schema-version="2.1" data-unit="cm">
+  return `<svg xmlns="${SVG_NAMESPACE_URI}" viewBox="${options.viewBox ?? "0 0 500 400"}" data-schema="apartment-svg" data-schema-version="2.2" data-unit="cm">
     <metadata><![CDATA[${options.metadataPayload ?? JSON.stringify(minimumMetadata())}]]></metadata>
     ${groups}
     ${options.extraGroups ?? ""}
@@ -1148,7 +1154,7 @@ function attributesMarkup(attributes: AttributeOverrides): string {
 
 function minimumMetadata(): Record<string, unknown> {
   return {
-    schema: "apartment-svg/2.1",
+    schema: "apartment-svg/2.2",
     project: { name: "Semantic schema test", units: "cm" },
     coordinateSystem: {
       x: "right",

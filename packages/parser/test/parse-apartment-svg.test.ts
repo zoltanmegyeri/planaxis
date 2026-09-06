@@ -19,10 +19,13 @@ describe("parseApartmentSvg", () => {
         xmlns="${SVG_NAMESPACE_URI}"
         viewBox="0 0 500 400"
         data-schema="apartment-svg"
-        data-schema-version="2.1"
+        data-schema-version="2.2"
         data-unit="cm"
       >
-        <metadata><![CDATA[{"schema":"apartment-svg/2.1"}]]></metadata>
+        <metadata><![CDATA[{"schema":"apartment-svg/2.2"}]]></metadata>
+        <g id="footprint">
+          <polygon id="apartment-footprint" data-kind="footprint" points="0.123456789012345678901,0 500,0 500,400 0,400" />
+        </g>
         <g id="walls">
           <rect id="wall-01" x="0" y="0" width="100" height="12" />
         </g>
@@ -52,12 +55,16 @@ describe("parseApartmentSvg", () => {
     ]);
     expect(document.metadataElements).toHaveLength(1);
     expect(document.metadataElements[0]?.children).toEqual([
-      { kind: "cdata", value: '{"schema":"apartment-svg/2.1"}' },
+      { kind: "cdata", value: '{"schema":"apartment-svg/2.2"}' },
     ]);
-    expect(document.topLevelGroups.map((group) => group.id)).toEqual(["walls"]);
+    expect(document.topLevelGroups.map((group) => group.id)).toEqual(["footprint", "walls"]);
     expect(document.semanticElements.map((element) => getAttribute(element, "id"))).toEqual([
+      "apartment-footprint",
       "wall-01",
     ]);
+    const footprint = requireSemanticElement(document, "apartment-footprint");
+    expect(footprint.name.localName).toBe("polygon");
+    expect(getAttribute(footprint, "points")).toBe("0.123456789012345678901,0 500,0 500,400 0,400");
     expect(Object.isFrozen(document)).toBe(true);
     expect(Object.isFrozen(document.rootElement.children)).toBe(true);
     expect("getAttribute" in document.rootElement).toBe(false);

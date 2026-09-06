@@ -67,6 +67,12 @@ export type ApartmentSvgSpaceFunction = ApartmentSpaceFunction;
 
 export type ApartmentSvgSpaceEnclosure = ApartmentSpaceEnclosure;
 
+export interface SchemaValidFootprint {
+  readonly id: string;
+  readonly kind: typeof APARTMENT_SVG_SEMANTIC_KINDS.footprint;
+  readonly points: readonly Point2D[];
+}
+
 export interface SchemaValidSpace {
   readonly id: string;
   readonly kind: typeof APARTMENT_SVG_SEMANTIC_KINDS.zone;
@@ -216,6 +222,7 @@ export interface SchemaValidCamera {
 }
 
 export type SchemaValidSemanticElement =
+  | SchemaValidFootprint
   | SchemaValidSpace
   | SchemaValidWall
   | SchemaValidWindow
@@ -234,6 +241,7 @@ export interface SchemaValidApartmentSvgDocument {
   readonly unit: typeof APARTMENT_SVG_DOCUMENT_VALUES.unit;
   readonly viewBox: SchemaValidApartmentSvgViewBox;
   readonly metadata: SchemaValidApartmentSvgMetadata;
+  readonly footprint: SchemaValidFootprint;
   readonly spaces: readonly SchemaValidSpace[];
   readonly walls: readonly SchemaValidWall[];
   readonly windows: readonly SchemaValidWindow[];

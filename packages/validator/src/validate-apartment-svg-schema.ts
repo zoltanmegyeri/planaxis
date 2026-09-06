@@ -26,7 +26,7 @@ export type ApartmentSvgSchemaValidationResult =
 const EMPTY_VALIDATION_ERRORS: readonly [] = Object.freeze([]);
 
 /**
- * Validates complete Apartment SVG 2.1 schema conformance. Successful output
+ * Validates complete Apartment SVG 2.2 schema conformance. Successful output
  * retains unresolved reference IDs and does not imply referential, geometric,
  * or topological conformance.
  */
@@ -40,11 +40,16 @@ export function validateApartmentSvgSchema(
     return Object.freeze({ valid: false, errors: Object.freeze(errors) });
   }
 
-  if (documentResult.viewBox === undefined || documentResult.metadata === undefined) {
-    throw new Error("Successful document schema validation did not retain its typed values.");
+  if (
+    documentResult.viewBox === undefined ||
+    documentResult.metadata === undefined ||
+    semanticResult.footprint === undefined
+  ) {
+    throw new Error("Successful schema validation did not retain its typed values.");
   }
 
   const semanticElements: readonly SchemaValidSemanticElement[] = [
+    semanticResult.footprint,
     ...semanticResult.spaces,
     ...semanticResult.walls,
     ...semanticResult.windows,
@@ -69,6 +74,7 @@ export function validateApartmentSvgSchema(
     unit: APARTMENT_SVG_DOCUMENT_VALUES.unit,
     viewBox: documentResult.viewBox,
     metadata: documentResult.metadata,
+    footprint: semanticResult.footprint,
     spaces: semanticResult.spaces,
     walls: semanticResult.walls,
     windows: semanticResult.windows,

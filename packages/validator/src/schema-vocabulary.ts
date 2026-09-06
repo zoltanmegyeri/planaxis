@@ -2,9 +2,9 @@ export const SVG_NAMESPACE_URI = "http://www.w3.org/2000/svg";
 
 export const APARTMENT_SVG_DOCUMENT_VALUES = Object.freeze({
   schema: "apartment-svg",
-  schemaVersion: "2.1",
+  schemaVersion: "2.2",
   unit: "cm",
-  metadataSchema: "apartment-svg/2.1",
+  metadataSchema: "apartment-svg/2.2",
 });
 
 export const APARTMENT_SVG_METADATA_COORDINATE_VALUES = Object.freeze({
@@ -18,6 +18,7 @@ export const APARTMENT_SVG_METADATA_COORDINATE_VALUES = Object.freeze({
 });
 
 export const APARTMENT_SVG_GROUP_IDS = Object.freeze({
+  footprint: "footprint",
   spaces: "spaces",
   walls: "walls",
   windows: "windows",
@@ -29,6 +30,7 @@ export const APARTMENT_SVG_GROUP_IDS = Object.freeze({
 });
 
 export const APARTMENT_SVG_CORE_GROUP_IDS = Object.freeze([
+  APARTMENT_SVG_GROUP_IDS.footprint,
   APARTMENT_SVG_GROUP_IDS.spaces,
   APARTMENT_SVG_GROUP_IDS.walls,
   APARTMENT_SVG_GROUP_IDS.windows,
@@ -116,6 +118,7 @@ export const APARTMENT_SVG_EXTENSION_PREFIXES = Object.freeze({
 });
 
 export const APARTMENT_SVG_SEMANTIC_KINDS = Object.freeze({
+  footprint: "footprint",
   zone: "zone",
   wall: "wall",
   window: "window",

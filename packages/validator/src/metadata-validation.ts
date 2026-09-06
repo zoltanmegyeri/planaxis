@@ -177,7 +177,7 @@ function validateMetadataObject(
     metadata,
     "schema",
     "$",
-    'exactly "apartment-svg/2.1"',
+    'exactly "apartment-svg/2.2"',
     (value) => value === APARTMENT_SVG_DOCUMENT_VALUES.metadataSchema,
     errors,
   );

@@ -3,12 +3,12 @@
   xmlns="http://www.w3.org/2000/svg"
   viewBox="0 0 500 400"
   data-schema="apartment-svg"
-  data-schema-version="2.1"
+  data-schema-version="2.2"
   data-unit="cm"
 >
   <metadata><![CDATA[
     {
-      "schema": "apartment-svg/2.1",
+      "schema": "apartment-svg/2.2",
       "project": { "name": "Duplicate semantic ID fixture", "units": "cm" },
       "coordinateSystem": {
         "x": "right",
@@ -19,6 +19,9 @@
       "level": { "id": "level-0", "baseZ": 0, "defaultCeilingHeight": 242 }
     }
   ]]></metadata>
+  <g id="footprint">
+    <polygon id="apartment-footprint" points="0,0 500,0 500,400 0,400" data-kind="footprint" />
+  </g>
   <g id="spaces">
     <polygon
       id="duplicate"

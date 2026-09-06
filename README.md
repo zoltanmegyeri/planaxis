@@ -7,7 +7,7 @@
 The project is built around the versioned, normative [Apartment SVG 2.2 specification](docs/specifications/apartment-svg/2.2.md), where an SVG document is not merely a drawing: it is the canonical, machine-readable representation of an apartment's geometry and semantics.
 
 > [!NOTE]
-> The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG parser and validation pipeline, developer validation CLI, and normalized `ValidatedApartment2D` domain model are in place. Apartment SVG 2.2 is now the normative format; the existing parser, validator, fixtures, and 2D domain model must next be brought into full 2.2 conformance, including the mandatory apartment footprint, footprint-containment rules, and clarified level-relative Z semantics, before renderer-independent 3D model construction begins.
+> The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG parser and validation pipeline, developer validation CLI, and normalized `ValidatedApartment2D` domain model are in place. Structural/schema/reference support and current test inputs now target Apartment SVG 2.2, including its mandatory exact-decimal footprint. Full 2.2 geometric validation, footprint containment, clarified level-relative Z semantics, and `ValidatedApartment2D` footprint support remain pending before renderer-independent 3D model construction begins.
 
 ## Project Goals
 
@@ -234,7 +234,7 @@ Natural-language discussion outside the repository may use any language, but rep
 
 The executable pipeline through `ValidatedApartment2D` is implemented: Apartment SVG parsing, schema validation, reference validation, geometric/topological validation, the developer validation CLI, and trusted 2D domain-model construction all exist. `GeometryValidApartmentSvgDocument` marks the final trusted SVG boundary before normalized domain construction.
 
-The current normative format is Apartment SVG 2.2. The immediate next implementation phase is to migrate the existing pipeline and fixtures to its mandatory apartment footprint, footprint-containment rules, level-relative architectural Z semantics, and corresponding `ValidatedApartment2D` representation. Renderer-independent `ArchitecturalModel3D` work follows that migration; rendering and AI-assisted features remain later stages.
+The current normative format is Apartment SVG 2.2. Schema and reference validation now expose its mandatory footprint polygon as exact-decimal semantic data with consistent ID indexes, and current fixtures use the 2.2 structure. The geometry stage still implements the earlier spatial rules: footprint topology, orthogonality, footprint/viewBox and placement containment, and level-relative architectural Z alignment remain pending. `ValidatedApartment2D` uses the 2.2 metadata identifier but does not yet retain the apartment footprint. A successful current pipeline result therefore does not establish full 2.2 conformance. Renderer-independent `ArchitecturalModel3D` work follows that migration; rendering and AI-assisted features remain later stages.
 
 Each implementation phase should have explicit acceptance criteria and automated tests.
 
