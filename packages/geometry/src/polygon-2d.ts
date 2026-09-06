@@ -4,7 +4,12 @@ import { arePointsExactlyEqual } from "./point-2d.js";
 import type { Point2D } from "./point-2d.js";
 import { getRectVertices } from "./rect-2d.js";
 import type { Rect2D } from "./rect-2d.js";
-import { getOrientation, getSegmentIntersectionType, isPointOnSegment } from "./segment-2d.js";
+import {
+  doSegmentsProperlyIntersect,
+  getOrientation,
+  getSegmentIntersectionType,
+  isPointOnSegment,
+} from "./segment-2d.js";
 
 const TWO = createDecimal("2");
 
@@ -84,6 +89,42 @@ export function doPolygonsOverlapWithPositiveArea(
   return aTriangles.some((aTriangle) =>
     bTriangles.some((bTriangle) => doTrianglesOverlapWithPositiveArea(aTriangle, bTriangle)),
   );
+}
+
+/**
+ * Complete closed-region containment of simple polygons without holes.
+ * Boundary containment suffices because the container has no holes. Split at
+ * boundary vertices to detect excursions through concave corners, including
+ * crossings that are not proper segment intersections. Only midpoint division
+ * is needed, so all intermediate coordinates remain finite exact decimals.
+ */
+export function isPolygonContainedInPolygon(
+  polygon: readonly Point2D[],
+  container: readonly Point2D[],
+): boolean {
+  if (polygon.length < 3 || container.length < 3) return false;
+  if (polygon.some((point) => locatePointInPolygon(point, container) === "outside")) return false;
+
+  return polygon.every((start, index) => {
+    const end = polygon[(index + 1) % polygon.length]!;
+    const splitPoints = [start, end];
+    for (let boundaryIndex = 0; boundaryIndex < container.length; boundaryIndex += 1) {
+      const boundaryStart = container[boundaryIndex]!;
+      const boundaryEnd = container[(boundaryIndex + 1) % container.length]!;
+      if (doSegmentsProperlyIntersect(start, end, boundaryStart, boundaryEnd)) return false;
+      if (isPointOnSegment(boundaryStart, start, end)) splitPoints.push(boundaryStart);
+    }
+    const coordinate = start.x.equals(end.x) ? "y" : "x";
+    splitPoints.sort((a, b) => a[coordinate].comparedTo(b[coordinate]));
+    return splitPoints.slice(1).every((point, splitIndex) => {
+      const previous = splitPoints[splitIndex]!;
+      const midpoint = {
+        x: previous.x.plus(point.x).dividedBy(TWO),
+        y: previous.y.plus(point.y).dividedBy(TWO),
+      };
+      return locatePointInPolygon(midpoint, container) !== "outside";
+    });
+  });
 }
 
 export function doesPolygonOverlapRectWithPositiveArea(

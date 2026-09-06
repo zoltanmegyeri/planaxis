@@ -1,3 +1,4 @@
+import { readdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
@@ -20,6 +21,30 @@ describe("runApartmentSvgValidationCli", () => {
     expect(result.exitCode).toBe(APARTMENT_SVG_VALIDATION_CLI_EXIT_CODES.success);
     expect(result.standardOutput).toEqual(["Apartment SVG is valid."]);
     expect(result.standardError).toEqual([]);
+  });
+
+  it("accepts every valid fixture through the complete 2.2 pipeline", async () => {
+    const names = await readdir(fixturePath("valid"));
+    for (const name of names.filter((name) => name.endsWith(".svg"))) {
+      const result = await runCli(fixturePath(`valid/${name}`));
+      expect(result, name).toEqual({
+        exitCode: 0,
+        standardOutput: ["Apartment SVG is valid."],
+        standardError: [],
+      });
+    }
+  });
+
+  it.each([
+    ["footprint-diagonal-edge.svg", "APSVG-FOOTPRINT-001"],
+    ["wall-crosses-footprint-notch.svg", "APSVG-FOOTPRINT-002"],
+  ])("reports the intended footprint error for %s", async (name, code) => {
+    const result = await runCli(fixturePath(`invalid/${name}`));
+    expect(result.exitCode).toBe(APARTMENT_SVG_VALIDATION_CLI_EXIT_CODES.invalidDocument);
+    expect(result.standardOutput).toEqual([]);
+    expect(result.standardError).toHaveLength(2);
+    expect(result.standardError[0]).toBe("Geometry validation failed.");
+    expect(result.standardError[1]).toMatch(new RegExp(`^${code}: `));
   });
 
   it("reports malformed XML with the parser kind and source location", async () => {

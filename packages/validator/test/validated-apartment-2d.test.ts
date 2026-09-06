@@ -56,6 +56,28 @@ describe("buildValidatedApartment2D public contract", () => {
     expect(model.bounds.width.toString()).toBe("599.9");
     expect(model.bounds.height.toString()).toBe("499.8");
     expect("viewBox" in model).toBe(false);
+    expect(model.footprint.id).toBe("apartment-footprint");
+    expect(model.footprint.kind).toBe("footprint");
+    expect(model.footprint.boundary).toEqual(document.footprint.points);
+    expect(model.footprint.boundary).not.toBe(document.footprint.points);
+    expect(model.semanticElementsById.get(model.footprint.id)).toBe(model.footprint);
+    expect(Object.isFrozen(model.footprint)).toBe(true);
+    expect(Object.isFrozen(model.footprint.boundary)).toBe(true);
+    expect(Object.isFrozen(model.footprint.boundary[0])).toBe(true);
+    expect(model.footprint.boundary[0]?.x.toString()).toBe("0.1");
+    expect(model.footprint.boundary[0]?.y.toString()).toBe("0.2");
+    expect(model.fixedElements.map((element) => element.baseZ)).toEqual(
+      document.fixedElements.map((element) => element.baseZ),
+    );
+    expect(model.utilities.map((element) => element.z)).toEqual(
+      document.utilities.map((element) => element.z),
+    );
+    expect(model.cameras.map((element) => element.z)).toEqual(
+      document.cameras.map((element) => element.z),
+    );
+    expect(model.windows.map((element) => element.sillHeight)).toEqual(
+      document.windows.map((element) => element.sillHeight),
+    );
 
     expect(model.metadata.schema).toBe("apartment-svg/2.2");
     expect(model.metadata.project).toEqual({ name: "Normalized apartment", units: "cm" });
@@ -165,6 +187,7 @@ describe("buildValidatedApartment2D public contract", () => {
     expect("radius" in camera).toBe(false);
 
     const semanticElements: readonly ApartmentSemanticElement[] = [
+      model.footprint,
       ...model.spaces,
       ...model.walls,
       ...model.windows,

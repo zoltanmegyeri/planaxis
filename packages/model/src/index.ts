@@ -5,6 +5,7 @@ export type {
   ApartmentFixedElement,
   ApartmentFixedElementKind,
   ApartmentFixedObject,
+  ApartmentFootprint,
   ApartmentHingedDoor,
   ApartmentLocation,
   ApartmentMetadata,

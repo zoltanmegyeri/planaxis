@@ -73,6 +73,8 @@ describe("validateApartmentSvgDocumentSchema public contract", () => {
         duplicate: "APSVG-ID-003",
       },
       footprint: {
+        invalidPolygon: "APSVG-FOOTPRINT-001",
+        placementOutsideFootprint: "APSVG-FOOTPRINT-002",
         invalidAttributeValue: "APSVG-FOOTPRINT-101",
         malformedPoints: "APSVG-FOOTPRINT-102",
         invalidPointNumber: "APSVG-FOOTPRINT-103",

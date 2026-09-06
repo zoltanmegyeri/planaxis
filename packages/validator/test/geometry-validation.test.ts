@@ -371,6 +371,191 @@ describe("global overlap restrictions", () => {
   });
 });
 
+describe("Apartment SVG 2.2 footprint geometry", () => {
+  it.each([
+    ["rectangle", "0,0 500,0 500,500 0,500"],
+    ["clockwise concave polygon", "0,0 500,0 500,200 200,200 200,500 0,500"],
+    ["reversed winding", "0,500 200,500 200,200 500,200 500,0 0,0"],
+    ["tiny exact edges", "0,0 0.001,0 0.001,0.001 0,0.001"],
+  ])("accepts a %s", (_name, points) => {
+    expect(validateGeometry(createSvg({ footprint: footprint(points) })).valid).toBe(true);
+  });
+
+  it.each([
+    ["too few vertices", "0,0 100,0 0,100", "distinct-vertices"],
+    ["zero area", "0,0 100,0 200,0 300,0", "positive-area"],
+    [
+      "self intersection",
+      "0,0 300,0 300,300 100,300 100,100 400,100 400,400 0,400",
+      "self-intersection",
+    ],
+    ["zero-length edge", "0,0 100,0 100,0 100,100 0,100", "nonzero-orthogonal-edges"],
+    ["zero-length closing edge", "0,0 100,0 100,100 0,100 0,0", "nonzero-orthogonal-edges"],
+    ["diagonal edge", "0,0 100,1 100,100 0,100", "nonzero-orthogonal-edges"],
+    ["nearly horizontal edge", "0,0 100,0.001 100,100 0,100", "nonzero-orthogonal-edges"],
+    ["diagonal closing edge", "0,0 100,0 100,100 1,100", "nonzero-orthogonal-edges"],
+  ])("rejects %s with a geometric footprint error", (_name, points, rule) => {
+    const result = validateGeometry(createSvg({ footprint: footprint(points) }));
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({
+        code: "APSVG-FOOTPRINT-001",
+        category: "footprint",
+        elementId: "apartment-footprint",
+        attribute: "points",
+        rule: `footprint.${rule}`,
+        actual: expect.any(String),
+        expected: expect.any(String),
+      }),
+    );
+    expect("document" in result).toBe(false);
+  });
+
+  it("rejects a footprint outside the viewBox", () => {
+    expectSingleError(
+      validateGeometry(createSvg({ footprint: footprint("-0.001,0 500,0 500,500 -0.001,500") })),
+      APARTMENT_SVG_VALIDATION_CODES.root.semanticGeometryOutsideViewBox,
+    );
+  });
+});
+
+const INSET_FOOTPRINT = "50,100 450,100 450,400 50,400";
+const NOTCHED_FOOTPRINT = "0,0 500,0 500,500 300,500 300,200 200,200 200,500 0,500";
+
+describe("complete closed-footprint containment", () => {
+  it("accepts every stationary category on the boundary and ignores marker radii", () => {
+    expect(
+      validateGeometry(
+        createSvg({
+          footprint: footprint(INSET_FOOTPRINT),
+          walls: horizontalWall(),
+          windows: windowElement(),
+          doors: door(),
+          spaces: zone(),
+          "fixed-elements": fixedElement("column", { x: "400", y: "350" }),
+          utilities: utility("ceiling-light", {
+            cx: "50",
+            cy: "400",
+            r: "1000",
+            "data-wall": null,
+          }),
+          cameras: camera({ cx: "450", cy: "400", r: "1000" }),
+        }),
+      ).valid,
+    ).toBe(true);
+  });
+
+  it.each([
+    ["zone", { spaces: zone({ points: "49.999,110 100,110 100,200 49.999,200" }) }, "zone-1"],
+    ["wall", { walls: horizontalWall({ x: "49.999" }) }, "wall-main"],
+    ["window", { walls: horizontalWall(), windows: windowElement({ y: "99.999" }) }, "window-1"],
+    ["door", { walls: horizontalWall(), doors: door({ y: "99.999" }) }, "door-1"],
+    ["fixed element", { "fixed-elements": fixedElement("column", { x: "400.001" }) }, "fixed-1"],
+    [
+      "utility",
+      { utilities: utility("ceiling-light", { cx: "49.999", "data-wall": null }) },
+      "utility-1",
+    ],
+    ["camera", { cameras: camera({ cx: "450.001" }) }, "camera-1"],
+  ] as const)("rejects %s outside the footprint but inside the viewBox", (_name, contents, id) => {
+    const result = validateGeometry(
+      createSvg({ footprint: footprint(INSET_FOOTPRINT), ...contents }),
+    );
+    expectSingleError(result, APARTMENT_SVG_VALIDATION_CODES.footprint.placementOutsideFootprint);
+    expect(result.errors[0]?.elementId).toBe(id);
+  });
+
+  it.each([
+    ["rectangle", { walls: horizontalWall({ x: "100", y: "300", width: "300" }) }],
+    ["polygon", { spaces: zone({ points: "100,300 400,300 400,400 100,400" }) }],
+    [
+      "polygon through concave corners",
+      { spaces: zone({ points: "100,100 400,400 400,450 100,150" }) },
+    ],
+  ] as const)(
+    "rejects a %s crossing a concave notch even with all vertices contained",
+    (_name, contents) => {
+      expectSingleError(
+        validateGeometry(createSvg({ footprint: footprint(NOTCHED_FOOTPRINT), ...contents })),
+        APARTMENT_SVG_VALIDATION_CODES.footprint.placementOutsideFootprint,
+      );
+    },
+  );
+
+  it("allows open-leaf outside footprint but still requires viewBox containment", () => {
+    const source = createSvg({
+      footprint: footprint(INSET_FOOTPRINT),
+      walls: horizontalWall(),
+      doors: hingedDoor(),
+    });
+    expect(validateGeometry(source).valid).toBe(true);
+    const outside = source
+      .replace('data-open-leaf-y="65"', 'data-open-leaf-y="-0.001"')
+      .replace('width="40"', 'width="105.001"');
+    expectSingleError(
+      validateGeometry(outside),
+      APARTMENT_SVG_VALIDATION_CODES.root.semanticGeometryOutsideViewBox,
+    );
+  });
+});
+
+describe("level-local camera collision invariance", () => {
+  it.each(["0", "300", "-300", "0.1"])(
+    "keeps collision results independent of level.baseZ=%s",
+    (baseZ) => {
+      const cases: readonly [Partial<Record<GroupId, string>>, string | undefined][] = [
+        [
+          { walls: horizontalWall(), cameras: camera({ cx: "100", cy: "105", "data-z": "0" }) },
+          "APSVG-CAMERA-001",
+        ],
+        [
+          { walls: horizontalWall(), cameras: camera({ cx: "100", cy: "105", "data-z": "242" }) },
+          "APSVG-CAMERA-001",
+        ],
+        [
+          {
+            walls: horizontalWall(),
+            cameras: camera({ cx: "100", cy: "105", "data-z": "242.001" }),
+          },
+          undefined,
+        ],
+        [
+          {
+            walls: horizontalWall({ "data-height": "100" }),
+            cameras: camera({ cx: "100", cy: "105", "data-z": "100.001" }),
+          },
+          undefined,
+        ],
+        ...["50", "150", "150.001", "49.999"].map(
+          (z): [Partial<Record<GroupId, string>>, string | undefined] => [
+            {
+              "fixed-elements": fixedElement("column", {
+                "data-base-z": "50",
+                "data-height": "100",
+              }),
+              cameras: camera({ cx: "320", cy: "320", "data-z": z }),
+            },
+            z === "50" || z === "150"
+              ? APARTMENT_SVG_VALIDATION_CODES.camera.insideFixedElement
+              : undefined,
+          ],
+        ),
+      ];
+      for (const [contents, code] of cases) {
+        const result = validateGeometry(
+          createSvg(contents).replace('"baseZ":0', `"baseZ":${baseZ}`),
+        );
+        expect(result.errors.map((error) => error.code)).toEqual(code === undefined ? [] : [code]);
+        expect(result.valid).toBe(code === undefined);
+      }
+    },
+  );
+});
+
+function footprint(points: string): string {
+  return tag("polygon", { id: "apartment-footprint", "data-kind": "footprint", points });
+}
+
 function validateGeometry(source: string): ApartmentSvgGeometryValidationResult {
   return validateApartmentSvgGeometry(referenceValidDocument(source));
 }

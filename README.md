@@ -7,7 +7,7 @@
 The project is built around the versioned, normative [Apartment SVG 2.2 specification](docs/specifications/apartment-svg/2.2.md), where an SVG document is not merely a drawing: it is the canonical, machine-readable representation of an apartment's geometry and semantics.
 
 > [!NOTE]
-> The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG parser and validation pipeline, developer validation CLI, and normalized `ValidatedApartment2D` domain model are in place. Structural/schema/reference support and current test inputs now target Apartment SVG 2.2, including its mandatory exact-decimal footprint. Full 2.2 geometric validation, footprint containment, clarified level-relative Z semantics, and `ValidatedApartment2D` footprint support remain pending before renderer-independent 3D model construction begins.
+> The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG 2.2 parser and complete validation pipeline, developer validation CLI, and normalized `ValidatedApartment2D` domain model are in place. Validation enforces canonical footprint geometry, complete stationary placement containment, and level-local camera collisions. The trusted model retains the exact-decimal footprint and level-local architectural Z values. Renderer-independent 3D foundations and modeling are the next development stage.
 
 ## Project Goals
 
@@ -234,7 +234,7 @@ Natural-language discussion outside the repository may use any language, but rep
 
 The executable pipeline through `ValidatedApartment2D` is implemented: Apartment SVG parsing, schema validation, reference validation, geometric/topological validation, the developer validation CLI, and trusted 2D domain-model construction all exist. `GeometryValidApartmentSvgDocument` marks the final trusted SVG boundary before normalized domain construction.
 
-The current normative format is Apartment SVG 2.2. Schema and reference validation now expose its mandatory footprint polygon as exact-decimal semantic data with consistent ID indexes, and current fixtures use the 2.2 structure. The geometry stage still implements the earlier spatial rules: footprint topology, orthogonality, footprint/viewBox and placement containment, and level-relative architectural Z alignment remain pending. `ValidatedApartment2D` uses the 2.2 metadata identifier but does not yet retain the apartment footprint. A successful current pipeline result therefore does not establish full 2.2 conformance. Renderer-independent `ArchitecturalModel3D` work follows that migration; rendering and AI-assisted features remain later stages.
+The parser, validator, CLI, and `ValidatedApartment2D` pipeline are aligned with Apartment SVG 2.2. Successful validation guarantees a simple, positive-area orthogonal footprint within the root `viewBox`, complete stationary geometry containment within its closed region, and level-local camera collision checks. Hinged-door open-leaf points may extend beyond the footprint but must remain within the `viewBox`. The trusted domain model exposes the canonical footprint separately from root bounds and includes the same footprint instance in its semantic ID index. Architectural Z values remain level-local, with `metadata.level.baseZ` retained separately for future 3D construction. Renderer-independent 3D foundations and `ArchitecturalModel3D` are the next stage; rendering and AI-assisted features follow later.
 
 Each implementation phase should have explicit acceptance criteria and automated tests.
 

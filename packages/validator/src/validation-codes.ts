@@ -42,6 +42,8 @@ export const APARTMENT_SVG_VALIDATION_CODES = Object.freeze({
     duplicate: "APSVG-ID-003",
   }),
   footprint: Object.freeze({
+    invalidPolygon: "APSVG-FOOTPRINT-001",
+    placementOutsideFootprint: "APSVG-FOOTPRINT-002",
     invalidAttributeValue: "APSVG-FOOTPRINT-101",
     malformedPoints: "APSVG-FOOTPRINT-102",
     invalidPointNumber: "APSVG-FOOTPRINT-103",

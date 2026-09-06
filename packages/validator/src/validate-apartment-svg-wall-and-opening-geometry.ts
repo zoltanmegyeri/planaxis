@@ -41,7 +41,7 @@ export type ApartmentSvgWallAndOpeningGeometryValidationResult =
 const EMPTY_VALIDATION_ERRORS: readonly [] = Object.freeze([]);
 
 /**
- * Validates the Apartment SVG 2.1 wall and opening geometry that follows
+ * Validates the Apartment SVG 2.2 wall and opening geometry that follows
  * reference resolution. Later topology, overlap, placement, and collision
  * rules remain deferred.
  */

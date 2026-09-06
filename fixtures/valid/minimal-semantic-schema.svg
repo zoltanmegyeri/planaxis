@@ -25,7 +25,7 @@
   <g id="spaces">
     <polygon
       id="space-1"
-      points="0,0 100,0 100,100 0,100"
+      points="0,10 100,10 100,100 0,100"
       data-kind="zone"
       data-name="Living room"
       data-function="living-room"

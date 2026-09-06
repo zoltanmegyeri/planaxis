@@ -78,6 +78,12 @@ export interface ApartmentMetadata {
   readonly location?: ApartmentLocation;
 }
 
+export interface ApartmentFootprint {
+  readonly id: string;
+  readonly kind: "footprint";
+  readonly boundary: readonly Point2D[];
+}
+
 export interface ApartmentSpace {
   readonly id: string;
   readonly kind: "zone";
@@ -207,6 +213,7 @@ export interface ApartmentCamera {
 }
 
 export type ApartmentSemanticElement =
+  | ApartmentFootprint
   | ApartmentSpace
   | ApartmentWall
   | ApartmentWindow
@@ -218,8 +225,11 @@ export type ApartmentSemanticElement =
 /**
  * Trusted, normalized in-memory apartment model produced only after complete
  * Apartment SVG schema, reference, geometric, and topological validation.
+ * Element-level architectural Z values remain level-local; metadata.level.baseZ
+ * is the separate model-space offset for downstream 3D construction.
  */
 export interface ValidatedApartment2D {
+  readonly footprint: ApartmentFootprint;
   readonly bounds: Rect2D;
   readonly metadata: ApartmentMetadata;
   readonly spaces: readonly ApartmentSpace[];

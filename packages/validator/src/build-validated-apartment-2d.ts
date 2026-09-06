@@ -11,6 +11,7 @@ import type {
   ApartmentDoor,
   ApartmentFixedElement,
   ApartmentFixedObject,
+  ApartmentFootprint,
   ApartmentHingedDoor,
   ApartmentMetadata,
   ApartmentRadiator,
@@ -40,6 +41,11 @@ export function buildValidatedApartment2D(
   document: GeometryValidApartmentSvgDocument,
 ): ValidatedApartment2D {
   const metadata = buildMetadata(document.metadata);
+  const footprint: ApartmentFootprint = Object.freeze({
+    id: document.footprint.id,
+    kind: document.footprint.kind,
+    boundary: Object.freeze(document.footprint.points.map((point) => buildPoint(point.x, point.y))),
+  });
   const spaces = Object.freeze(document.spaces.map(buildSpace));
   const walls = Object.freeze(
     document.walls.map((wall) => buildWall(wall, metadata.level.defaultCeilingHeight)),
@@ -108,6 +114,7 @@ export function buildValidatedApartment2D(
   );
 
   const semanticElements: readonly ApartmentSemanticElement[] = [
+    footprint,
     ...spaces,
     ...walls,
     ...windows,
@@ -134,6 +141,7 @@ export function buildValidatedApartment2D(
       height: document.viewBox.height,
     }),
     metadata,
+    footprint,
     spaces,
     walls,
     windows,

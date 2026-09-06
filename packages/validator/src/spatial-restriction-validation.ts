@@ -1,4 +1,5 @@
 import {
+  createDecimal,
   doRectsIntersect,
   doRectsOverlapWithPositiveArea,
   isPointInRect,
@@ -55,8 +56,8 @@ function validateCameraCollisions(
 ): void {
   for (const camera of document.cameras) {
     for (const wall of document.walls) {
-      const minimumZ = document.metadata.level.baseZ;
-      const maximumZ = minimumZ.plus(getEffectiveWallHeight(wall, document));
+      const minimumZ = createDecimal("0");
+      const maximumZ = getEffectiveWallHeight(wall, document);
       if (!isCameraInsideVolume(camera, wall, minimumZ, maximumZ)) continue;
       errors.push(
         spatialError({

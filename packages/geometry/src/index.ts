@@ -12,6 +12,7 @@ export {
   getPolygonArea,
   getPolygonSignedDoubleArea,
   hasPolygonSelfIntersection,
+  isPolygonContainedInPolygon,
   locatePointInPolygon,
 } from "./polygon-2d.js";
 export type { PointPolygonLocation } from "./polygon-2d.js";

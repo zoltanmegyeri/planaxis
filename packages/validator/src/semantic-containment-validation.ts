@@ -20,14 +20,14 @@ export function collectSemanticContainmentErrors(
     height: document.viewBox.height,
   };
 
-  for (const zone of document.spaces) {
+  for (const zone of [document.footprint, ...document.spaces]) {
     const outsidePoints = zone.points.filter((point) => !isPointInRect(point, viewBox));
     if (outsidePoints.length > 0) {
       errors.push(
         containmentError(
           zone.id,
           "points",
-          `zone vertices ${outsidePoints.map(formatPoint).join(", ")}`,
+          `${zone.kind} vertices ${outsidePoints.map(formatPoint).join(", ")}`,
           viewBox,
         ),
       );
