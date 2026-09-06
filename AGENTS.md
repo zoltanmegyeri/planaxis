@@ -54,7 +54,7 @@ Before making changes, identify which documents govern the task.
 The normative Apartment SVG specification is:
 
 ```text
-docs/specifications/apartment-svg/2.1.md
+docs/specifications/apartment-svg/2.2.md
 ```
 
 The specification defines the external file format, conformance rules, lexical types, geometry, references, validation behavior, and canonical interpretation order.
@@ -135,7 +135,7 @@ Derived values may exist in memory when useful, but redundant geometric facts mu
 
 Do not construct the architectural 3D model from unvalidated Apartment SVG data.
 
-The 3D pipeline may assume that its `ValidatedApartment2D` input has already satisfied the required schema, reference, geometric, topological, and overlap checks.
+The 3D pipeline may assume that its `ValidatedApartment2D` input has already satisfied the required schema, reference, geometric, topological, footprint-containment, and overlap checks.
 
 ### 3. Authoritative geometry uses exact decimal arithmetic
 
@@ -307,7 +307,7 @@ In particular, the agent may and, when relevant, must read authoritative documen
 
 ```text
 AGENTS.md
-docs/specifications/apartment-svg/2.1.md
+docs/specifications/apartment-svg/2.2.md
 docs/architecture/overview.md
 docs/development/coding-guidelines.md
 docs/development/testing.md

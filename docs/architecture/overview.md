@@ -11,7 +11,7 @@ This document describes **how the system is currently intended to be structured*
 The normative definition of the external apartment file format is the Apartment SVG specification:
 
 ```text
-docs/specifications/apartment-svg/2.1.md
+docs/specifications/apartment-svg/2.2.md
 ```
 
 That specification takes precedence for all Apartment SVG semantics.
@@ -102,6 +102,8 @@ The Apartment SVG document is the **canonical external and persistent representa
 
 It is the source of truth for facts defined by the Apartment SVG specification.
 
+In Apartment SVG 2.2, the mandatory apartment footprint is canonical geometry. It defines the horizontal physical extent of the modeled level and must not be reconstructed from walls, zones, presentation, or visual appearance.
+
 The parser and validator must not infer missing required facts from:
 
 - CSS;
@@ -123,6 +125,8 @@ If required information is missing or invalid, the correct outcome is a validati
 It is **not** a second persistence format and is **not** a competing source of truth.
 
 Its purpose is to provide application code with a safe domain model that no longer exposes raw XML or SVG parsing concerns.
+
+The model must retain canonical geometry needed by downstream stages, including the validated apartment footprint and the specification-defined level-local Z values and metadata.
 
 It may contain derived values that are useful at runtime, for example:
 
@@ -153,6 +157,8 @@ It may contain concepts such as:
 - utility positions;
 - camera definitions.
 
+For Apartment SVG 2.2, the apartment footprint and level metadata provide deterministic source data for the implicit floor and default ceiling surfaces. Their XY geometry is the footprint; their model-space Z positions are `level.baseZ` and `level.baseZ + level.defaultCeilingHeight` respectively. This does not imply slab thickness, construction material, or other physical properties not present in the specification.
+
 It must not contain Three.js-specific types.
 
 ---
@@ -179,16 +185,17 @@ It also does not construct 3D geometry.
 
 Schema validation verifies structural conformance to the Apartment SVG specification.
 
-The implemented schema-validation phase consumes the parser-owned `ParsedApartmentSvgDocument` representation and validates:
+The schema-validation phase consumes the parser-owned `ParsedApartmentSvgDocument` representation and validates:
 
 - Apartment SVG scalar lexical and value types needed at document level;
 - the canonical root element, namespace, schema attributes, and `viewBox`;
 - metadata multiplicity, CDATA/JSON form, required metadata structure, exact numeric values, optional location data, and extension keys;
-- required top-level groups, permitted root-level elements, extension groups, and core-group transform restrictions;
+- required top-level groups, including the mandatory `footprint` group, permitted root-level elements, extension groups, and core-group transform restrictions;
+- the footprint group's required single `data-kind="footprint"` polygon and its permitted attributes;
 - common semantic-element structure, attributes, IDs, presentation/extension boundaries, and prohibited transforms or redundant geometry;
 - the complete schema tables, enum values, scalar values, and conditional attributes for spaces, walls, windows, doors, fixed elements, utilities, and cameras.
 
-The public full-schema entry point returns structured `APSVG-*` validation errors for ordinary schema failures. On success it produces a validator-owned `SchemaValidApartmentSvgDocument` containing exact-decimal document and semantic values, raw unresolved reference IDs, and a unique core semantic ID index. This intermediate representation establishes schema conformance only: it is deliberately distinct from `ValidatedApartment2D` and does not imply reference, geometric, or topological conformance. The earlier document-level validation entry point remains available for callers that need only the root, metadata, and group-structure slice.
+The public full-schema entry point returns structured `APSVG-*` validation errors for ordinary schema failures. On success it produces a validator-owned `SchemaValidApartmentSvgDocument` containing exact-decimal document and semantic values, raw unresolved reference IDs, and a unique core semantic ID index. This intermediate representation establishes schema conformance only: it is deliberately distinct from `ValidatedApartment2D` and does not imply reference, geometric, topological, footprint, or containment conformance. The earlier document-level validation entry point may remain available for callers that need only the root, metadata, and group-structure slice.
 
 Typical responsibilities include:
 
@@ -207,11 +214,11 @@ The implementation should preserve the specification's distinction between XML c
 
 References such as `data-wall` and `data-radiator-below` are resolved only after identifiers and element types have been validated sufficiently to make resolution safe.
 
-The implemented reference-validation phase consumes `SchemaValidApartmentSvgDocument` directly, without reparsing XML or repeating schema validation. It validates target existence and required semantic kind for every Apartment SVG 2.1 core reference. Ordinary failures are returned as structured `APSVG-REF-*` errors.
+The reference-validation phase consumes `SchemaValidApartmentSvgDocument` directly, without reparsing XML or repeating schema validation. It validates target existence and required semantic kind for every core reference. Ordinary failures are returned as structured `APSVG-REF-*` errors.
 
 On success it produces a validator-owned `ReferenceValidApartmentSvgDocument`. Windows, doors, radiators, and wall-associated utilities expose typed resolved relationships, and the document's semantic ID index points to the reference-valid element representations. Exact-decimal schema values are preserved unchanged.
 
-This intermediate type establishes referential conformance only. It remains deliberately distinct from `ValidatedApartment2D` and does not imply geometric or topological conformance.
+This intermediate type establishes referential conformance only. It remains deliberately distinct from `ValidatedApartment2D` and does not imply geometric, topological, footprint, or containment conformance.
 
 Responsibilities include:
 
@@ -224,22 +231,27 @@ Downstream layers do not need to resolve the same raw reference IDs again.
 
 ### 5.4. Geometric and Topological Validation
 
-The implemented full geometric-validation stage consumes `ReferenceValidApartmentSvgDocument`, first composes the narrower wall/opening geometry validator, and then validates every remaining spatial invariant defined by Apartment SVG 2.1. Wall/opening failures stop the full stage before checks that depend on those invariants.
+The full geometric-validation stage consumes `ReferenceValidApartmentSvgDocument` and validates every remaining spatial invariant required by the Apartment SVG specification. Checks may be composed in narrower stages when later checks depend on earlier geometric guarantees.
 
-The complete stage validates:
+The complete stage is responsible for validating:
 
+- the apartment footprint polygon's topology, positive area, and exact orthogonal-edge requirement;
+- containment of the footprint within the root `viewBox`;
 - wall-axis consistency;
 - window-to-wall relationships;
 - door-to-wall relationships;
 - hinged-door hinge position;
-- hinged-door open-leaf geometry;
+- hinged-door open-leaf geometry and its explicit exemption from footprint containment while remaining subject to `viewBox` containment;
 - zone polygon validity;
-- semantic geometry containment within the root `viewBox`;
+- stationary semantic geometry containment within the closed apartment footprint;
 - wall-associated utility placement;
-- camera collisions with wall and fixed-element volumes;
+- utility and camera point containment within the footprint, ignoring presentation-only marker radius;
+- camera collisions with wall and fixed-element volumes using level-relative Z semantics;
 - opening, zone, and wall overlap restrictions.
 
-The normative geometric tolerance is defined by the Apartment SVG specification.
+For concave footprints, containment applies to the complete rectangle or polygon geometry, not merely to selected vertices.
+
+The normative geometric tolerance is defined by the Apartment SVG specification. Footprint edge orthogonality is an exact coordinate rule and must not be relaxed using `EPSILON`.
 
 Validation must report errors rather than silently repair invalid input.
 
@@ -263,17 +275,25 @@ trusted domain representation
 
 Code receiving `ValidatedApartment2D` may rely on the invariants guaranteed by the validation pipeline.
 
-The implemented `buildValidatedApartment2D` entry point is owned by `@planaxis/validator`, while the model contracts are owned by `@planaxis/model`. Construction creates a normalized, read-only domain object graph with domain-oriented bounds, footprints, positions, and space boundaries. Relationships to walls and radiators point to the corresponding constructed domain instances, and a semantic-element ID index contains those same instances.
+The `buildValidatedApartment2D` entry point is owned by `@planaxis/validator`, while the model contracts are owned by `@planaxis/model`. Construction creates a normalized, read-only domain object graph with domain-oriented bounds, the canonical apartment footprint, element footprints, positions, and space boundaries. Relationships to walls and radiators point to the corresponding constructed domain instances, and a semantic-element ID index contains those same instances.
 
-The model retains exact-decimal canonical metadata and semantic geometry while adding deterministic derived values required by downstream code, including wall length, thickness, centerline, and effective height; window and door opening widths; and hinged-door leaf length and closed free endpoint. SVG marker radii and raw unresolved reference IDs are not part of this domain representation.
+The model retains exact-decimal canonical metadata and semantic geometry while adding deterministic derived values required by downstream code, including wall length, thickness, centerline, and effective height; window and door opening widths; and hinged-door leaf length and closed free endpoint. Element-level architectural Z values remain level-relative as defined by the specification; `metadata.level.baseZ` is retained separately as the model-space position of the level-local floor plane. SVG marker radii and raw unresolved reference IDs are not part of this domain representation.
 
 ### 5.6. Construction of `ArchitecturalModel3D`
 
-The 3D model builder transforms validated 2D architectural data and explicit Z-related metadata into renderer-independent 3D geometry.
+The 3D model builder transforms validated 2D architectural data and explicit level-local Z metadata into renderer-independent 3D geometry.
 
-The builder may derive 3D structures such as wall volumes and openings, but it must not reinterpret invalid or missing source data.
+Model-space Z is derived deterministically as:
 
-The builder must not repeat domain validation as a substitute for the validation layer.
+```text
+modelZ = metadata.level.baseZ + localZ
+```
+
+The builder may derive structures such as wall volumes and wall openings. It also derives the implicit floor and default ceiling surfaces directly from the validated apartment footprint and level metadata.
+
+The builder must not invent slab thickness, material, or other geometry not defined by the Apartment SVG specification.
+
+The builder must not reinterpret invalid or missing source data and must not repeat domain validation as a substitute for the validation layer.
 
 Defensive assertions may exist for internal programming errors, but source-document validation belongs upstream.
 
@@ -363,7 +383,9 @@ runtime simulation state
 
 Examples of persistent facts include:
 
-- geometry;
+- apartment footprint and other canonical geometry;
+- level base Z and default ceiling height;
+- level-relative architectural Z values;
 - camera definitions stored by the Apartment SVG;
 - geographic latitude and longitude;
 - true-north orientation;
@@ -496,6 +518,7 @@ Expected responsibilities:
 - shared domain types;
 - Apartment SVG semantic model types;
 - `ValidatedApartment2D`;
+- the validated apartment footprint and level-local architectural data;
 - identifiers and enums;
 - metadata types;
 - validation-result contracts where appropriate.
@@ -529,7 +552,7 @@ Expected responsibilities:
 
 - schema validation;
 - reference validation;
-- geometric and topological validation;
+- geometric, topological, and footprint-containment validation;
 - validation errors and error codes;
 - production of the validated 2D domain model.
 
@@ -648,7 +671,7 @@ renderer tests
     renderer-facing structures / behavior
 ```
 
-Parser and validator behavior should be exercised with focused Apartment SVG fixtures.
+Parser and validator behavior should be exercised with focused Apartment SVG fixtures, including footprint structure, orthogonal geometry, containment, and level-relative Z cases required by the current specification.
 
 The repository distinguishes:
 
@@ -753,7 +776,9 @@ ADRs describe **why significant decisions were made**.
 
 ## 16. Current Implementation Phase
 
-The executable repository bootstrap, authoritative numeric and geometric foundations, Apartment SVG XML parsing boundary, complete schema validation, reference validation, complete geometric/topological validation, developer validation CLI, and `ValidatedApartment2D` construction are implemented. The Node.js CLI reads one Apartment SVG file and composes the shared parse, schema, reference, and geometry stages while keeping filesystem and process behavior in the application layer. Schema validation produces a typed, exact-decimal `SchemaValidApartmentSvgDocument`; reference validation resolves its core relationships into `ReferenceValidApartmentSvgDocument`; and the full geometry stage validates wall/opening geometry, zone topology, semantic `viewBox` containment, utility placement, camera collisions, and global overlap rules. Its nominal `GeometryValidApartmentSvgDocument` is the final trusted SVG representation before `@planaxis/validator` constructs the normalized, exact-decimal `ValidatedApartment2D` owned by `@planaxis/model`. The next unimplemented stage is the renderer-independent `ArchitecturalModel3D`.
+The executable repository bootstrap, authoritative numeric and geometric foundations, Apartment SVG XML parsing boundary, schema-validation pipeline, reference validation, geometric/topological validation, developer validation CLI, and `ValidatedApartment2D` construction are implemented. The Node.js CLI reads one Apartment SVG file and composes the shared parse, schema, reference, and geometry stages while keeping filesystem and process behavior in the application layer. Schema validation produces a typed, exact-decimal `SchemaValidApartmentSvgDocument`; reference validation resolves its core relationships into `ReferenceValidApartmentSvgDocument`; and the geometry stage establishes the nominal `GeometryValidApartmentSvgDocument` boundary before `@planaxis/validator` constructs the normalized, exact-decimal `ValidatedApartment2D` owned by `@planaxis/model`.
+
+Apartment SVG 2.2 is now the normative external format. The existing implementation predates its mandatory apartment footprint and clarified architectural Z semantics, so the immediate next implementation phase is to bring the parser, schema validation, geometric/topological validation, fixtures, and `ValidatedApartment2D` contract into full 2.2 conformance. This includes parsing and validating the canonical orthogonal footprint, enforcing footprint containment, preserving the footprint in the trusted 2D model, and applying the specification's level-relative Z semantics consistently. The renderer-independent `ArchitecturalModel3D` follows this migration rather than preceding it.
 
 The intended implementation order is broadly:
 
@@ -773,6 +798,8 @@ reference resolution
 geometric / topological validation
     ↓
 ValidatedApartment2D
+    ↓
+Apartment SVG 2.2 footprint and Z-semantics migration
     ↓
 ArchitecturalModel3D
     ↓

@@ -4,10 +4,10 @@
 
 **PlanAxis** is a TypeScript-based toolkit and web application for validating, interpreting, visualizing, and eventually redesigning apartments described by a structured SVG floor-plan format.
 
-The project is built around the versioned, normative [Apartment SVG 2.1 specification](docs/specifications/apartment-svg/2.1.md), where an SVG document is not merely a drawing: it is the canonical, machine-readable representation of an apartment's geometry and semantics.
+The project is built around the versioned, normative [Apartment SVG 2.2 specification](docs/specifications/apartment-svg/2.2.md), where an SVG document is not merely a drawing: it is the canonical, machine-readable representation of an apartment's geometry and semantics.
 
 > [!NOTE]
-> The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG parser, complete schema and reference validators, complete geometric/topological validator, validation CLI, and normalized `ValidatedApartment2D` domain model are in place. Successful geometric validation produces the nominal `GeometryValidApartmentSvgDocument`, from which the validator constructs the trusted exact-decimal model used by future 3D code.
+> The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG parser and validation pipeline, developer validation CLI, and normalized `ValidatedApartment2D` domain model are in place. Apartment SVG 2.2 is now the normative format; the existing parser, validator, fixtures, and 2D domain model must next be brought into full 2.2 conformance, including the mandatory apartment footprint, footprint-containment rules, and clarified level-relative Z semantics, before renderer-independent 3D model construction begins.
 
 ## Project Goals
 
@@ -50,6 +50,8 @@ The Apartment SVG document is the canonical external model.
 
 Geometry must not be inferred from CSS, visual appearance, annotations, natural-language labels, or other non-normative information. Missing required information must result in validation errors rather than guesses.
 
+Apartment SVG 2.2 makes the mandatory apartment-level footprint canonical geometry. The footprint is not inferred from walls or zones; it defines the horizontal physical extent of the modeled level and the XY extent of its implicit floor and default ceiling surfaces.
+
 ### Validation precedes 3D generation
 
 A 3D model may only be created from a fully validated Apartment SVG document.
@@ -74,6 +76,8 @@ SVG
 Apartment geometry is expressed in centimeters and must not rely on JavaScript binary floating-point arithmetic for authoritative calculations.
 
 Exact decimal arithmetic is used throughout the domain and validation layers. Conversion to native JavaScript `number` values is allowed only at explicitly defined boundaries where required by external systems such as Three.js.
+
+Architectural element Z values are level-relative. `metadata.level.baseZ` positions the level-local floor plane in model space, while geographic `elevationMeters` remains independent MSL metadata.
 
 ### Rendering is separate from domain logic
 
@@ -169,7 +173,7 @@ Project documentation lives under [`docs/`](docs/).
 
 [`docs/specifications/`](docs/specifications/) contains normative domain specifications.
 
-The current normative format definition is the [Apartment SVG 2.1 specification](docs/specifications/apartment-svg/2.1.md). It defines the external file format, validation rules, geometric invariants, reference semantics, and canonical interpretation rules.
+The current normative format definition is the [Apartment SVG 2.2 specification](docs/specifications/apartment-svg/2.2.md). It defines the external file format, validation rules, geometric invariants, reference semantics, footprint and containment semantics, architectural Z semantics, and canonical interpretation rules.
 
 ### Architecture
 
@@ -228,7 +232,9 @@ Natural-language discussion outside the repository may use any language, but rep
 
 ## Development Status
 
-The initial implementation is being developed incrementally. Apartment SVG parsing, complete schema validation, reference validation, geometric/topological validation, the developer validation CLI, and construction of the trusted `ValidatedApartment2D` model are implemented. `GeometryValidApartmentSvgDocument` marks the final trusted SVG boundary, and the normalized 2D domain model is now the trusted input to the future renderer-independent 3D generation stage. 3D generation, rendering, and AI-assisted features remain ahead.
+The executable pipeline through `ValidatedApartment2D` is implemented: Apartment SVG parsing, schema validation, reference validation, geometric/topological validation, the developer validation CLI, and trusted 2D domain-model construction all exist. `GeometryValidApartmentSvgDocument` marks the final trusted SVG boundary before normalized domain construction.
+
+The current normative format is Apartment SVG 2.2. The immediate next implementation phase is to migrate the existing pipeline and fixtures to its mandatory apartment footprint, footprint-containment rules, level-relative architectural Z semantics, and corresponding `ValidatedApartment2D` representation. Renderer-independent `ArchitecturalModel3D` work follows that migration; rendering and AI-assisted features remain later stages.
 
 Each implementation phase should have explicit acceptance criteria and automated tests.
 

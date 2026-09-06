@@ -353,5 +353,5 @@ AGENTS.md
 docs/architecture/overview.md
 docs/development/coding-guidelines.md
 docs/development/testing.md
-docs/specifications/apartment-svg/2.1.md
+docs/specifications/apartment-svg/2.2.md
 ```

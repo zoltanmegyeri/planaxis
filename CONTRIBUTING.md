@@ -61,7 +61,7 @@ docs/development/agent-task-workflow.md
 For Apartment SVG behavior, the normative specification is:
 
 ```text
-docs/specifications/apartment-svg/2.1.md
+docs/specifications/apartment-svg/2.2.md
 ```
 
 For established architectural decisions, review:

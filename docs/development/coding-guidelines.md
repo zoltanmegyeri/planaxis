@@ -16,7 +16,7 @@ docs/decisions/
 The Apartment SVG format itself is defined normatively by:
 
 ```text
-docs/specifications/apartment-svg/2.1.md
+docs/specifications/apartment-svg/2.2.md
 ```
 
 These guidelines describe how PlanAxis code should be written. They do not redefine Apartment SVG semantics or architecture.
@@ -376,6 +376,8 @@ The persistent Apartment SVG intentionally avoids redundant geometric facts.
 The in-memory model may expose derived values when they improve downstream code, but those values must remain clearly derived.
 
 Do not create competing authoritative representations of the same geometry.
+
+Specification-defined derivations are not guesses. For example, Apartment SVG 2.2 explicitly derives the implicit floor and default ceiling surfaces from the canonical apartment footprint and level metadata, and derives model-space Z by adding `metadata.level.baseZ` to a level-local architectural Z value. Implement such derivations exactly as specified rather than introducing alternate interpretations.
 
 ### 7.4. Use semantic identifiers where they prevent mistakes
 

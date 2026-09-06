@@ -16,7 +16,7 @@ docs/decisions/
 The normative Apartment SVG behavior is defined by:
 
 ```text
-docs/specifications/apartment-svg/2.1.md
+docs/specifications/apartment-svg/2.2.md
 ```
 
 Tests must verify the implementation against the specification. They must not accidentally redefine it.
@@ -139,6 +139,7 @@ Typical examples:
 - geometric tolerance checks;
 - rectangle containment;
 - segment or polygon operations;
+- orthogonal-polygon and polygon-containment operations;
 - wall-axis derivation;
 - door leaf calculations;
 - heading normalization;
@@ -166,7 +167,8 @@ Typical responsibilities to test include:
 - malformed XML handling;
 - root element extraction;
 - metadata extraction;
-- group discovery;
+- group discovery, including the `footprint` group;
+- extraction of the footprint polygon and its raw attributes;
 - attribute extraction;
 - preservation of lexical decimal values;
 - relevant permitted XML/SVG structures;
@@ -203,6 +205,9 @@ Examples include:
 - malformed metadata structure;
 - missing required top-level group;
 - duplicate top-level group;
+- missing or duplicate `footprint` group;
+- a `footprint` group that does not contain exactly one polygon;
+- invalid or missing footprint attributes, including `data-kind="footprint"`;
 - unknown non-extension group;
 - missing required element attribute;
 - prohibited attribute;
@@ -246,9 +251,27 @@ Resolved references in `ValidatedApartment2D` should be tested through domain co
 
 ## 9. Geometric and Topological Validation Tests
 
-Geometric tests are central to PlanAxis and must use exact decimal values and the normative geometric tolerance.
+Geometric tests are central to PlanAxis and must use exact decimal values and the normative geometric tolerance where the specification defines tolerance-aware comparison.
 
-### 9.1. Walls
+### 9.1. Apartment footprint
+
+Cover at least:
+
+- valid rectangular footprint;
+- valid concave orthogonal footprint;
+- too few distinct vertices;
+- zero-area footprint;
+- self-intersecting footprint;
+- diagonal footprint edge;
+- proof that a nearly horizontal or vertical diagonal edge is still invalid rather than accepted through `EPSILON`;
+- footprint extending outside the root `viewBox`;
+- wall, window, door, fixed-element, and zone geometry fully contained in the closed footprint;
+- rectangle or polygon crossing outside a concave footprint even when selected vertices are inside;
+- utility and camera center points inside or on the footprint boundary;
+- utility and camera marker radii not participating in footprint containment;
+- hinged-door `open-leaf` reference geometry outside the footprint but still inside the root `viewBox`.
+
+### 9.2. Walls
 
 Cover cases such as:
 
@@ -260,7 +283,7 @@ Cover cases such as:
 - explicit wall height;
 - default wall height derived from metadata.
 
-### 9.2. Windows
+### 9.3. Windows
 
 Cover at least:
 
@@ -271,9 +294,10 @@ Cover at least:
 - opening extending before wall start;
 - opening extending beyond wall end;
 - opening not covering the full wall thickness;
-- sill plus opening height exceeding wall height.
+- sill plus opening height exceeding wall height;
+- window sill and opening height interpreted as level-relative vertical values.
 
-### 9.3. Doors
+### 9.4. Doors
 
 Test door types separately.
 
@@ -291,7 +315,9 @@ For hinged doors, cover:
 
 For sliding and opening-only doors, verify that hinged-door-only attributes are prohibited.
 
-### 9.4. Zones
+Door opening Z must be tested as level-relative, with local `Zmin = 0` and `Zmax = data-opening-height`.
+
+### 9.5. Zones
 
 Cover:
 
@@ -302,28 +328,31 @@ Cover:
 - zone-to-zone positive-area overlap;
 - shared boundary without interior overlap;
 - zone interior overlapping a wall;
-- boundary contact with a wall.
+- boundary contact with a wall;
+- complete zone containment within the apartment footprint.
 
-### 9.5. Fixed elements and utilities
+### 9.6. Fixed elements and utilities
 
 Cover:
 
-- valid fixed-element dimensions and Z ranges;
+- valid fixed-element dimensions and level-relative Z ranges;
 - conditional `data-wall` behavior for radiators;
 - `fixed-object` description requirements;
 - wall-associated utility on wall footprint or boundary;
 - wall-associated utility outside wall footprint;
-- `ceiling-light` with prohibited wall reference.
+- `ceiling-light` with prohibited wall reference;
+- utility `data-z` interpreted as level-relative.
 
-### 9.6. Cameras
+### 9.7. Cameras
 
 Cover:
 
 - valid camera in free space;
-- camera XY inside wall but Z outside wall volume;
-- camera XY and Z both inside wall volume;
-- collision with fixed element;
-- marker radius not affecting collision detection.
+- camera XY inside wall but local Z outside wall volume;
+- camera XY and local Z both inside wall volume;
+- collision with fixed element using level-relative Z ranges;
+- equivalent collision results after adding the same `level.baseZ` model-space offset;
+- marker radius not affecting collision detection or footprint containment.
 
 ---
 
@@ -375,14 +404,17 @@ Use exact decimal construction in these tests.
 
 Do not use binary floating-point approximations to test the domain tolerance policy.
 
+Do not apply `EPSILON` to specification rules that require exact equality, such as footprint edge orthogonality.
+
 ---
 
 ## 12. `ValidatedApartment2D` Tests
 
 Tests for `ValidatedApartment2D` should verify that it is produced only from fully valid Apartment SVG input.
 
-Test important deterministic derived values where they are part of the domain contract, such as:
+Test important canonical and deterministic values where they are part of the domain contract, such as:
 
+- the validated apartment footprint;
 - effective wall height;
 - wall length;
 - wall thickness;
@@ -391,6 +423,8 @@ Test important deterministic derived values where they are part of the domain co
 - door opening width;
 - door leaf length;
 - closed free endpoint;
+- level-relative sill, opening, fixed-element, utility, and camera Z values;
+- `metadata.level.baseZ` preserved separately from level-local Z values;
 - specification-defined metadata defaults or resolved values.
 
 Do not require the in-memory model to preserve irrelevant XML details such as:
@@ -413,12 +447,16 @@ Its tests should construct or obtain a valid `ValidatedApartment2D`, then verify
 Typical assertions include:
 
 - correct wall volume dimensions;
-- correct base Z and wall height;
+- correct model-space base Z and wall height;
 - correctly represented wall openings;
-- correct window Z range;
-- correct door opening Z range;
-- correct fixed-element volume;
+- correct window model-space Z range;
+- correct door opening model-space Z range;
+- correct fixed-element model-space volume;
+- correct utility and camera model-space Z positions;
 - correct camera position and orientation data;
+- floor surface XY geometry equal to the validated apartment footprint at `level.baseZ`;
+- default ceiling surface XY geometry equal to the same footprint at `level.baseZ + level.defaultCeilingHeight`;
+- no invented floor/ceiling slab thickness or material when the source does not define them;
 - consistent coordinate-system mapping.
 
 These tests must not require WebGL and must not assert on `THREE.Mesh`, `THREE.Material`, or other renderer-specific objects.
@@ -499,6 +537,7 @@ Example names:
 
 ```text
 minimal.svg
+concave-footprint.svg
 horizontal-wall.svg
 window-horizontal-wall.svg
 hinged-door-vertical-left.svg
@@ -516,6 +555,9 @@ Example names:
 ```text
 duplicate-id.svg
 missing-required-group.svg
+missing-footprint.svg
+invalid-footprint-diagonal-edge.svg
+geometry-outside-footprint.svg
 broken-wall-reference.svg
 invalid-wall-axis.svg
 window-outside-wall.svg
@@ -634,6 +676,8 @@ Test names should describe behavior.
 Preferred:
 
 ```text
+rejects a footprint containing a diagonal edge
+rejects a wall that crosses outside a concave footprint
 rejects a hinged door whose hinge is not on an opening endpoint
 accepts a window whose wall-thickness difference equals EPSILON
 uses the default ceiling height when data-height is absent
@@ -686,6 +730,7 @@ Small test builders are encouraged when they remove irrelevant boilerplate.
 Examples:
 
 ```text
+footprint(...)
 wall(...)
 window(...)
 hingedDoor(...)
@@ -735,6 +780,7 @@ Potential candidates include:
 
 - geometric-equality symmetry;
 - rectangle-intersection invariants;
+- orthogonal-polygon invariants;
 - normalized heading range;
 - distance properties;
 - polygon helper invariants.
@@ -1073,10 +1119,10 @@ A versioned fixture hierarchy may be introduced when multiple supported versions
 ```text
 fixtures/
     apartment-svg/
-        2.1/
+        2.2/
             valid/
             invalid/
-        2.2/
+        2.3/
             valid/
             invalid/
 ```
@@ -1127,7 +1173,10 @@ Before considering test work complete, verify:
 - valid and invalid cases are both covered where relevant;
 - boundary values are tested;
 - exact decimal arithmetic is preserved;
-- `EPSILON` boundary cases are covered for geometric rules;
+- `EPSILON` boundary cases are covered for tolerance-aware geometric rules;
+- exact geometric rules such as footprint orthogonality are not weakened by tolerance;
+- footprint topology and containment are covered when relevant;
+- level-relative and model-space Z semantics are distinguished correctly;
 - invalid fixtures primarily violate the intended rule;
 - validation errors are asserted structurally;
 - tests are deterministic;
