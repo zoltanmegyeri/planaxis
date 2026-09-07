@@ -26,6 +26,8 @@ Apartment SVG
     -> interactive visualization / later design workflows
 ```
 
+The React application in `apps/web` is the first official user-facing entry point. `pnpm dev:web` starts local Apartment SVG loading and validation with a safe read-only 2D SVG pan/zoom viewer. React and browser APIs remain application-layer concerns under ADR-002. Three.js renderer adaptation and 3D visualization are the next development stage.
+
 AI-assisted design and photorealistic rendering are downstream features. They must not replace or weaken the deterministic geometry and validation pipeline.
 
 ## Repository Language
@@ -207,7 +209,7 @@ Unless superseded by an accepted ADR, the intended baseline is:
 - Node.js 24 LTS for server-side execution;
 - pnpm workspaces for the monorepo;
 - Fastify for the HTTP backend;
-- Vite for the browser application;
+- React with Vite for the browser application;
 - Three.js for interactive 3D rendering;
 - `decimal.js` for authoritative decimal arithmetic;
 - Vitest for automated tests.

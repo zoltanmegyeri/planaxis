@@ -428,21 +428,28 @@ The exact split may evolve, but responsibilities should remain explicit.
 
 ### 8.1. Browser Application
 
-The browser application is expected to handle interactive tasks such as:
+The React application in `apps/web`, built with Vite, is the first official user-facing
+PlanAxis entry point. Start it with `pnpm dev:web`; the command builds its shared
+workspace dependencies before starting Vite. [ADR-002](../decisions/ADR-002-react-browser-ui.md)
+records the UI framework decision.
 
-- loading or selecting apartment projects;
-- displaying validation results;
-- rendering the 3D scene;
-- free navigation through the apartment;
-- selecting predefined cameras;
-- changing runtime date and time;
-- controlling artificial lights;
-- adjusting dimmers;
-- later design exploration workflows.
+The application loads one local SVG through a file picker or drag-and-drop. It calls
+`parseApartmentSvg`, `validateApartmentSvgSchema`, `validateApartmentSvgReferences`,
+`validateApartmentSvgGeometry`, and `buildValidatedApartment2D` through public shared APIs.
+It stops at the first failed stage, exposes complete diagnostics, and retains the trusted
+model only after all stages succeed. File and unexpected processing failures are separate
+application states. Replacements clear prior results; stale asynchronous reads are ignored.
 
-Core TypeScript packages should be reusable in the browser when practical.
+The source is displayed independently of validation in a blob-backed SVG `<img>`.
+Uploaded markup is never inserted into the application DOM. Preview URLs are released on
+replacement and disposal. A preview decoding failure does not hide validation results.
+The viewer supports fit/reset, mouse and touch pan/zoom, and keyboard navigation.
+Image transforms use viewport pixels and never feed into authoritative geometry.
+React, browser resources, and interaction state remain entirely in the application layer.
+No server, network call, persistence, or 3D model construction is involved in this workflow.
 
-This makes client-side parsing, validation, or model generation possible without requiring separate implementations.
+Three.js renderer adaptation and interactive 3D visualization are the next development
+stage. Later browser workflows may add cameras, runtime lighting, and design exploration.
 
 ### 8.2. Server Application
 
@@ -783,6 +790,8 @@ ADRs describe **why significant decisions were made**.
 ---
 
 ## 16. Current Implementation Phase
+
+The initial React browser workflow is implemented: local SVG loading and validation, trusted 2D model retention, structured diagnostics, and a safe read-only SVG pan/zoom viewer. `pnpm dev:web` starts this user-facing application.
 
 The executable repository bootstrap, authoritative numeric and geometric foundations, Apartment SVG XML parsing boundary, schema-validation pipeline, reference validation, geometric/topological validation, developer validation CLI, and `ValidatedApartment2D` construction are implemented. The Node.js CLI reads one Apartment SVG file and composes the shared parse, schema, reference, and geometry stages while keeping filesystem and process behavior in the application layer. Schema validation produces a typed, exact-decimal `SchemaValidApartmentSvgDocument`; reference validation resolves its core relationships into `ReferenceValidApartmentSvgDocument`; and the geometry stage establishes the nominal `GeometryValidApartmentSvgDocument` boundary before `@planaxis/validator` constructs the normalized, exact-decimal `ValidatedApartment2D` owned by `@planaxis/model`.
 

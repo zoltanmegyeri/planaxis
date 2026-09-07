@@ -7,7 +7,7 @@
 The project is built around the versioned, normative [Apartment SVG 2.2 specification](docs/specifications/apartment-svg/2.2.md), where an SVG document is not merely a drawing: it is the canonical, machine-readable representation of an apartment's geometry and semantics.
 
 > [!NOTE]
-> The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG 2.2 parser and complete validation pipeline, developer validation CLI, and normalized `ValidatedApartment2D` domain model are in place. Validation enforces canonical footprint geometry, complete stationary placement containment, and level-local camera collisions. The trusted model retains the exact-decimal footprint and level-local architectural Z values. Exact, renderer-independent `ArchitecturalModel3D` construction is implemented in `@planaxis/model-3d`. Renderer adaptation and interactive Three.js visualization are the next development stage.
+> The React browser application now provides local SVG loading, validation, and a read-only pan/zoom 2D viewer as the first official user-facing entry point. The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG 2.2 parser and complete validation pipeline, developer validation CLI, and normalized `ValidatedApartment2D` domain model are in place. Validation enforces canonical footprint geometry, complete stationary placement containment, and level-local camera collisions. The trusted model retains the exact-decimal footprint and level-local architectural Z values. Exact, renderer-independent `ArchitecturalModel3D` construction is implemented in `@planaxis/model-3d`. Renderer adaptation and interactive Three.js visualization are the next development stage.
 
 ## Project Goals
 
@@ -93,7 +93,7 @@ The project is intended to use:
 - **Node.js** for server-side execution;
 - **pnpm workspaces** for the monorepo;
 - **Fastify** for the backend HTTP layer;
-- **Vite** for the browser application;
+- **React and Vite** for the browser application;
 - **Three.js** for interactive 3D rendering;
 - **decimal.js** for authoritative decimal arithmetic;
 - **Vitest** for automated testing.
@@ -148,6 +148,28 @@ PlanAxis is a pnpm workspace monorepo organized around the following areas:
 The exact package structure may be refined during implementation. Architectural boundaries are more important than preserving a particular directory layout.
 
 `fixtures/` is intended for automated verification and may contain intentionally invalid or synthetic Apartment SVG documents. `examples/` is intended for valid, user-facing samples suitable for learning and demonstration.
+
+## Open a Floor Plan in the Browser
+
+The React browser application is the first official user-facing PlanAxis entry point.
+Start it from the repository root:
+
+```bash
+pnpm dev:web
+```
+
+This builds the shared packages and starts Vite. Open the local URL printed in the terminal.
+Browse for one SVG or drop it anywhere in the application. The file is read, parsed,
+validated, and converted to `ValidatedApartment2D` locally, without a server or upload.
+The status and collapsible validation panel expose parser and structured validation diagnostics.
+
+The read-only 2D viewer displays the original SVG in a restricted image context, including
+renderable drawings that fail Apartment SVG validation. Drag to pan, scroll or pinch to
+zoom, and use **Fit / Reset** to frame the drawing. With the viewport focused, use the
+arrow keys, `+` / `-`, and `0`. Open another file to replace the document.
+
+React is confined to `apps/web`; see [ADR-002](docs/decisions/ADR-002-react-browser-ui.md).
+Three.js renderer adaptation and 3D visualization are the next development stage.
 
 ## Validate an Apartment SVG
 
@@ -278,6 +300,7 @@ pnpm typecheck
 pnpm test
 pnpm build
 pnpm validate:svg <path-to-svg>
+pnpm dev:web
 ```
 
 These commands must remain reliable because they are part of both human development and formal coding-agent verification.
