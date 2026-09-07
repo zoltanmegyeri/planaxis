@@ -2,11 +2,11 @@
 
 ## Task Metadata
 
-- **Status:** Ready
+- **Status:** In Progress
 - **Created:** 2026-09-07
-- **Issued:** —
+- **Issued:** 2026-09-07
 - **Completed:** —
-- **Agent:** —
+- **Agent:** Codex
 - **Repository:** PlanAxis
 - **Description:** `TASK-015-description.md`
 - **Related tasks:** TASK-003, TASK-014
@@ -26,7 +26,7 @@ The authoritative task description is stored in:
 
 `TASK-015-description.md`
 
-The task is ready for formal delegation and has not yet been issued.
+The task was formally issued on 2026-09-07 and is now in progress.
 
 ## Execution Record
 
