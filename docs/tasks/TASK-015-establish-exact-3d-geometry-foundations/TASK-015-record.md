@@ -2,17 +2,17 @@
 
 ## Task Metadata
 
-- **Status:** In Progress
+- **Status:** Completed
 - **Created:** 2026-09-07
 - **Issued:** 2026-09-07
-- **Completed:** —
+- **Completed:** 2026-09-07
 - **Agent:** Codex
 - **Repository:** PlanAxis
 - **Description:** `TASK-015-description.md`
 - **Related tasks:** TASK-003, TASK-014
 - **Related ADRs:** ADR-001
 - **Related specifications:** Apartment SVG 2.2
-- **Implementation commits:** —
+- **Implementation commits:** 77a9f7baf5b9162ff3c14e8e8ef2d28d42c9debe
 
 ## Purpose
 
@@ -32,11 +32,22 @@ The task was formally issued on 2026-09-07 and is now in progress.
 
 ### Result
 
-Pending.
+Codex completed the exact 3D geometry foundations.
+
+The implementation:
+
+- added `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`;
+- added exact and tolerance-aware 3D point comparison using the existing centralized geometric tolerance;
+- added exact `VerticalRange` height derivation;
+- exposed the new primitives through the public `@planaxis/geometry` API;
+- added focused precision, tolerance-boundary, and composition tests;
+- updated current-state documentation to identify `ArchitecturalModel3D` construction as the next stage.
 
 ### Verification
 
-Pending.
+The implementation was completed successfully.
+
+Command-by-command agent verification results were not separately provided during task-record finalization.
 
 ### Deviations from Description
 
@@ -50,11 +61,13 @@ None.
 
 ### Review Status
 
-Pending.
+Accepted
 
 ### Review Notes
 
-Pending.
+The TASK-015 implementation was accepted as successfully completed.
+
+No additional human-review findings, deviations, or follow-up items were provided during task-record finalization.
 
 ### Human Changes After Agent Execution
 
@@ -64,11 +77,25 @@ None.
 
 ### Implementation Commits
 
-—
+```text
+77a9f7baf5b9162ff3c14e8e8ef2d28d42c9debe
+```
 
 ### Commit Messages
 
-—
+```text
+feat(geometry): establish exact 3D geometry foundations
+
+Add Point3D, VerticalRange, RectangularPrism3D, and
+HorizontalPolygonSurface3D as renderer-independent primitives.
+Reuse centralized tolerance rules for point comparisons and
+derive vertical range height with exact decimal arithmetic.
+
+Cover precision, tolerance boundaries, and composition with tests.
+Update current-state documentation for the completed foundation.
+
+Task: TASK-015
+```
 
 ### Supersession
 
