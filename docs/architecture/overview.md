@@ -146,7 +146,7 @@ Such values are derived from the canonical SVG and must not create redundant per
 
 It represents architectural geometry and spatial relationships, not rendering-engine objects.
 
-It may contain concepts such as:
+It exposes:
 
 - wall volumes;
 - wall openings;
@@ -279,7 +279,7 @@ Code receiving `ValidatedApartment2D` may rely on the invariants guaranteed by t
 
 The `buildValidatedApartment2D` entry point is owned by `@planaxis/validator`, while the model contracts are owned by `@planaxis/model`. Construction creates a normalized, read-only domain object graph with domain-oriented bounds, element footprints, positions, and space boundaries. The canonical apartment footprint is exposed separately from root bounds. Relationships to walls and radiators point to the corresponding constructed domain instances, and a semantic-element ID index contains those same instances.
 
-The model retains exact-decimal canonical metadata and semantic geometry while adding deterministic derived values required by downstream code, including wall length, thickness, centerline, and effective height; window and door opening widths; and hinged-door leaf length and closed free endpoint. All element-level architectural Z values remain level-local; `metadata.level.baseZ` is retained separately for the future 3D builder. SVG marker radii and raw unresolved reference IDs are not part of this domain representation.
+The model retains exact-decimal canonical metadata and semantic geometry while adding deterministic derived values required by downstream code, including wall length, thickness, centerline, and effective height; window and door opening widths; and hinged-door leaf length and closed free endpoint. All element-level architectural Z values remain level-local; `metadata.level.baseZ` is retained separately for the 3D builder. SVG marker radii and raw unresolved reference IDs are not part of this domain representation.
 
 ### 5.6. Construction of `ArchitecturalModel3D`
 
@@ -291,7 +291,13 @@ Model-space Z is derived deterministically as:
 modelZ = metadata.level.baseZ + localZ
 ```
 
-The builder may derive structures such as wall volumes and wall openings. It also derives the implicit floor and default ceiling surfaces directly from the validated apartment footprint and level metadata.
+`@planaxis/model-3d` owns the public `ArchitecturalModel3D` contracts and `buildArchitecturalModel3D(apartment: ValidatedApartment2D)` builder. It depends on `@planaxis/model` for trusted input and shared semantics and on `@planaxis/geometry` for exact geometry primitives.
+
+The builder constructs a normalized read-only object graph with `metadata`, `floor`, `ceiling`, `walls`, `windows`, `doors`, `fixedElements`, `utilities`, `cameras`, and `sourceElementsById`. It preserves source X/Y unchanged. Floor and default ceiling are `HorizontalPolygonSurface3D` boundaries derived from the canonical footprint, independent of explicit wall heights. Walls and fixed elements expose `RectangularPrism3D` volumes; windows and doors expose separate opening prisms describing void extents within the wall envelope. No boolean subtraction or mesh splitting occurs.
+
+Windows, doors, radiators, and wall-associated utilities reference constructed 3D walls; optional window-to-radiator relationships likewise reference constructed radiators. The read-only source-semantic ID index contains the same instances as the typed collections. Derived floor and ceiling surfaces have no invented source IDs; footprint and space elements are not added to the index or extruded into room volumes.
+
+Source metadata and immutable plan geometry are shared with the trusted input. Window opening/frame/glass details, door types and status, fixed-element descriptions, and utility semantics remain available. Hinged-door hinge, open-leaf, leaf length, and closed endpoint remain exact plan-view reference geometry. Camera positions are `Point3D`, while heading, pitch, and horizontal FOV remain exact degree values without trigonometric conversion. Heights remain dimensions, and window sill height remains a level-local source measurement; prism ranges and point Z coordinates are model-space values.
 
 The builder must not invent slab thickness, material, or other geometry not defined by the Apartment SVG specification.
 
@@ -500,7 +506,7 @@ apps/
 `apps/cli` is a Node.js-only adapter around the shared parser and validator packages. Filesystem,
 console, and process concerns remain there rather than entering the shared core.
 
-The monorepo defines these shared package skeletons:
+The monorepo defines these shared packages:
 
 ```text
 packages/
@@ -780,7 +786,7 @@ ADRs describe **why significant decisions were made**.
 
 The executable repository bootstrap, authoritative numeric and geometric foundations, Apartment SVG XML parsing boundary, schema-validation pipeline, reference validation, geometric/topological validation, developer validation CLI, and `ValidatedApartment2D` construction are implemented. The Node.js CLI reads one Apartment SVG file and composes the shared parse, schema, reference, and geometry stages while keeping filesystem and process behavior in the application layer. Schema validation produces a typed, exact-decimal `SchemaValidApartmentSvgDocument`; reference validation resolves its core relationships into `ReferenceValidApartmentSvgDocument`; and the geometry stage establishes the nominal `GeometryValidApartmentSvgDocument` boundary before `@planaxis/validator` constructs the normalized, exact-decimal `ValidatedApartment2D` owned by `@planaxis/model`.
 
-Apartment SVG 2.2 is the normative external format, and the parser, validator, CLI, and trusted 2D domain pipeline are fully aligned with it. Schema and reference stages preserve the mandatory exact-decimal footprint while leaving geometry checks to the geometry stage. Successful geometric validation guarantees footprint topology, positive area, exact orthogonality, root viewBox containment, and complete stationary placement containment within the closed footprint. Hinged-door open-leaf geometry is exempt from footprint containment but remains inside the viewBox. Camera collisions compare level-local Z ranges consistently. `ValidatedApartment2D` retains the canonical footprint and unchanged level-local architectural Z values, with the level offset stored separately. Exact, renderer-independent 3D geometry foundations are implemented in `@planaxis/geometry`: `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`. Point comparisons reuse the centralized geometric tolerance, and range height is derived with exact decimal subtraction. These primitives carry no architectural or transformation semantics. `ArchitecturalModel3D` construction is the next development stage; `@planaxis/model-3d` remains a package skeleton.
+Apartment SVG 2.2 is the normative external format, and the parser, validator, CLI, and trusted 2D domain pipeline are fully aligned with it. Schema and reference stages preserve the mandatory exact-decimal footprint while leaving geometry checks to the geometry stage. Successful geometric validation guarantees footprint topology, positive area, exact orthogonality, root viewBox containment, and complete stationary placement containment within the closed footprint. Hinged-door open-leaf geometry is exempt from footprint containment but remains inside the viewBox. Camera collisions compare level-local Z ranges consistently. `ValidatedApartment2D` retains the canonical footprint and unchanged level-local architectural Z values, with the level offset stored separately. Exact, renderer-independent 3D geometry foundations are implemented in `@planaxis/geometry`: `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`. Point comparisons reuse the centralized geometric tolerance, and range height is derived with exact decimal subtraction. These primitives carry no architectural or transformation semantics. `@planaxis/model-3d` implements deterministic `ArchitecturalModel3D` construction from trusted 2D input using these primitives, preserving architectural semantics and resolved relationships without renderer objects or unsupported physical assumptions. Renderer adaptation and interactive Three.js visualization are the next development stage.
 
 The intended implementation order is broadly:
 

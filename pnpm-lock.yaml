@@ -78,7 +78,18 @@ importers:
         specifier: workspace:*
         version: link:../geometry
 
-  packages/model-3d: {}
+  packages/model-3d:
+    dependencies:
+      '@planaxis/geometry':
+        specifier: workspace:*
+        version: link:../geometry
+      '@planaxis/model':
+        specifier: workspace:*
+        version: link:../model
+    devDependencies:
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.11(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3))
 
   packages/parser:
     dependencies:
