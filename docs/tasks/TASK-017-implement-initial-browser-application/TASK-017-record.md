@@ -2,17 +2,17 @@
 
 ## Task Metadata
 
-- **Status:** In Progress
+- **Status:** Completed
 - **Created:** 2026-09-07
 - **Issued:** 2026-09-07
-- **Completed:** —
+- **Completed:** 2026-09-07
 - **Agent:** Codex
 - **Repository:** PlanAxis
 - **Description:** `TASK-017-description.md`
 - **Related tasks:** TASK-016
 - **Related ADRs:** ADR-001, ADR-002
 - **Related specifications:** Apartment SVG 2.2
-- **Implementation commits:** —
+- **Implementation commits:** 33104318a3837a1488fb6641bb132778a8ef5cf4
 
 ## Purpose
 
@@ -26,17 +26,31 @@ The authoritative task description is stored in:
 
 `TASK-017-description.md`
 
-The task was formally issued on 2026-09-07 and the task description is now immutable.
+The task was formally issued on 2026-09-07 and remained immutable throughout execution.
 
 ## Execution Record
 
 ### Result
 
-Pending.
+Codex implemented the first user-facing PlanAxis browser workflow in `apps/web`.
+
+The implementation:
+
+- adopted React with Vite for the browser application and documented the decision in ADR-002;
+- added local SVG file loading through file selection and drag-and-drop;
+- runs the existing parser, schema, reference, and geometry validation stages in the browser and constructs `ValidatedApartment2D` for valid input;
+- presents document status and structured parser/validation diagnostics;
+- displays uploaded SVG files in a safe read-only image context;
+- added pan, zoom, fit/reset, keyboard, and touch-oriented 2D viewport interaction;
+- handles document replacement and preview resource lifecycle;
+- added focused web tests and the root-level `pnpm dev:web` command;
+- updated README, AGENTS, and architecture documentation for the new browser entry point.
 
 ### Verification
 
-Pending.
+No verification failures were reported for the accepted implementation.
+
+Command-by-command verification results were not separately provided during task-record finalization.
 
 ### Deviations from Description
 
@@ -50,11 +64,13 @@ None.
 
 ### Review Status
 
-Pending
+Accepted
 
 ### Review Notes
 
-None.
+The TASK-017 implementation was reviewed as successful and accepted for completion.
+
+No additional implementation issues or follow-up items were reported during finalization.
 
 ### Human Changes After Agent Execution
 
@@ -64,11 +80,20 @@ None.
 
 ### Implementation Commits
 
-—
+```text
+33104318a3837a1488fb6641bb132778a8ef5cf4
+```
 
 ### Commit Messages
 
-—
+```text
+feat(web): add local SVG validation and 2D viewer
+
+Implement the React workspace with local file loading, diagnostics,
+safe pan/zoom previews, and focused tests. Document React adoption.
+
+Task: TASK-017
+```
 
 ### Supersession
 
@@ -76,4 +101,6 @@ None.
 
 ## Notes
 
-TASK-017 intentionally establishes the first usable 2D browser experience only. Three.js rendering, `ArchitecturalModel3D` consumption, 3D view switching, cameras, free-walk navigation, lighting, and AI features remain later work.
+TASK-017 established the first official user-facing PlanAxis browser application.
+
+The browser can now load and validate Apartment SVG 2.2 files locally and display them in a safe read-only 2D viewer. Three.js renderer adaptation, `ArchitecturalModel3D` consumption, 3D view switching, cameras, free-walk navigation, lighting, and AI features remain later work.
