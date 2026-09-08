@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import type { ReactElement } from "react";
+import { ValidWorkspace } from "./valid-workspace.js";
 import { SvgViewport } from "./svg-viewport.js";
 import { useDocument } from "./use-document.js";
 import { ValidationDetails } from "./validation-details.js";
@@ -13,7 +14,7 @@ const STATUS_LABELS = {
 };
 
 export function App(): ReactElement {
-  const { document, load } = useDocument();
+  const { document, load, rendererFailure } = useDocument();
   const picker = useRef<HTMLInputElement>(null);
   const [showDetails, setShowDetails] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
@@ -110,7 +111,15 @@ export function App(): ReactElement {
           </div>
           <div className={`workspace${showDetails ? " with-details" : ""}`}>
             <div className="preview-area">
-              {source !== undefined ? (
+              {document.status === "valid" ? (
+                <ValidWorkspace
+                  key={document.revision}
+                  source={document.source}
+                  name={document.name}
+                  model={document.architecturalModel}
+                  onFailure={rendererFailure}
+                />
+              ) : source !== undefined ? (
                 <SvgViewport key={source} source={source} name={document.name} />
               ) : (
                 <p className="preview-message">

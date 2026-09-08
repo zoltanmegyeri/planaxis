@@ -7,7 +7,7 @@
 The project is built around the versioned, normative [Apartment SVG 2.2 specification](docs/specifications/apartment-svg/2.2.md), where an SVG document is not merely a drawing: it is the canonical, machine-readable representation of an apartment's geometry and semantics.
 
 > [!NOTE]
-> The React browser application now provides local SVG loading, validation, and a read-only pan/zoom 2D viewer as the first official user-facing entry point. The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG 2.2 parser and complete validation pipeline, developer validation CLI, and normalized `ValidatedApartment2D` domain model are in place. Validation enforces canonical footprint geometry, complete stationary placement containment, and level-local camera collisions. The trusted model retains the exact-decimal footprint and level-local architectural Z values. Exact, renderer-independent `ArchitecturalModel3D` construction is implemented in `@planaxis/model-3d`. Renderer adaptation and interactive Three.js visualization are the next development stage.
+> The React browser application now provides local SVG loading, validation, and a read-only pan/zoom 2D viewer as the first official user-facing entry point. The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG 2.2 parser and complete validation pipeline, developer validation CLI, and normalized `ValidatedApartment2D` domain model are in place. Validation enforces canonical footprint geometry, complete stationary placement containment, and level-local camera collisions. The trusted model retains the exact-decimal footprint and level-local architectural Z values. Exact, renderer-independent `ArchitecturalModel3D` construction is implemented in `@planaxis/model-3d`. Interactive 3D viewing is implemented in `@planaxis/renderer-three`; see the browser workflow below.
 
 ## Project Goals
 
@@ -120,7 +120,8 @@ PlanAxis is a pnpm workspace monorepo organized around the following areas:
 │   ├── geometry/
 │   ├── parser/
 │   ├── validator/
-│   └── model-3d/
+│   ├── model-3d/
+│   └── renderer-three/
 │
 ├── examples/
 │
@@ -168,8 +169,15 @@ renderable drawings that fail Apartment SVG validation. Drag to pan, scroll or p
 zoom, and use **Fit / Reset** to frame the drawing. With the viewport focused, use the
 arrow keys, `+` / `-`, and `0`. Open another file to replace the document.
 
+For a valid document, choose **3D** to inspect walls with door/window openings, fixed
+elements, and utility markers. Drag to orbit, right-drag to pan, and scroll to zoom;
+touch supports one-finger orbit and two-finger pan/zoom. Use the **Camera** selector for
+embedded SVG cameras or return to **Inspection / orbit**. Every replacement starts in
+2D; switching views does not reparse the file. A browser needs WebGPU or WebGL2 for 3D.
+See [ADR-003](docs/decisions/ADR-003-three-renderer-architecture.md).
+
 React is confined to `apps/web`; see [ADR-002](docs/decisions/ADR-002-react-browser-ui.md).
-Three.js renderer adaptation and 3D visualization are the next development stage.
+The dedicated `@planaxis/renderer-three` adapter provides WebGPU-first Three.js rendering with its supported WebGL2 fallback. It converts exact centimeters to meters only at the renderer boundary, mapping PlanAxis `(X, Y, Z)` to Three.js `(X, Z, Y)`. Valid documents support 2D/3D switching, orbit inspection, and embedded-camera viewing; invalid documents retain the 2D diagnostic workflow. Free-walk navigation, advanced lighting/materials, and AI-assisted features remain future stages.
 
 ## Validate an Apartment SVG
 
@@ -256,7 +264,7 @@ Natural-language discussion outside the repository may use any language, but rep
 
 The executable pipeline through `ValidatedApartment2D` is implemented: Apartment SVG parsing, schema validation, reference validation, geometric/topological validation, the developer validation CLI, and trusted 2D domain-model construction all exist. `GeometryValidApartmentSvgDocument` marks the final trusted SVG boundary before normalized domain construction.
 
-The parser, validator, CLI, and `ValidatedApartment2D` pipeline are aligned with Apartment SVG 2.2. Successful validation guarantees a simple, positive-area orthogonal footprint within the root `viewBox`, complete stationary geometry containment within its closed region, and level-local camera collision checks. Hinged-door open-leaf points may extend beyond the footprint but must remain within the `viewBox`. The trusted domain model exposes the canonical footprint separately from root bounds and includes the same footprint instance in its semantic ID index. Architectural Z values remain level-local, with `metadata.level.baseZ` retained separately for 3D construction. The geometry package now exposes `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`, with exact and tolerance-aware point equality and exact range-height derivation. `@planaxis/model-3d` now exports `buildArchitecturalModel3D(ValidatedApartment2D)`: it constructs floor and default ceiling surfaces, wall envelopes, window/door opening prisms, fixed-element volumes, utility positions, and exact camera definitions. It preserves architectural semantics and resolved relationships through constructed 3D instances and a source-semantic ID index. Model-space Z applies the level offset exactly once; X/Y remain unchanged. No slab thickness, physical door-leaf geometry, mesh processing, or renderer objects are inferred. Renderer adaptation and interactive Three.js visualization are the next stage; AI-assisted features follow later.
+The parser, validator, CLI, and `ValidatedApartment2D` pipeline are aligned with Apartment SVG 2.2. Successful validation guarantees a simple, positive-area orthogonal footprint within the root `viewBox`, complete stationary geometry containment within its closed region, and level-local camera collision checks. Hinged-door open-leaf points may extend beyond the footprint but must remain within the `viewBox`. The trusted domain model exposes the canonical footprint separately from root bounds and includes the same footprint instance in its semantic ID index. Architectural Z values remain level-local, with `metadata.level.baseZ` retained separately for 3D construction. The geometry package now exposes `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`, with exact and tolerance-aware point equality and exact range-height derivation. `@planaxis/model-3d` now exports `buildArchitecturalModel3D(ValidatedApartment2D)`: it constructs floor and default ceiling surfaces, wall envelopes, window/door opening prisms, fixed-element volumes, utility positions, and exact camera definitions. It preserves architectural semantics and resolved relationships through constructed 3D instances and a source-semantic ID index. Model-space Z applies the level offset exactly once; X/Y remain unchanged. No slab thickness, physical door-leaf geometry, mesh processing, or renderer objects are inferred. The renderer adapter and browser inspection workflow are implemented. Free-walk navigation, advanced lighting/materials, and AI-assisted features remain future stages.
 
 Each implementation phase should have explicit acceptance criteria and automated tests.
 

@@ -10,7 +10,18 @@ import { App } from "../src/app.js";
 import { processDocument } from "../src/process-document.js";
 import { useDocument } from "../src/use-document.js";
 import type { DocumentState } from "../src/use-document.js";
+import * as model3D from "@planaxis/model-3d";
 import * as processing from "../src/process-document.js";
+
+const rendererMocks = vi.hoisted(() => ({
+  initialize: vi.fn<() => Promise<void>>(),
+  setModel: vi.fn(),
+  resize: vi.fn(),
+  selectCamera: vi.fn(),
+  render: vi.fn(),
+  dispose: vi.fn(),
+}));
+vi.mock("@planaxis/renderer-three", () => ({ createApartmentRenderer: () => rendererMocks }));
 
 const fixture = (path: string): string =>
   readFileSync(resolve(fileURLToPath(import.meta.url), "../../../../fixtures", path), "utf8");
@@ -25,6 +36,7 @@ const createUrl = vi.fn((blob: Blob | MediaSource) => {
 const revokeUrl = vi.fn();
 
 beforeEach(() => {
+  rendererMocks.initialize.mockResolvedValue();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.spyOn(URL, "createObjectURL").mockImplementation(createUrl);
   vi.spyOn(URL, "revokeObjectURL").mockImplementation(revokeUrl);
@@ -212,4 +224,90 @@ it("retains the trusted model and clears it immediately on replacement, ignoring
   await act(async () => load([file()]));
   expect(state.status).toBe("valid");
   expect(state).not.toHaveProperty("errors");
+});
+
+async function clickView(name: string): Promise<void> {
+  const button = [...host.querySelectorAll("button")].find((button) => button.textContent === name);
+  if (!button) throw new Error(`Missing ${name} button`);
+  await act(async () => button.click());
+}
+it("switches valid views without processing again, selects embedded cameras and cleans up", async () => {
+  const process = vi.spyOn(processing, "processDocument");
+  const svg = fixture("valid/minimal-semantic-schema.svg");
+  const selectedFile = file(svg);
+  const read = vi.spyOn(selectedFile, "text");
+  await render();
+  await pick([selectedFile]);
+  expect(host.querySelector("canvas")).toBeNull();
+  await clickView("3D");
+  expect(host.querySelector("canvas")).not.toBeNull();
+  expect(rendererMocks.setModel).toHaveBeenCalledWith(
+    expect.objectContaining({ walls: expect.any(Array) }),
+  );
+  const select = host.querySelector("select");
+  if (!select) throw new Error("Missing camera selector");
+  expect([...select.options].map((option) => option.text)).toEqual([
+    "Inspection / orbit",
+    "camera-1",
+  ]);
+  await act(async () => {
+    select.value = "camera-1";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  expect(rendererMocks.selectCamera).toHaveBeenLastCalledWith("camera-1");
+  await act(async () => {
+    select.value = "";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  expect(rendererMocks.selectCamera).toHaveBeenLastCalledWith(null);
+  await clickView("2D");
+  expect(rendererMocks.dispose).toHaveBeenCalledTimes(1);
+  expect(host.querySelector("img")).not.toBeNull();
+  await clickView("3D");
+  expect(process).toHaveBeenCalledTimes(1);
+  expect(read).toHaveBeenCalledTimes(1);
+  await pick([file(svg, "replacement.svg")]);
+  expect(rendererMocks.dispose).toHaveBeenCalledTimes(2);
+  expect(host.querySelector("canvas")).toBeNull();
+  expect(host.querySelector("img")).not.toBeNull();
+  await pick([file('<svg xmlns="http://www.w3.org/2000/svg"/>')]);
+  expect(host.querySelector('[aria-label="Apartment view"]')).toBeNull();
+});
+it("shows renderer initialization failure as an application failure", async () => {
+  rendererMocks.initialize.mockRejectedValueOnce(new Error("No GPU backend"));
+  await render();
+  await pick([file()]);
+  await clickView("3D");
+  expect(host.querySelector('[role="status"]')?.textContent).toBe("File / processing failure");
+  expect(host.textContent).toContain("Unexpected renderer failure: No GPU backend");
+  expect(rendererMocks.dispose).toHaveBeenCalledTimes(1);
+  expect(host.querySelector("canvas")).toBeNull();
+});
+it("disposes immediately when leaving 3D during initialization and ignores late success", async () => {
+  let finish = (): void => {};
+  rendererMocks.initialize.mockReturnValueOnce(
+    new Promise<void>((resolve) => {
+      finish = resolve;
+    }),
+  );
+  await render();
+  await pick([file()]);
+  await clickView("3D");
+  await clickView("2D");
+  expect(rendererMocks.dispose).toHaveBeenCalledTimes(1);
+  await act(async () => finish());
+  expect(host.querySelector("canvas")).toBeNull();
+  expect(host.querySelector('[role="status"]')?.textContent).toBe("Valid");
+});
+
+it("surfaces unexpected architectural construction errors before enabling 3D", async () => {
+  vi.spyOn(model3D, "buildArchitecturalModel3D").mockImplementationOnce(() => {
+    throw new Error("Architectural invariant failed");
+  });
+  await render();
+  await pick([file()]);
+  expect(host.textContent).toContain(
+    "Unexpected processing failure: Architectural invariant failed",
+  );
+  expect(host.querySelector('[aria-label="Apartment view"]')).toBeNull();
 });

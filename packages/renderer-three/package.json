@@ -1,0 +1,32 @@
+{
+  "name": "@planaxis/renderer-three",
+  "version": "0.0.0",
+  "private": true,
+  "description": "PlanAxis Three.js renderer adapter",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@planaxis/geometry": "workspace:*",
+    "@planaxis/model-3d": "workspace:*",
+    "three": "0.185.1"
+  },
+  "devDependencies": {
+    "@types/three": "0.185.4",
+    "vitest": "catalog:",
+    "@planaxis/parser": "workspace:*",
+    "@planaxis/validator": "workspace:*"
+  }
+}

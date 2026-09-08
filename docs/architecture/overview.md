@@ -309,7 +309,7 @@ Defensive assertions may exist for internal programming errors, but source-docum
 
 A renderer adapter converts `ArchitecturalModel3D` and runtime simulation state into renderer-specific objects.
 
-The first renderer is expected to use Three.js.
+`@planaxis/renderer-three` implements direct Three.js adaptation with WebGPU-first rendering and supported WebGL2 fallback. Exact centimeters become meters at this boundary, with `(X, Y, Z)` mapped to `(X, Z, Y)`. Geometry, materials, controls, and GPU resources are renderer-owned. See [ADR-003](../decisions/ADR-003-three-renderer-architecture.md).
 
 Responsibilities may include:
 
@@ -446,10 +446,9 @@ replacement and disposal. A preview decoding failure does not hide validation re
 The viewer supports fit/reset, mouse and touch pan/zoom, and keyboard navigation.
 Image transforms use viewport pixels and never feed into authoritative geometry.
 React, browser resources, and interaction state remain entirely in the application layer.
-No server, network call, persistence, or 3D model construction is involved in this workflow.
+No server, upload, or persistence is involved. Successful validation also constructs `ArchitecturalModel3D` through its public builder.
 
-Three.js renderer adaptation and interactive 3D visualization are the next development
-stage. Later browser workflows may add cameras, runtime lighting, and design exploration.
+Valid documents start in 2D and expose a 3D switch without reparsing. The 3D view offers orbit inspection and embedded cameras, with horizontal FOV adapted on resize. Unmount and replacement release renderer resources; failures remain explicit application states. Invalid documents retain only 2D preview and diagnostics.
 
 ### 8.2. Server Application
 
@@ -522,6 +521,7 @@ packages/
     parser/
     validator/
     model-3d/
+    renderer-three/
 ```
 
 These names are not immutable, but the responsibilities they represent should remain distinct.
@@ -582,7 +582,9 @@ Expected responsibilities:
 
 It must not depend on Three.js.
 
-Renderer-specific code should live in the web application or in a dedicated renderer package if a concrete need for such a package emerges.
+### `renderer-three`
+
+Owns Three.js scene construction, deterministic wall opening partitioning, PBR defaults, cameras, controls, and GPU resources. It depends on `model-3d` and exact geometry types, remains independent of React, and exposes explicit initialization, replacement, resize, camera selection, rendering, and disposal. The browser owns ResizeObserver and view state. Rendering is event-driven; no persistent application loop remains when inactive.
 
 Avoid creating packages preemptively without implementation pressure.
 
@@ -795,7 +797,7 @@ The initial React browser workflow is implemented: local SVG loading and validat
 
 The executable repository bootstrap, authoritative numeric and geometric foundations, Apartment SVG XML parsing boundary, schema-validation pipeline, reference validation, geometric/topological validation, developer validation CLI, and `ValidatedApartment2D` construction are implemented. The Node.js CLI reads one Apartment SVG file and composes the shared parse, schema, reference, and geometry stages while keeping filesystem and process behavior in the application layer. Schema validation produces a typed, exact-decimal `SchemaValidApartmentSvgDocument`; reference validation resolves its core relationships into `ReferenceValidApartmentSvgDocument`; and the geometry stage establishes the nominal `GeometryValidApartmentSvgDocument` boundary before `@planaxis/validator` constructs the normalized, exact-decimal `ValidatedApartment2D` owned by `@planaxis/model`.
 
-Apartment SVG 2.2 is the normative external format, and the parser, validator, CLI, and trusted 2D domain pipeline are fully aligned with it. Schema and reference stages preserve the mandatory exact-decimal footprint while leaving geometry checks to the geometry stage. Successful geometric validation guarantees footprint topology, positive area, exact orthogonality, root viewBox containment, and complete stationary placement containment within the closed footprint. Hinged-door open-leaf geometry is exempt from footprint containment but remains inside the viewBox. Camera collisions compare level-local Z ranges consistently. `ValidatedApartment2D` retains the canonical footprint and unchanged level-local architectural Z values, with the level offset stored separately. Exact, renderer-independent 3D geometry foundations are implemented in `@planaxis/geometry`: `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`. Point comparisons reuse the centralized geometric tolerance, and range height is derived with exact decimal subtraction. These primitives carry no architectural or transformation semantics. `@planaxis/model-3d` implements deterministic `ArchitecturalModel3D` construction from trusted 2D input using these primitives, preserving architectural semantics and resolved relationships without renderer objects or unsupported physical assumptions. Renderer adaptation and interactive Three.js visualization are the next development stage.
+Apartment SVG 2.2 is the normative external format, and the parser, validator, CLI, and trusted 2D domain pipeline are fully aligned with it. Schema and reference stages preserve the mandatory exact-decimal footprint while leaving geometry checks to the geometry stage. Successful geometric validation guarantees footprint topology, positive area, exact orthogonality, root viewBox containment, and complete stationary placement containment within the closed footprint. Hinged-door open-leaf geometry is exempt from footprint containment but remains inside the viewBox. Camera collisions compare level-local Z ranges consistently. `ValidatedApartment2D` retains the canonical footprint and unchanged level-local architectural Z values, with the level offset stored separately. Exact, renderer-independent 3D geometry foundations are implemented in `@planaxis/geometry`: `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`. Point comparisons reuse the centralized geometric tolerance, and range height is derived with exact decimal subtraction. These primitives carry no architectural or transformation semantics. `@planaxis/model-3d` implements deterministic `ArchitecturalModel3D` construction from trusted 2D input using these primitives, preserving architectural semantics and resolved relationships without renderer objects or unsupported physical assumptions. The Three.js adapter and browser 2D/3D workflow are implemented as described in sections 5.7 and 8.1. Free-walk navigation and advanced lighting/material work remain future stages.
 
 The intended implementation order is broadly:
 

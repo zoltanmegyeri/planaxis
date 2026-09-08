@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { processDocument } from "./process-document.js";
 import type { DocumentResult } from "./process-document.js";
 
@@ -6,11 +6,12 @@ export type DocumentState =
   | { status: "empty" }
   | { status: "processing"; name: string }
   | { status: "failure"; name: string; message: string; source?: string }
-  | (DocumentResult & { name: string; source: string });
+  | (DocumentResult & { name: string; source: string; revision: number });
 
 export function useDocument(): {
   document: DocumentState;
   load: (files: readonly File[]) => Promise<void>;
+  rendererFailure: (error: unknown) => void;
 } {
   const [document, setDocument] = useState<DocumentState>({ status: "empty" });
   const generation = useRef(0);
@@ -47,7 +48,7 @@ export function useDocument(): {
     }
     if (request !== generation.current) return;
     try {
-      setDocument({ ...processDocument(source), source, name: file.name });
+      setDocument({ ...processDocument(source), source, name: file.name, revision: request });
     } catch (error: unknown) {
       setDocument({
         status: "failure",
@@ -57,7 +58,19 @@ export function useDocument(): {
       });
     }
   }
-  return { document, load };
+  const rendererFailure = useCallback((error: unknown): void => {
+    setDocument((current) =>
+      current.status === "valid"
+        ? {
+            status: "failure",
+            name: current.name,
+            source: current.source,
+            message: `Unexpected renderer failure: ${describeError(error)}`,
+          }
+        : current,
+    );
+  }, []);
+  return { document, load, rendererFailure };
 }
 
 function describeError(error: unknown): string {

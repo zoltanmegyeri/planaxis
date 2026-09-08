@@ -25,6 +25,8 @@
     "@planaxis/parser": "workspace:*",
     "@planaxis/validator": "workspace:*",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "@planaxis/model-3d": "workspace:*",
+    "@planaxis/renderer-three": "workspace:*"
   }
 }
