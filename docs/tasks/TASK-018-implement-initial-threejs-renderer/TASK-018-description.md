@@ -115,13 +115,13 @@ Use one centralized conversion policy equivalent to:
 
 ```text
 PlanAxis X  -> Three X
-PlanAxis Y  -> Three -Z
+PlanAxis Y  -> Three Z
 PlanAxis Z  -> Three Y
 ```
 
 with centimeter-to-meter scaling.
 
-This conversion must preserve handedness and be used consistently for geometry, camera positions/orientations, and other renderer-space data.
+This conversion changes coordinate-system handedness to preserve the SVG’s visual layout: +X points right, +Y points down in the floor plan, and architectural +Z points upward. Apply it consistently to geometry and camera positions/orientations. Adjust triangle winding and normals so floor surfaces face upward and ceiling surfaces face downward.
 
 Convert `Decimal` values to JavaScript `number` only inside the renderer adapter or another explicitly renderer-owned boundary. Renderer-derived values must never flow back into authoritative domain state.
 
@@ -301,7 +301,7 @@ Add focused tests for renderer adaptation without requiring a real GPU whenever 
 Cover at least:
 
 - centimeter-to-meter conversion;
-- PlanAxis-to-Three coordinate conversion and handedness;
+- PlanAxis-to-Three coordinate conversion, correct surface orientation, and absence of mirroring, verified using an asymmetric layout and a camera with a known viewing direction;
 - wall dimensions and placement;
 - wall opening construction, including multiple openings on one wall;
 - floor/ceiling mesh geometry;
@@ -382,7 +382,7 @@ The task is complete when:
 2. Three.js is added using the newest suitable stable release selected under repository policy;
 3. ADR-003 documents the renderer architecture and exact renderer boundary;
 4. valid `ValidatedApartment2D` is converted through `@planaxis/model-3d` to `ArchitecturalModel3D` before rendering;
-5. renderer-space conversion uses 1 unit = 1 meter and the defined handedness-preserving coordinate mapping;
+5. renderer-space conversion uses 1 unit = 1 meter and maps PlanAxis `(X, Y, Z)` to Three.js `(X, Z, Y)`, preserving the SVG floor-plan layout without mirroring;
 6. floor, ceiling, walls with real door/window openings, fixed elements, and supported window/door representations are visible in the 3D scene;
 7. neutral PBR visualization materials, basic lighting, and sensible shadows provide a readable scene without becoming authoritative design data;
 8. valid documents expose working 2D/3D switching while invalid documents remain 2D-only;
