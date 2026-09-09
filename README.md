@@ -167,7 +167,10 @@ The status and collapsible validation panel expose parser and structured validat
 The read-only 2D viewer displays the original SVG in a restricted image context, including
 renderable drawings that fail Apartment SVG validation. Drag to pan, scroll or pinch to
 zoom, and use **Fit / Reset** to frame the drawing. With the viewport focused, use the
-arrow keys, `+` / `-`, and `0`. Open another file to replace the document.
+arrow keys, `+` / `-`, and `0`. Open another file to replace the document. Use **Focus view**
+to expand the active 2D or 3D viewport across the browser client area without resetting its
+navigation state; close it with the corner control or `Escape`. This layout mode does not use
+the browser Fullscreen API, so browser and operating-system chrome remain unchanged.
 
 For a valid document, choose **3D** to inspect walls with door/window openings, fixed
 elements, and utility markers. Drag to orbit, right-drag to pan, and scroll to zoom;

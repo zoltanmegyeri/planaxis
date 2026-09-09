@@ -82,6 +82,7 @@ it("starts empty with keyboard-accessible open actions and textual status", asyn
     "Open SVG",
     "Browse files",
   ]);
+  expect(host.querySelector('[aria-label="Enter Focus view"]')).toBeNull();
   expect(host.querySelector("img")).toBeNull();
 });
 
@@ -231,6 +232,93 @@ async function clickView(name: string): Promise<void> {
   if (!button) throw new Error(`Missing ${name} button`);
   await act(async () => button.click());
 }
+
+async function clickControl(label: string): Promise<void> {
+  const button = host.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`);
+  if (!button) throw new Error(`Missing ${label} button`);
+  await act(async () => button.click());
+}
+
+it("focuses the 2D viewport without remounting it or resetting workspace state", async () => {
+  await render();
+  await pick([file()]);
+  const surface = host.querySelector<HTMLDivElement>(".drawing-surface");
+  const image = host.querySelector<HTMLImageElement>("img");
+  const details = host.querySelector("aside");
+  if (!surface || !image || !details) throw new Error("Missing loaded 2D workspace");
+  vi.spyOn(surface, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 848, 648));
+  Object.defineProperties(image, { naturalWidth: { value: 400 }, naturalHeight: { value: 200 } });
+  await act(async () => image.dispatchEvent(new Event("load")));
+  await clickControl("Zoom in");
+  const transform = image.style.transform;
+  const previewUrlCalls = createUrl.mock.calls.length;
+
+  await clickControl("Enter Focus view");
+
+  const application = host.querySelector(".application");
+  expect(application?.classList.contains("focus-view")).toBe(true);
+  for (const chrome of host.querySelectorAll<HTMLElement>(".focus-view-hidden"))
+    expect(chrome.hidden).toBe(true);
+  expect(host.querySelector("img")).toBe(image);
+  expect(image.style.transform).toBe(transform);
+  expect(createUrl).toHaveBeenCalledTimes(previewUrlCalls);
+  expect(host.querySelector('[aria-label="Exit Focus view"]')).not.toBeNull();
+
+  await clickControl("Exit Focus view");
+
+  expect(application?.classList.contains("focus-view")).toBe(false);
+  expect(host.querySelector("img")).toBe(image);
+  expect(image.style.transform).toBe(transform);
+  expect(host.querySelector("aside")).toBe(details);
+  expect(
+    host.querySelector('[aria-controls="validation-details"]')?.getAttribute("aria-expanded"),
+  ).toBe("true");
+});
+
+it("exits Focus view with Escape while preserving the active 3D view and camera", async () => {
+  await render();
+  await pick([file(fixture("valid/minimal-semantic-schema.svg"))]);
+  await clickView("3D");
+  const canvas = host.querySelector("canvas");
+  const select = host.querySelector<HTMLSelectElement>("select");
+  if (!canvas || !select) throw new Error("Missing 3D viewport");
+  await act(async () => {
+    select.value = "camera-1";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+
+  await clickControl("Enter Focus view");
+  expect(host.querySelector<HTMLElement>(".three-toolbar")?.hidden).toBe(true);
+  const escape = new KeyboardEvent("keydown", { key: "Escape", cancelable: true });
+  await act(async () => window.dispatchEvent(escape));
+
+  expect(escape.defaultPrevented).toBe(true);
+  expect(host.querySelector(".application")?.classList.contains("focus-view")).toBe(false);
+  expect(host.querySelector("canvas")).toBe(canvas);
+  expect(select.value).toBe("camera-1");
+  expect(host.querySelector<HTMLButtonElement>('[aria-pressed="true"]')?.textContent).toBe("3D");
+  expect(rendererMocks.setModel).toHaveBeenCalledTimes(1);
+  expect(rendererMocks.dispose).not.toHaveBeenCalled();
+
+  const inactiveEscape = new KeyboardEvent("keydown", { key: "Escape", cancelable: true });
+  await act(async () => window.dispatchEvent(inactiveEscape));
+  expect(inactiveEscape.defaultPrevented).toBe(false);
+});
+
+it("offers Focus view for an invalid document with a 2D preview", async () => {
+  await render();
+  await pick([file(fixture("invalid/missing-cameras-group.svg"), "invalid.svg")]);
+  const image = host.querySelector("img");
+  expect(host.querySelector('[role="status"]')?.textContent).toBe("Invalid");
+  expect(image).not.toBeNull();
+
+  await clickControl("Enter Focus view");
+
+  expect(host.querySelector(".application")?.classList.contains("focus-view")).toBe(true);
+  expect(host.querySelector("img")).toBe(image);
+  expect(host.querySelector<HTMLElement>("aside")?.hidden).toBe(true);
+});
+
 it("switches valid views without processing again, selects embedded cameras and cleans up", async () => {
   const process = vi.spyOn(processing, "processDocument");
   const svg = fixture("valid/minimal-semantic-schema.svg");

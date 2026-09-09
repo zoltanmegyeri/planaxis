@@ -194,6 +194,11 @@ h2 {
   font-size: 12px;
   padding: 7px 10px;
 }
+.workspace-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 .workspace {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -208,6 +213,38 @@ h2 {
   min-width: 0;
   min-height: 0;
   position: relative;
+}
+.application.focus-view .focus-view-hidden {
+  display: none;
+}
+.application.focus-view .workspace,
+.application.focus-view .workspace.with-details {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  border-top: 0;
+}
+.focus-view-close {
+  position: absolute;
+  z-index: 2;
+  top: 16px;
+  right: 16px;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border-color: #ffffff99;
+  border-radius: 50%;
+  color: #fff;
+  background: #24342fb3;
+  box-shadow: 0 2px 12px #0003;
+  font-size: 27px;
+  line-height: 1;
+}
+.focus-view-close:hover {
+  background: #24342fe6;
+}
+.focus-view-close span {
+  display: block;
+  transform: translateY(-1px);
 }
 .viewer {
   height: 100%;
@@ -350,6 +387,9 @@ dd {
   }
   .workspace-bar > span {
     font-size: 10px;
+  }
+  .workspace-actions {
+    gap: 5px;
   }
   .workspace.with-details {
     grid-template-columns: minmax(0, 1fr);

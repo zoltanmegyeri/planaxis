@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactElement } from "react";
 import { ValidWorkspace } from "./valid-workspace.js";
 import { SvgViewport } from "./svg-viewport.js";
@@ -17,12 +17,30 @@ export function App(): ReactElement {
   const { document, load, rendererFailure } = useDocument();
   const picker = useRef<HTMLInputElement>(null);
   const [showDetails, setShowDetails] = useState(true);
+  const [isFocusView, setIsFocusView] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const dragDepth = useRef(0);
   const source = "source" in document ? document.source : undefined;
+
+  useEffect(() => {
+    if (!isFocusView) return;
+    const exitOnEscape = (event: KeyboardEvent): void => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setIsFocusView(false);
+    };
+    window.addEventListener("keydown", exitOnEscape);
+    return () => window.removeEventListener("keydown", exitOnEscape);
+  }, [isFocusView]);
+
+  function loadFiles(files: readonly File[]): Promise<void> {
+    setIsFocusView(false);
+    return load(files);
+  }
+
   return (
     <div
-      className={`application${isDragging ? " dragging" : ""}`}
+      className={`application${isDragging ? " dragging" : ""}${isFocusView ? " focus-view" : ""}`}
       onDragEnter={(event) => {
         event.preventDefault();
         dragDepth.current += 1;
@@ -41,10 +59,10 @@ export function App(): ReactElement {
         event.preventDefault();
         dragDepth.current = 0;
         setIsDragging(false);
-        void load(Array.from(event.dataTransfer.files));
+        void loadFiles(Array.from(event.dataTransfer.files));
       }}
     >
-      <header className="app-header">
+      <header className="app-header focus-view-hidden" hidden={isFocusView}>
         <div className="brand">
           <span className="brand-mark" aria-hidden="true">
             P
@@ -74,7 +92,7 @@ export function App(): ReactElement {
           onChange={(event) => {
             const files = Array.from(event.currentTarget.files ?? []);
             event.currentTarget.value = "";
-            if (files.length > 0) void load(files);
+            if (files.length > 0) void loadFiles(files);
           }}
         />
       </header>
@@ -99,15 +117,22 @@ export function App(): ReactElement {
         </section>
       ) : (
         <>
-          <div className="workspace-bar">
+          <div className="workspace-bar focus-view-hidden" hidden={isFocusView}>
             <span>Local document · Apartment SVG 2.2</span>
-            <button
-              aria-expanded={showDetails}
-              aria-controls="validation-details"
-              onClick={() => setShowDetails((value) => !value)}
-            >
-              {showDetails ? "Hide" : "Show"} validation details
-            </button>
+            <div className="workspace-actions">
+              <button
+                aria-expanded={showDetails}
+                aria-controls="validation-details"
+                onClick={() => setShowDetails((value) => !value)}
+              >
+                {showDetails ? "Hide" : "Show"} validation details
+              </button>
+              {source !== undefined && (
+                <button aria-label="Enter Focus view" onClick={() => setIsFocusView(true)}>
+                  Focus view
+                </button>
+              )}
+            </div>
           </div>
           <div className={`workspace${showDetails ? " with-details" : ""}`}>
             <div className="preview-area">
@@ -118,9 +143,15 @@ export function App(): ReactElement {
                   name={document.name}
                   model={document.architecturalModel}
                   onFailure={rendererFailure}
+                  isFocusView={isFocusView}
                 />
               ) : source !== undefined ? (
-                <SvgViewport key={source} source={source} name={document.name} />
+                <SvgViewport
+                  key={source}
+                  source={source}
+                  name={document.name}
+                  isFocusView={isFocusView}
+                />
               ) : (
                 <p className="preview-message">
                   {document.status === "processing"
@@ -128,9 +159,24 @@ export function App(): ReactElement {
                     : "Open an SVG to view its drawing."}
                 </p>
               )}
+              {isFocusView && (
+                <button
+                  className="focus-view-close"
+                  aria-label="Exit Focus view"
+                  title="Exit Focus view"
+                  onClick={() => setIsFocusView(false)}
+                >
+                  <span aria-hidden="true">×</span>
+                </button>
+              )}
             </div>
             {showDetails && (
-              <aside id="validation-details" aria-label="Validation details">
+              <aside
+                id="validation-details"
+                className="focus-view-hidden"
+                aria-label="Validation details"
+                hidden={isFocusView}
+              >
                 <p className="eyebrow">Validation details</p>
                 <ValidationDetails document={document} />
               </aside>

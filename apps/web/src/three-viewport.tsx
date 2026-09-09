@@ -7,9 +7,11 @@ import type { ReactElement } from "react";
 export function ThreeViewport({
   model,
   onFailure,
+  isFocusView = false,
 }: {
   model: ArchitecturalModel3D;
   onFailure: (error: unknown) => void;
+  isFocusView?: boolean;
 }): ReactElement {
   const canvas = useRef<HTMLCanvasElement>(null);
   const renderer = useRef<ApartmentRenderer | null>(null);
@@ -57,7 +59,7 @@ export function ThreeViewport({
   }, [model, onFailure]);
   return (
     <section className="three-viewport" aria-label="3D apartment view">
-      <div className="three-toolbar">
+      <div className="three-toolbar focus-view-hidden" hidden={isFocusView}>
         <label>
           Camera{" "}
           <select
