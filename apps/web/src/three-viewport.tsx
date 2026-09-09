@@ -1,8 +1,18 @@
 import type { ArchitecturalModel3D } from "@planaxis/model-3d";
-import { createApartmentRenderer } from "@planaxis/renderer-three";
-import type { ApartmentRenderer } from "@planaxis/renderer-three";
+import {
+  createApartmentRenderer,
+  FULL_FRAME_FOCAL_LENGTHS,
+  isFullFrameFocalLength,
+} from "@planaxis/renderer-three";
+import type { ApartmentRenderer, FullFrameFocalLength } from "@planaxis/renderer-three";
 import { useEffect, useRef, useState } from "react";
 import type { ReactElement } from "react";
+import {
+  fitRenderSurface,
+  isRenderAspectRatio,
+  RENDER_ASPECT_RATIO_OPTIONS,
+} from "./render-aspect-ratio.js";
+import type { RenderAspectRatio } from "./render-aspect-ratio.js";
 
 export function ThreeViewport({
   model,
@@ -13,13 +23,20 @@ export function ThreeViewport({
   onFailure: (error: unknown) => void;
   isFocusView?: boolean;
 }): ReactElement {
+  const renderArea = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const renderer = useRef<ApartmentRenderer | null>(null);
+  const resizeRenderer = useRef<() => void>(() => undefined);
   const [cameraId, setCameraId] = useState("");
+  const [focalLength, setFocalLength] = useState<FullFrameFocalLength | null>(null);
+  const [aspectRatio, setAspectRatio] = useState<RenderAspectRatio>("fill");
+  const aspectRatioRef = useRef<RenderAspectRatio>(aspectRatio);
+  aspectRatioRef.current = aspectRatio;
   const [ready, setReady] = useState(false);
   useEffect(() => {
     const element = canvas.current;
-    if (!element) return;
+    const area = renderArea.current;
+    if (!element || !area) return;
     let active = true;
     let instance: ApartmentRenderer | undefined;
     let observer: ResizeObserver | undefined;
@@ -31,16 +48,22 @@ export function ThreeViewport({
       renderer.current = instance;
       const resize = (): void => {
         try {
-          const rect = element.getBoundingClientRect();
-          instance?.resize(rect.width, rect.height, window.devicePixelRatio);
+          const rect = area.getBoundingClientRect();
+          const frame = fitRenderSurface(rect.width, rect.height, aspectRatioRef.current);
+          element.style.width = `${frame.width}px`;
+          element.style.height = `${frame.height}px`;
+          element.style.left = `${frame.left}px`;
+          element.style.top = `${frame.top}px`;
+          instance?.resize(frame.width, frame.height, window.devicePixelRatio);
         } catch (error) {
           fail(error);
         }
       };
+      resizeRenderer.current = resize;
       resize();
       instance.setModel(model);
       observer = new ResizeObserver(resize);
-      observer.observe(element);
+      observer.observe(area);
       void instance
         .initialize()
         .then(() => {
@@ -55,8 +78,12 @@ export function ThreeViewport({
       observer?.disconnect();
       instance?.dispose();
       renderer.current = null;
+      resizeRenderer.current = () => undefined;
     };
   }, [model, onFailure]);
+  useEffect(() => {
+    resizeRenderer.current();
+  }, [aspectRatio, isFocusView]);
   return (
     <section className="three-viewport" aria-label="3D apartment view">
       <div className="three-toolbar focus-view-hidden" hidden={isFocusView}>
@@ -84,6 +111,50 @@ export function ThreeViewport({
             ))}
           </select>
         </label>
+        <label>
+          Focal length{" "}
+          <select
+            aria-label="3D focal length"
+            value={focalLength ?? ""}
+            disabled={!ready}
+            onChange={(event) => {
+              const value = event.target.value;
+              const next = value === "" ? null : Number(value);
+              if (next !== null && !isFullFrameFocalLength(next)) return;
+              try {
+                renderer.current?.setFocalLengthOverride(next);
+                setFocalLength(next);
+              } catch (error) {
+                onFailure(error);
+              }
+            }}
+          >
+            <option value="">Camera default</option>
+            {FULL_FRAME_FOCAL_LENGTHS.map((value) => (
+              <option key={value} value={value}>
+                {value} mm
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Aspect ratio{" "}
+          <select
+            aria-label="3D render aspect ratio"
+            value={aspectRatio}
+            disabled={!ready}
+            onChange={(event) => {
+              const value = event.target.value;
+              if (isRenderAspectRatio(value)) setAspectRatio(value);
+            }}
+          >
+            {RENDER_ASPECT_RATIO_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
         <span>
           {ready
             ? cameraId
@@ -92,7 +163,9 @@ export function ThreeViewport({
             : "Starting 3D…"}
         </span>
       </div>
-      <canvas ref={canvas} aria-label="Apartment 3D rendering" />
+      <div ref={renderArea} className="three-render-area">
+        <canvas ref={canvas} aria-label="Apartment 3D rendering" />
+      </div>
     </section>
   );
 }

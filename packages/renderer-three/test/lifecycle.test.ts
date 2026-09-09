@@ -43,6 +43,7 @@ vi.mock("three/addons/controls/OrbitControls.js", async () => {
   };
 });
 import { createApartmentRenderer } from "../src/index.js";
+import { fullFrameHorizontalFov, verticalFov } from "../src/cameras.js";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -127,3 +128,50 @@ it("keeps distant valid embedded cameras within the scene clipping range", async
   expect(camera.far).toBeGreaterThan(10000);
   renderer.dispose();
 });
+
+it("keeps focal-length overrides independent from camera selection and resize", async () => {
+  const renderer = createApartmentRenderer(canvas, vi.fn());
+  renderer.resize(800, 400);
+  renderer.setModel(modelFixture());
+  await renderer.initialize();
+  let camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+  expect(camera.fov).toBe(50);
+
+  const inspectionPosition = camera.position.clone();
+  renderer.setFocalLengthOverride(35);
+  camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+  expect(camera.fov).toBeCloseTo(verticalFov(fullFrameHorizontalFov(35), 2));
+  expect(camera.position).toEqual(inspectionPosition);
+
+  renderer.selectCamera("camera-1");
+  camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+  expect(camera.fov).toBeCloseTo(verticalFov(fullFrameHorizontalFov(35), 2));
+  const embeddedPosition = camera.position.clone();
+
+  renderer.resize(400, 800);
+  expect(camera.fov).toBeCloseTo(verticalFov(fullFrameHorizontalFov(35), 0.5));
+  expect(camera.position).toEqual(embeddedPosition);
+
+  renderer.setFocalLengthOverride(null);
+  expect(camera.fov).toBeCloseTo(verticalFov(70, 0.5));
+  expect(camera.position).toEqual(embeddedPosition);
+
+  renderer.selectCamera(null);
+  expect(camera.fov).toBe(50);
+  renderer.dispose();
+});
+
+it.each([16, 24, 35, 50, 70, 85] as const)(
+  "applies the supported %s mm projection",
+  async (focalLength) => {
+    const renderer = createApartmentRenderer(canvas, vi.fn());
+    renderer.resize(900, 600);
+    renderer.setModel(modelFixture());
+    await renderer.initialize();
+    renderer.selectCamera("camera-1");
+    renderer.setFocalLengthOverride(focalLength);
+    const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+    expect(camera.fov).toBeCloseTo(verticalFov(fullFrameHorizontalFov(focalLength), 1.5));
+    renderer.dispose();
+  },
+);

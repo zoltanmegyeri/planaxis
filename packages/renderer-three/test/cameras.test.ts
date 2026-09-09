@@ -3,7 +3,12 @@ import { buildApartmentScene } from "../src/apartment-scene.js";
 import { createDecimal as decimal } from "@planaxis/geometry";
 import { Box3, PerspectiveCamera, Raycaster, Vector2, Vector3 } from "three/webgpu";
 import { expect, it } from "vitest";
-import { applyEmbeddedCamera, frameInspection, verticalFov } from "../src/cameras.js";
+import {
+  applyEmbeddedCamera,
+  frameInspection,
+  fullFrameHorizontalFov,
+  verticalFov,
+} from "../src/cameras.js";
 import { modelFixture } from "./model-fixture.js";
 
 it.each([
@@ -12,6 +17,16 @@ it.each([
   [0.5, 126.869897646],
 ])("converts horizontal FOV at aspect %s", (aspect, expected) => {
   expect(verticalFov(90, aspect)).toBeCloseTo(expected);
+});
+it.each([
+  [16, 96.73292132685962],
+  [24, 73.73979529168804],
+  [35, 54.43222311461495],
+  [50, 39.59775270904986],
+  [70, 28.841546255021967],
+  [85, 23.913168486298265],
+] as const)("converts a %s mm full-frame lens to horizontal FOV", (focalLength, expected) => {
+  expect(fullFrameHorizontalFov(focalLength)).toBeCloseTo(expected);
 });
 it.each([
   [0, 0, [1, 0, 0]],

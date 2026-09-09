@@ -18,10 +18,15 @@ const rendererMocks = vi.hoisted(() => ({
   setModel: vi.fn(),
   resize: vi.fn(),
   selectCamera: vi.fn(),
+  setFocalLengthOverride: vi.fn(),
   render: vi.fn(),
   dispose: vi.fn(),
 }));
-vi.mock("@planaxis/renderer-three", () => ({ createApartmentRenderer: () => rendererMocks }));
+vi.mock("@planaxis/renderer-three", () => ({
+  createApartmentRenderer: () => rendererMocks,
+  FULL_FRAME_FOCAL_LENGTHS: [16, 24, 35, 50, 70, 85],
+  isFullFrameFocalLength: (value: number) => [16, 24, 35, 50, 70, 85].includes(value),
+}));
 
 const fixture = (path: string): string =>
   readFileSync(resolve(fileURLToPath(import.meta.url), "../../../../fixtures", path), "utf8");
@@ -303,6 +308,89 @@ it("exits Focus view with Escape while preserving the active 3D view and camera"
   const inactiveEscape = new KeyboardEvent("keydown", { key: "Escape", cancelable: true });
   await act(async () => window.dispatchEvent(inactiveEscape));
   expect(inactiveEscape.defaultPrevented).toBe(false);
+});
+
+it("keeps camera, lens, and fitted image selections independent through Focus view", async () => {
+  await render();
+  await pick([file(fixture("valid/minimal-semantic-schema.svg"))]);
+  await clickView("3D");
+  const application = host.querySelector<HTMLElement>(".application");
+  const area = host.querySelector<HTMLDivElement>(".three-render-area");
+  const canvas = host.querySelector<HTMLCanvasElement>("canvas");
+  const camera = host.querySelector<HTMLSelectElement>('[aria-label="3D camera"]');
+  const lens = host.querySelector<HTMLSelectElement>('[aria-label="3D focal length"]');
+  const image = host.querySelector<HTMLSelectElement>('[aria-label="3D render aspect ratio"]');
+  if (!application || !area || !canvas || !camera || !lens || !image) {
+    throw new Error("Missing 3D framing controls");
+  }
+  vi.spyOn(area, "getBoundingClientRect").mockImplementation(() =>
+    application.classList.contains("focus-view")
+      ? new DOMRect(0, 0, 900, 1200)
+      : new DOMRect(0, 0, 1200, 800),
+  );
+
+  expect([...lens.options].map((option) => option.text)).toEqual([
+    "Camera default",
+    "16 mm",
+    "24 mm",
+    "35 mm",
+    "50 mm",
+    "70 mm",
+    "85 mm",
+  ]);
+  expect([...image.options].map((option) => option.text)).toEqual([
+    "Fill",
+    "16:9",
+    "3:2",
+    "1:1",
+    "2:3",
+    "9:16",
+  ]);
+
+  await act(async () => {
+    lens.value = "35";
+    lens.dispatchEvent(new Event("change", { bubbles: true }));
+    image.value = "1:1";
+    image.dispatchEvent(new Event("change", { bubbles: true }));
+    camera.value = "camera-1";
+    camera.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  expect(rendererMocks.setFocalLengthOverride).toHaveBeenLastCalledWith(35);
+  expect(rendererMocks.selectCamera).toHaveBeenLastCalledWith("camera-1");
+  expect(camera.value).toBe("camera-1");
+  expect(lens.value).toBe("35");
+  expect(image.value).toBe("1:1");
+  expect(canvas.style.width).toBe("800px");
+  expect(canvas.style.height).toBe("800px");
+  expect(canvas.style.left).toBe("200px");
+  expect(canvas.style.top).toBe("0px");
+  expect(rendererMocks.resize).toHaveBeenLastCalledWith(800, 800, window.devicePixelRatio);
+
+  await clickControl("Enter Focus view");
+  expect(host.querySelector("canvas")).toBe(canvas);
+  expect(camera.value).toBe("camera-1");
+  expect(lens.value).toBe("35");
+  expect(image.value).toBe("1:1");
+  expect(canvas.style.width).toBe("900px");
+  expect(canvas.style.height).toBe("900px");
+  expect(canvas.style.left).toBe("0px");
+  expect(canvas.style.top).toBe("150px");
+
+  await clickControl("Exit Focus view");
+  await act(async () => {
+    lens.value = "";
+    lens.dispatchEvent(new Event("change", { bubbles: true }));
+    image.value = "fill";
+    image.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  expect(rendererMocks.setFocalLengthOverride).toHaveBeenLastCalledWith(null);
+  expect(camera.value).toBe("camera-1");
+  expect(lens.value).toBe("");
+  expect(image.value).toBe("fill");
+  expect(canvas.style.width).toBe("1200px");
+  expect(canvas.style.height).toBe("800px");
+  expect(canvas.style.left).toBe("0px");
+  expect(canvas.style.top).toBe("0px");
 });
 
 it("offers Focus view for an invalid document with a 2D preview", async () => {

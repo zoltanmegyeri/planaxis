@@ -450,11 +450,15 @@ dd {
   padding: 0.4rem;
   max-width: 100%;
 }
-.three-viewport canvas {
-  display: block;
-  width: 100%;
+.three-render-area {
+  position: relative;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
+}
+.three-viewport canvas {
+  position: absolute;
+  display: block;
   touch-action: none;
 }
 

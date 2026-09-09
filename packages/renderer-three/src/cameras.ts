@@ -2,6 +2,18 @@ import type { ArchitecturalCamera3D } from "@planaxis/model-3d";
 import { Box3, MathUtils, PerspectiveCamera, Vector3 } from "three/webgpu";
 import { rendererPoint } from "./coordinates.js";
 
+export const FULL_FRAME_FOCAL_LENGTHS = [16, 24, 35, 50, 70, 85] as const;
+
+export type FullFrameFocalLength = (typeof FULL_FRAME_FOCAL_LENGTHS)[number];
+
+export function isFullFrameFocalLength(value: number): value is FullFrameFocalLength {
+  return FULL_FRAME_FOCAL_LENGTHS.some((focalLength) => focalLength === value);
+}
+
+export function fullFrameHorizontalFov(focalLengthMm: FullFrameFocalLength): number {
+  return MathUtils.radToDeg(2 * Math.atan(36 / (2 * focalLengthMm)));
+}
+
 export function verticalFov(horizontalDegrees: number, aspect: number): number {
   return MathUtils.radToDeg(
     2 * Math.atan(Math.tan(MathUtils.degToRad(horizontalDegrees) / 2) / aspect),

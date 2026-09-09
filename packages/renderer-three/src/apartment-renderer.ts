@@ -11,13 +11,21 @@ import {
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { buildApartmentScene } from "./apartment-scene.js";
 import type { ApartmentScene } from "./apartment-scene.js";
-import { applyEmbeddedCamera, frameInspection } from "./cameras.js";
+import {
+  applyEmbeddedCamera,
+  frameInspection,
+  fullFrameHorizontalFov,
+  isFullFrameFocalLength,
+  verticalFov,
+} from "./cameras.js";
+import type { FullFrameFocalLength } from "./cameras.js";
 
 export interface ApartmentRenderer {
   initialize(): Promise<void>;
   setModel(model: ArchitecturalModel3D): void;
   resize(width: number, height: number, pixelRatio?: number): void;
   selectCamera(sourceId: string | null): void;
+  setFocalLengthOverride(focalLengthMm: FullFrameFocalLength | null): void;
   render(): void;
   dispose(): void;
 }
@@ -43,6 +51,7 @@ export function createApartmentRenderer(
   let apartment: ApartmentScene | undefined;
   let model: ArchitecturalModel3D | undefined;
   let cameraId: string | null = null;
+  let focalLengthOverride: FullFrameFocalLength | null = null;
   let aspect = 1;
   let initialized = false;
   let disposed = false;
@@ -64,6 +73,19 @@ export function createApartmentRenderer(
   renderer.onDeviceLost = (info): void => {
     if (!disposed) onError(new Error(`Rendering device lost: ${info.message}`));
   };
+  const applyEffectiveProjection = (): void => {
+    camera.aspect = aspect;
+    if (focalLengthOverride !== null) {
+      camera.fov = verticalFov(fullFrameHorizontalFov(focalLengthOverride), aspect);
+    } else if (cameraId === null) {
+      camera.fov = 50;
+    } else {
+      const source = model?.cameras.find((candidate) => candidate.id === cameraId);
+      if (!source) throw new Error(`Unknown apartment camera: ${cameraId}`);
+      camera.fov = verticalFov(source.horizontalFov.toNumber(), aspect);
+    }
+    camera.updateProjectionMatrix();
+  };
   const selectCamera = (id: string | null): void => {
     if (disposed || !model || !apartment) return;
     controls.enabled = false;
@@ -81,6 +103,7 @@ export function createApartmentRenderer(
       camera.updateProjectionMatrix();
     }
     cameraId = id;
+    applyEffectiveProjection();
     render();
   };
   controls.addEventListener("change", render);
@@ -138,14 +161,19 @@ export function createApartmentRenderer(
       aspect = w / h;
       renderer.setPixelRatio(Math.max(1, Math.min(2, pixelRatio)));
       renderer.setSize(w, h, false);
-      if (cameraId !== null) selectCamera(cameraId);
-      else {
-        camera.aspect = aspect;
-        camera.updateProjectionMatrix();
-        render();
-      }
+      applyEffectiveProjection();
+      render();
     },
     selectCamera,
+    setFocalLengthOverride(focalLengthMm) {
+      if (disposed) return;
+      if (focalLengthMm !== null && !isFullFrameFocalLength(focalLengthMm)) {
+        throw new Error(`Unsupported full-frame focal length: ${focalLengthMm}`);
+      }
+      focalLengthOverride = focalLengthMm;
+      applyEffectiveProjection();
+      render();
+    },
     render,
     dispose() {
       if (disposed) return;

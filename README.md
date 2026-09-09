@@ -175,8 +175,12 @@ the browser Fullscreen API, so browser and operating-system chrome remain unchan
 For a valid document, choose **3D** to inspect walls with door/window openings, fixed
 elements, and utility markers. Drag to orbit, right-drag to pan, and scroll to zoom;
 touch supports one-finger orbit and two-finger pan/zoom. Use the **Camera** selector for
-embedded SVG cameras or return to **Inspection / orbit**. Every replacement starts in
-2D; switching views does not reparse the file. A browser needs WebGPU or WebGL2 for 3D.
+embedded SVG cameras or return to **Inspection / orbit**. The independent **Focal length**
+selector keeps each camera's default projection or applies a 16–85 mm full-frame preset.
+The **Aspect ratio** selector either fills the viewport or centers the largest fitting
+16:9, 3:2, 1:1, 2:3, or 9:16 render surface. Framing choices survive camera changes,
+resizing, and Focus view transitions. Every replacement starts in 2D; switching views does
+not reparse the file. A browser needs WebGPU or WebGL2 for 3D.
 See [ADR-003](docs/decisions/ADR-003-three-renderer-architecture.md).
 
 React is confined to `apps/web`; see [ADR-002](docs/decisions/ADR-002-react-browser-ui.md).
