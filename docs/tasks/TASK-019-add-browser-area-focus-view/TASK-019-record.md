@@ -2,17 +2,17 @@
 
 ## Task Metadata
 
-- **Status:** In Progress
+- **Status:** Completed
 - **Created:** 2026-09-09
 - **Issued:** 2026-09-09
-- **Completed:** —
+- **Completed:** 2026-09-09
 - **Agent:** Codex
 - **Repository:** PlanAxis
 - **Description:** `TASK-019-description.md`
 - **Related tasks:** TASK-017, TASK-018
 - **Related ADRs:** ADR-002, ADR-003
 - **Related specifications:** —
-- **Implementation commits:** —
+- **Implementation commits:** 2e51e7f1d655f27a713cc04977651330a51908e9
 
 ## Purpose
 
@@ -26,17 +26,21 @@ The authoritative task description is stored in:
 
 `TASK-019-description.md`
 
-The task was formally issued on 2026-09-09 and is now in progress.
+The task was formally issued on 2026-09-09 and is now completed.
 
 ## Execution Record
 
 ### Result
 
-Pending.
+Codex completed the browser-area Focus view.
+
+The implementation adds focus-mode entry and exit behavior, hides normal application and viewport chrome while focused, preserves the active 2D or 3D viewport state, supports invalid-document 2D previews, provides a corner close control and `Escape` handling, and documents the new browser behavior.
 
 ### Verification
 
-Pending.
+The implementation was completed successfully.
+
+Command-by-command agent verification results were not separately provided during task-record finalization.
 
 ### Deviations from Description
 
@@ -50,11 +54,13 @@ None.
 
 ### Review Status
 
-Pending
+Accepted
 
 ### Review Notes
 
-None.
+The TASK-019 implementation was accepted as successfully completed.
+
+No additional human-review findings were reported.
 
 ### Human Changes After Agent Execution
 
@@ -64,11 +70,20 @@ None.
 
 ### Implementation Commits
 
-—
+```text
+2e51e7f1d655f27a713cc04977651330a51908e9
+```
 
 ### Commit Messages
 
-—
+```text
+feat(web): add browser-area focus view
+
+Preserve active viewport state while hiding application and viewer chrome.
+Cover 2D, 3D, invalid-preview, close, and Escape behavior.
+
+Task: TASK-019
+```
 
 ### Supersession
 
@@ -78,4 +93,4 @@ None.
 
 This task intentionally uses browser-client-area focus mode rather than the browser Fullscreen API.
 
-The focus-view mechanism is expected to remain generic so future viewport-owned state can be preserved without coupling the feature to specific controls.
+The focus-view mechanism remains generic so viewport-owned state can be preserved without coupling the feature to specific controls.
