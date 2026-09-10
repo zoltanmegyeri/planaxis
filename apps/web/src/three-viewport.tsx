@@ -14,6 +14,9 @@ import {
 } from "./render-aspect-ratio.js";
 import type { RenderAspectRatio } from "./render-aspect-ratio.js";
 
+// Not a valid Apartment SVG ID, so an embedded camera cannot shadow this choice.
+const WALK_VIEW = "@walk";
+
 export function ThreeViewport({
   model,
   onFailure,
@@ -96,7 +99,12 @@ export function ThreeViewport({
             onChange={(event) => {
               const id = event.target.value;
               try {
-                renderer.current?.selectCamera(id || null);
+                if (id === WALK_VIEW) {
+                  if (model.cameras.length === 0) return;
+                  renderer.current?.selectWalk();
+                } else {
+                  renderer.current?.selectCamera(id || null);
+                }
                 setCameraId(id);
               } catch (error) {
                 onFailure(error);
@@ -104,6 +112,9 @@ export function ThreeViewport({
             }}
           >
             <option value="">Inspection / orbit</option>
+            <option value={WALK_VIEW} disabled={model.cameras.length === 0}>
+              Walk
+            </option>
             {model.cameras.map((camera) => (
               <option key={camera.id} value={camera.id}>
                 {camera.id}
@@ -157,14 +168,19 @@ export function ThreeViewport({
         </label>
         <span>
           {ready
-            ? cameraId
-              ? "Embedded camera"
-              : "Drag to orbit · Right-drag to pan · Scroll to zoom"
+            ? cameraId === WALK_VIEW
+              ? "WASD / arrows to walk · Left-drag to look · Shift: fast · Option (Mac) / Space (Windows, Linux): slow · No collisions"
+              : cameraId
+                ? "Embedded camera"
+                : "Drag to orbit · Right-drag to pan · Scroll to zoom"
             : "Starting 3D…"}
         </span>
+        {model.cameras.length === 0 && (
+          <span>Free walk requires at least one camera in the Apartment SVG.</span>
+        )}
       </div>
       <div ref={renderArea} className="three-render-area">
-        <canvas ref={canvas} aria-label="Apartment 3D rendering" />
+        <canvas ref={canvas} tabIndex={0} aria-label="Apartment 3D rendering" />
       </div>
     </section>
   );

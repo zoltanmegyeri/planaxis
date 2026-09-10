@@ -19,18 +19,20 @@ import {
   verticalFov,
 } from "./cameras.js";
 import type { FullFrameFocalLength } from "./cameras.js";
+import { WalkControls } from "./walk-controls.js";
 
 export interface ApartmentRenderer {
   initialize(): Promise<void>;
   setModel(model: ArchitecturalModel3D): void;
   resize(width: number, height: number, pixelRatio?: number): void;
   selectCamera(sourceId: string | null): void;
+  selectWalk(): void;
   setFocalLengthOverride(focalLengthMm: FullFrameFocalLength | null): void;
   render(): void;
   dispose(): void;
 }
 
-/** Owns GPU resources and input listeners. Rendering is event-driven, with no persistent loop. */
+/** Owns GPU resources and input listeners. Continuous rendering runs only while walking. */
 export function createApartmentRenderer(
   canvas: HTMLCanvasElement,
   onError: (error: unknown) => void,
@@ -51,6 +53,8 @@ export function createApartmentRenderer(
   let apartment: ApartmentScene | undefined;
   let model: ArchitecturalModel3D | undefined;
   let cameraId: string | null = null;
+  let isWalking = false;
+  let walk: WalkControls | undefined;
   let focalLengthOverride: FullFrameFocalLength | null = null;
   let aspect = 1;
   let initialized = false;
@@ -67,27 +71,42 @@ export function createApartmentRenderer(
     try {
       renderer.render(scene, camera);
     } catch (error) {
+      walk?.deactivate();
       onError(error);
     }
   };
   renderer.onDeviceLost = (info): void => {
-    if (!disposed) onError(new Error(`Rendering device lost: ${info.message}`));
+    if (!disposed) {
+      walk?.deactivate();
+      onError(new Error(`Rendering device lost: ${info.message}`));
+    }
   };
   const applyEffectiveProjection = (): void => {
     camera.aspect = aspect;
     if (focalLengthOverride !== null) {
       camera.fov = verticalFov(fullFrameHorizontalFov(focalLengthOverride), aspect);
-    } else if (cameraId === null) {
+    } else if (!isWalking && cameraId === null) {
       camera.fov = 50;
     } else {
-      const source = model?.cameras.find((candidate) => candidate.id === cameraId);
+      const source = isWalking
+        ? model?.cameras[0]
+        : model?.cameras.find((candidate) => candidate.id === cameraId);
       if (!source) throw new Error(`Unknown apartment camera: ${cameraId}`);
       camera.fov = verticalFov(source.horizontalFov.toNumber(), aspect);
     }
     camera.updateProjectionMatrix();
   };
+  const extendClippingRange = (): void => {
+    if (!apartment) return;
+    const radius = apartment.bounds.getSize(new Vector3()).length() / 2;
+    const distance = camera.position.distanceTo(apartment.bounds.getCenter(new Vector3()));
+    camera.far = Math.max(camera.far, distance + radius * 2);
+    camera.updateProjectionMatrix();
+  };
   const selectCamera = (id: string | null): void => {
     if (disposed || !model || !apartment) return;
+    walk?.deactivate();
+    isWalking = false;
     controls.enabled = false;
     if (id === null) {
       controls.target.copy(frameInspection(camera, apartment.bounds, aspect));
@@ -97,10 +116,7 @@ export function createApartmentRenderer(
       const source = model.cameras.find((candidate) => candidate.id === id);
       if (!source) throw new Error(`Unknown apartment camera: ${id}`);
       applyEmbeddedCamera(camera, source, aspect);
-      const radius = apartment.bounds.getSize(new Vector3()).length() / 2;
-      const distance = camera.position.distanceTo(apartment.bounds.getCenter(new Vector3()));
-      camera.far = Math.max(camera.far, distance + radius * 2);
-      camera.updateProjectionMatrix();
+      extendClippingRange();
     }
     cameraId = id;
     applyEffectiveProjection();
@@ -129,6 +145,9 @@ export function createApartmentRenderer(
     setModel(next) {
       if (disposed) throw new Error("Renderer is disposed.");
       const replacement = buildApartmentScene(next);
+      walk?.dispose();
+      walk = undefined;
+      isWalking = false;
       if (apartment) {
         scene.remove(apartment.group);
         apartment.dispose();
@@ -165,6 +184,19 @@ export function createApartmentRenderer(
       render();
     },
     selectCamera,
+    selectWalk() {
+      if (disposed || !model || !apartment) return;
+      walk ??= new WalkControls(model, camera, canvas, () => {
+        extendClippingRange();
+        render();
+      });
+      controls.enabled = false;
+      isWalking = true;
+      walk.activate();
+      extendClippingRange();
+      applyEffectiveProjection();
+      render();
+    },
     setFocalLengthOverride(focalLengthMm) {
       if (disposed) return;
       if (focalLengthMm !== null && !isFullFrameFocalLength(focalLengthMm)) {
@@ -178,6 +210,7 @@ export function createApartmentRenderer(
     dispose() {
       if (disposed) return;
       disposed = true;
+      walk?.dispose();
       controls.removeEventListener("change", render);
       controls.dispose();
       apartment?.dispose();

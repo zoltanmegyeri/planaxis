@@ -2,6 +2,8 @@ import { createDecimal as decimal } from "@planaxis/geometry";
 import { beforeEach, expect, it, vi } from "vitest";
 import type { PerspectiveCamera, Scene } from "three/webgpu";
 import { modelFixture } from "./model-fixture.js";
+import { navigationSurface } from "./navigation-surface.js";
+import { Vector3 } from "three/webgpu";
 
 const gpu = vi.hoisted(() => ({
   init: vi.fn<() => Promise<void>>(),
@@ -175,3 +177,117 @@ it.each([16, 24, 35, 50, 70, 85] as const)(
     renderer.dispose();
   },
 );
+
+it("anchors Walk to the first camera in document order at floor + 165 cm with neutral pitch", async () => {
+  const model = modelFixture();
+  const source = model.cameras[0];
+  if (!source) throw new Error("Missing camera fixture");
+  const surface = navigationSurface();
+  const renderer = createApartmentRenderer(surface.canvas, vi.fn());
+  renderer.resize(800, 400);
+  renderer.setModel({
+    ...model,
+    floor: { ...model.floor, z: decimal("300") },
+    cameras: [
+      {
+        ...source,
+        id: "z-first",
+        position: { x: decimal("125"), y: decimal("75"), z: decimal("900") },
+        heading: decimal("90"),
+        pitch: decimal("45"),
+        horizontalFov: decimal("80"),
+      },
+      { ...source, id: "a-second" },
+    ],
+  });
+  await renderer.initialize();
+  renderer.selectWalk();
+  const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+  expect(camera.position.toArray()).toEqual([1.25, 4.65, 0.75]);
+  expect(camera.getWorldDirection(new Vector3()).toArray()).toEqual([
+    expect.closeTo(0),
+    expect.closeTo(0),
+    expect.closeTo(1),
+  ]);
+  expect(camera.fov).toBeCloseTo(verticalFov(80, 2));
+  expect(surface.frames.size).toBe(0);
+  renderer.dispose();
+});
+
+it("retains Walk pose and independent projection through view changes and resize, then resets on replacement", async () => {
+  const model = modelFixture();
+  const surface = navigationSurface();
+  const renderer = createApartmentRenderer(surface.canvas, vi.fn());
+  renderer.setModel(model);
+  await renderer.initialize();
+  renderer.setFocalLengthOverride(35);
+  renderer.selectWalk();
+  const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+  surface.key("keydown", "KeyW");
+  surface.pointer("pointerdown");
+  surface.pointer("pointermove", 100, 100);
+  surface.frame(1000);
+  const position = camera.position.clone();
+  const orientation = camera.quaternion.clone();
+  renderer.resize(400, 800);
+  expect(camera.fov).toBeCloseTo(verticalFov(fullFrameHorizontalFov(35), 0.5));
+  expect(camera.position).toEqual(position);
+  expect(camera.quaternion.toArray()).toEqual(orientation.toArray());
+  for (const id of ["camera-1", null]) {
+    renderer.selectCamera(id);
+    expect(surface.frames.size).toBe(0);
+    expect(surface.key("keydown", "ArrowUp").defaultPrevented).toBe(false);
+    renderer.selectWalk();
+    expect(camera.position).toEqual(position);
+    expect(camera.quaternion.toArray()).toEqual(orientation.toArray());
+    expect(camera.fov).toBeCloseTo(verticalFov(fullFrameHorizontalFov(35), 0.5));
+    surface.pointer("pointermove", 500, 500);
+    expect(camera.quaternion.toArray()).toEqual(orientation.toArray());
+    surface.frame(1000);
+    expect(camera.position).toEqual(position);
+  }
+  renderer.setFocalLengthOverride(null);
+  expect(camera.fov).toBeCloseTo(verticalFov(70, 0.5));
+  surface.key("keydown", "ShiftLeft");
+  surface.key("keydown", "KeyW");
+  surface.pointer("pointerdown");
+  const source = model.cameras[0];
+  if (!source) throw new Error("Missing camera fixture");
+  renderer.setModel({
+    ...model,
+    cameras: [{ ...source, position: { ...source.position, x: decimal("25") } }],
+  });
+  expect(surface.frames.size).toBe(0);
+  expect(camera.fov).toBe(50);
+  renderer.selectWalk();
+  expect(camera.position.toArray()).toEqual([0.25, 1.65, 0.5]);
+  const resetOrientation = camera.quaternion.clone();
+  surface.pointer("pointermove", 500, 500);
+  expect(camera.quaternion.toArray()).toEqual(resetOrientation.toArray());
+  surface.key("keydown", "KeyW", { repeat: true });
+  expect(surface.frames.size).toBe(0);
+  surface.key("keydown", "KeyW");
+  surface.frame(1000);
+  expect(camera.position.z).toBeCloseTo(-1);
+  renderer.dispose();
+  expect(surface.frames.size).toBe(0);
+  const renders = gpu.render.mock.calls.length;
+  surface.key("keydown", "KeyW");
+  surface.pointer("pointerdown");
+  surface.pointer("pointermove", 500, 500);
+  surface.frame(1000);
+  expect(gpu.render).toHaveBeenCalledTimes(renders);
+});
+
+it("rejects Walk without an embedded camera and keeps inspection available", async () => {
+  const renderer = createApartmentRenderer(navigationSurface().canvas, vi.fn());
+  renderer.setModel({ ...modelFixture(), cameras: [] });
+  await renderer.initialize();
+  const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+  const inspection = camera.position.clone();
+  expect(() => renderer.selectWalk()).toThrow("Free walk requires at least one camera");
+  renderer.resize(800, 400);
+  expect(camera.position).toEqual(inspection);
+  expect(camera.fov).toBe(50);
+  renderer.dispose();
+});

@@ -26,7 +26,7 @@ Apartment SVG
     -> interactive visualization / later design workflows
 ```
 
-The React application in `apps/web` is the first official user-facing entry point. `pnpm dev:web` starts local Apartment SVG loading and validation with a safe read-only 2D SVG pan/zoom viewer. React and browser APIs remain application-layer concerns under ADR-002. The dedicated `@planaxis/renderer-three` adapter provides WebGPU-first Three.js rendering with its supported WebGL2 fallback. It converts exact centimeters to meters only at the renderer boundary, mapping PlanAxis `(X, Y, Z)` to Three.js `(X, Z, Y)`. Valid documents support 2D/3D switching, orbit inspection, and embedded-camera viewing; invalid documents retain the 2D diagnostic workflow. Free-walk navigation, advanced lighting/materials, and AI-assisted features remain future stages.
+The React application in `apps/web` is the first official user-facing entry point. `pnpm dev:web` starts local Apartment SVG loading and validation with a safe read-only 2D SVG pan/zoom viewer. React and browser APIs remain application-layer concerns under ADR-002. The dedicated `@planaxis/renderer-three` adapter provides WebGPU-first Three.js rendering with its supported WebGL2 fallback. It converts exact centimeters to meters only at the renderer boundary, mapping PlanAxis `(X, Y, Z)` to Three.js `(X, Z, Y)`. Valid documents support 2D/3D switching, orbit inspection, embedded-camera viewing, and free-walk navigation; invalid documents retain the 2D diagnostic workflow. Advanced lighting/materials and AI-assisted features remain future stages.
 
 AI-assisted design and photorealistic rendering are downstream features. They must not replace or weaken the deterministic geometry and validation pipeline.
 

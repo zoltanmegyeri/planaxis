@@ -175,16 +175,28 @@ the browser Fullscreen API, so browser and operating-system chrome remain unchan
 For a valid document, choose **3D** to inspect walls with door/window openings, fixed
 elements, and utility markers. Drag to orbit, right-drag to pan, and scroll to zoom;
 touch supports one-finger orbit and two-finger pan/zoom. Use the **Camera** selector for
-embedded SVG cameras or return to **Inspection / orbit**. The independent **Focal length**
+embedded SVG cameras, **Walk**, or **Inspection / orbit**. The independent **Focal length**
 selector keeps each camera's default projection or applies a 16–85 mm full-frame preset.
 The **Aspect ratio** selector either fills the viewport or centers the largest fitting
 16:9, 3:2, 1:1, 2:3, or 9:16 render surface. Framing choices survive camera changes,
 resizing, and Focus view transitions. Every replacement starts in 2D; switching views does
 not reparse the file. A browser needs WebGPU or WebGL2 for 3D.
+
+**Walk** requires at least one embedded camera. It starts at the first camera's horizontal
+position and heading, with a fixed eye height of 165 cm above the floor and a level gaze.
+With the 3D canvas focused (click it to refocus), hold **WASD** or the **arrow keys** to move
+and **left-drag** to look; both controls work together. Base speed is 1.5 m/s. Hold **Shift**
+for twice the speed, or **Option** on macOS / **Space** on Windows and Linux for half speed.
+Fast and slow together use normal speed. Movement stays horizontal and has no collisions:
+you can pass through walls and move outside the apartment. Leaving the canvas or losing
+focus clears held controls. Returning to Walk from another 3D camera mode restores the
+Walk pose; replacing the document starts a new session. **Camera default** uses the first
+embedded camera's horizontal FOV in Walk; lens and aspect-ratio choices remain independent.
+
 See [ADR-003](docs/decisions/ADR-003-three-renderer-architecture.md).
 
 React is confined to `apps/web`; see [ADR-002](docs/decisions/ADR-002-react-browser-ui.md).
-The dedicated `@planaxis/renderer-three` adapter provides WebGPU-first Three.js rendering with its supported WebGL2 fallback. It converts exact centimeters to meters only at the renderer boundary, mapping PlanAxis `(X, Y, Z)` to Three.js `(X, Z, Y)`. Valid documents support 2D/3D switching, orbit inspection, and embedded-camera viewing; invalid documents retain the 2D diagnostic workflow. Free-walk navigation, advanced lighting/materials, and AI-assisted features remain future stages.
+The dedicated `@planaxis/renderer-three` adapter provides WebGPU-first Three.js rendering with its supported WebGL2 fallback. It converts exact centimeters to meters only at the renderer boundary, mapping PlanAxis `(X, Y, Z)` to Three.js `(X, Z, Y)`. Valid documents support 2D/3D switching, orbit inspection, embedded-camera viewing, and free-walk navigation; invalid documents retain the 2D diagnostic workflow. Advanced lighting/materials and AI-assisted features remain future stages.
 
 ## Validate an Apartment SVG
 
@@ -271,7 +283,7 @@ Natural-language discussion outside the repository may use any language, but rep
 
 The executable pipeline through `ValidatedApartment2D` is implemented: Apartment SVG parsing, schema validation, reference validation, geometric/topological validation, the developer validation CLI, and trusted 2D domain-model construction all exist. `GeometryValidApartmentSvgDocument` marks the final trusted SVG boundary before normalized domain construction.
 
-The parser, validator, CLI, and `ValidatedApartment2D` pipeline are aligned with Apartment SVG 2.2. Successful validation guarantees a simple, positive-area orthogonal footprint within the root `viewBox`, complete stationary geometry containment within its closed region, and level-local camera collision checks. Hinged-door open-leaf points may extend beyond the footprint but must remain within the `viewBox`. The trusted domain model exposes the canonical footprint separately from root bounds and includes the same footprint instance in its semantic ID index. Architectural Z values remain level-local, with `metadata.level.baseZ` retained separately for 3D construction. The geometry package now exposes `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`, with exact and tolerance-aware point equality and exact range-height derivation. `@planaxis/model-3d` now exports `buildArchitecturalModel3D(ValidatedApartment2D)`: it constructs floor and default ceiling surfaces, wall envelopes, window/door opening prisms, fixed-element volumes, utility positions, and exact camera definitions. It preserves architectural semantics and resolved relationships through constructed 3D instances and a source-semantic ID index. Model-space Z applies the level offset exactly once; X/Y remain unchanged. No slab thickness, physical door-leaf geometry, mesh processing, or renderer objects are inferred. The renderer adapter and browser inspection workflow are implemented. Free-walk navigation, advanced lighting/materials, and AI-assisted features remain future stages.
+The parser, validator, CLI, and `ValidatedApartment2D` pipeline are aligned with Apartment SVG 2.2. Successful validation guarantees a simple, positive-area orthogonal footprint within the root `viewBox`, complete stationary geometry containment within its closed region, and level-local camera collision checks. Hinged-door open-leaf points may extend beyond the footprint but must remain within the `viewBox`. The trusted domain model exposes the canonical footprint separately from root bounds and includes the same footprint instance in its semantic ID index. Architectural Z values remain level-local, with `metadata.level.baseZ` retained separately for 3D construction. The geometry package now exposes `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`, with exact and tolerance-aware point equality and exact range-height derivation. `@planaxis/model-3d` now exports `buildArchitecturalModel3D(ValidatedApartment2D)`: it constructs floor and default ceiling surfaces, wall envelopes, window/door opening prisms, fixed-element volumes, utility positions, and exact camera definitions. It preserves architectural semantics and resolved relationships through constructed 3D instances and a source-semantic ID index. Model-space Z applies the level offset exactly once; X/Y remain unchanged. No slab thickness, physical door-leaf geometry, mesh processing, or renderer objects are inferred. The renderer adapter, browser inspection workflow, and free-walk navigation are implemented. Advanced lighting/materials and AI-assisted features remain future stages.
 
 Each implementation phase should have explicit acceptance criteria and automated tests.
 

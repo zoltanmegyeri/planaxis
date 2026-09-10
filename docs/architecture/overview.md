@@ -445,10 +445,10 @@ Uploaded markup is never inserted into the application DOM. Preview URLs are rel
 replacement and disposal. A preview decoding failure does not hide validation results.
 The viewer supports fit/reset, mouse and touch pan/zoom, and keyboard navigation.
 Image transforms use viewport pixels and never feed into authoritative geometry.
-React, browser resources, and interaction state remain entirely in the application layer.
+React and 2D browser resources and interaction state remain in the application layer; 3D camera controls and their input lifecycle belong to the renderer adapter.
 No server, upload, or persistence is involved. Successful validation also constructs `ArchitecturalModel3D` through its public builder.
 
-Valid documents start in 2D and expose a 3D switch without reparsing. The 3D view offers orbit inspection and embedded cameras, with horizontal FOV adapted on resize. Unmount and replacement release renderer resources; failures remain explicit application states. Invalid documents retain only 2D preview and diagnostics.
+Valid documents start in 2D and expose a 3D switch without reparsing. The 3D view offers orbit inspection, embedded cameras, and Walk, with horizontal FOV adapted on resize. Walk is disabled with an explanatory message when no embedded camera exists. The browser owns the camera/view selector, independent focal-length and render-aspect controls, and concise navigation help. Focus view changes the layout without remounting the renderer or resetting its pose and projection selections. Unmount and replacement release renderer resources; failures remain explicit application states. Invalid documents retain only 2D preview and diagnostics.
 
 ### 8.2. Server Application
 
@@ -585,6 +585,25 @@ It must not depend on Three.js.
 ### `renderer-three`
 
 Owns Three.js scene construction, deterministic wall opening partitioning, PBR defaults, cameras, controls, and GPU resources. It depends on `model-3d` and exact geometry types, remains independent of React, and exposes explicit initialization, replacement, resize, camera selection, rendering, and disposal. The browser owns ResizeObserver and view state. Rendering is event-driven; no persistent application loop remains when inactive.
+
+The renderer's `selectWalk()` activates a model-local `WalkControls` session. The first
+camera in document order supplies horizontal position, heading, and default horizontal FOV.
+The initial eye position uses `model.floor.z + 165 cm`, independent of source camera Z,
+with neutral pitch and zero roll. Exact coordinates cross the existing centimeters-to-meters
+boundary once. Walk pose, input, and speed are transient renderer state; neither the SVG
+nor the domain model changes. A session preserves its pose across inspection/embedded-camera
+selection and resets when the model is replaced.
+
+The focused canvas handles WASD/arrows and left-mouse-drag look independently. Translation
+uses yaw only, normalized direction, and elapsed time at 1.5 m/s. Either Shift key doubles
+speed; either macOS Option key or Windows/Linux Space halves it. Fast and slow together
+cancel. The named settings live in `navigation-constants.ts`. Pitch is clamped to ±89°;
+movement has no collision, gravity, or footprint constraint. Input is cleared on pointer
+leave/cancel, canvas/window blur, hidden document visibility, mode exit, replacement, and
+disposal. Keyboard repeats cannot resurrect cleared input. A requestAnimationFrame loop
+exists only while resolved movement is nonzero; modifiers and opposing keys alone leave
+rendering idle. Mouse-only look renders from pointer events. Numeric lens overrides,
+aspect-ratio changes, resize, and Focus view preserve the Walk pose.
 
 Avoid creating packages preemptively without implementation pressure.
 
@@ -797,7 +816,7 @@ The initial React browser workflow is implemented: local SVG loading and validat
 
 The executable repository bootstrap, authoritative numeric and geometric foundations, Apartment SVG XML parsing boundary, schema-validation pipeline, reference validation, geometric/topological validation, developer validation CLI, and `ValidatedApartment2D` construction are implemented. The Node.js CLI reads one Apartment SVG file and composes the shared parse, schema, reference, and geometry stages while keeping filesystem and process behavior in the application layer. Schema validation produces a typed, exact-decimal `SchemaValidApartmentSvgDocument`; reference validation resolves its core relationships into `ReferenceValidApartmentSvgDocument`; and the geometry stage establishes the nominal `GeometryValidApartmentSvgDocument` boundary before `@planaxis/validator` constructs the normalized, exact-decimal `ValidatedApartment2D` owned by `@planaxis/model`.
 
-Apartment SVG 2.2 is the normative external format, and the parser, validator, CLI, and trusted 2D domain pipeline are fully aligned with it. Schema and reference stages preserve the mandatory exact-decimal footprint while leaving geometry checks to the geometry stage. Successful geometric validation guarantees footprint topology, positive area, exact orthogonality, root viewBox containment, and complete stationary placement containment within the closed footprint. Hinged-door open-leaf geometry is exempt from footprint containment but remains inside the viewBox. Camera collisions compare level-local Z ranges consistently. `ValidatedApartment2D` retains the canonical footprint and unchanged level-local architectural Z values, with the level offset stored separately. Exact, renderer-independent 3D geometry foundations are implemented in `@planaxis/geometry`: `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`. Point comparisons reuse the centralized geometric tolerance, and range height is derived with exact decimal subtraction. These primitives carry no architectural or transformation semantics. `@planaxis/model-3d` implements deterministic `ArchitecturalModel3D` construction from trusted 2D input using these primitives, preserving architectural semantics and resolved relationships without renderer objects or unsupported physical assumptions. The Three.js adapter and browser 2D/3D workflow are implemented as described in sections 5.7 and 8.1. Free-walk navigation and advanced lighting/material work remain future stages.
+Apartment SVG 2.2 is the normative external format, and the parser, validator, CLI, and trusted 2D domain pipeline are fully aligned with it. Schema and reference stages preserve the mandatory exact-decimal footprint while leaving geometry checks to the geometry stage. Successful geometric validation guarantees footprint topology, positive area, exact orthogonality, root viewBox containment, and complete stationary placement containment within the closed footprint. Hinged-door open-leaf geometry is exempt from footprint containment but remains inside the viewBox. Camera collisions compare level-local Z ranges consistently. `ValidatedApartment2D` retains the canonical footprint and unchanged level-local architectural Z values, with the level offset stored separately. Exact, renderer-independent 3D geometry foundations are implemented in `@planaxis/geometry`: `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`. Point comparisons reuse the centralized geometric tolerance, and range height is derived with exact decimal subtraction. These primitives carry no architectural or transformation semantics. `@planaxis/model-3d` implements deterministic `ArchitecturalModel3D` construction from trusted 2D input using these primitives, preserving architectural semantics and resolved relationships without renderer objects or unsupported physical assumptions. The Three.js adapter and browser 2D/3D workflow are implemented as described in sections 5.7 and 8.1. Free-walk navigation is implemented; advanced lighting/material work remains a future stage.
 
 The intended implementation order is broadly:
 

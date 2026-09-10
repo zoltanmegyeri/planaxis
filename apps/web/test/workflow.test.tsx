@@ -18,6 +18,7 @@ const rendererMocks = vi.hoisted(() => ({
   setModel: vi.fn(),
   resize: vi.fn(),
   selectCamera: vi.fn(),
+  selectWalk: vi.fn(),
   setFocalLengthOverride: vi.fn(),
   render: vi.fn(),
   dispose: vi.fn(),
@@ -424,6 +425,7 @@ it("switches valid views without processing again, selects embedded cameras and 
   if (!select) throw new Error("Missing camera selector");
   expect([...select.options].map((option) => option.text)).toEqual([
     "Inspection / orbit",
+    "Walk",
     "camera-1",
   ]);
   await act(async () => {
@@ -486,4 +488,84 @@ it("surfaces unexpected architectural construction errors before enabling 3D", a
     "Unexpected processing failure: Architectural invariant failed",
   );
   expect(host.querySelector('[aria-label="Apartment view"]')).toBeNull();
+});
+
+it("disables Walk without source cameras and explains the requirement", async () => {
+  await render();
+  await pick([file()]);
+  await clickView("3D");
+  const camera = host.querySelector<HTMLSelectElement>('[aria-label="3D camera"]');
+  const walk = [...(camera?.options ?? [])].find((option) => option.text === "Walk");
+  if (!camera || !walk) throw new Error("Missing Walk choice");
+  expect(walk.disabled).toBe(true);
+  expect(camera.disabled).toBe(false);
+  expect(camera.value).toBe("");
+  expect(host.textContent).toContain(
+    "Free walk requires at least one camera in the Apartment SVG.",
+  );
+  await act(async () => {
+    camera.value = walk.value;
+    camera.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  expect(rendererMocks.selectWalk).not.toHaveBeenCalled();
+});
+
+it("selects Walk independently of embedded IDs, lens, aspect ratio, and Focus view", async () => {
+  await render();
+  await pick([
+    file(fixture("valid/minimal-semantic-schema.svg").replace('id="camera-1"', 'id="walk"')),
+  ]);
+  await clickView("3D");
+  const camera = host.querySelector<HTMLSelectElement>('[aria-label="3D camera"]');
+  const lens = host.querySelector<HTMLSelectElement>('[aria-label="3D focal length"]');
+  const aspect = host.querySelector<HTMLSelectElement>('[aria-label="3D render aspect ratio"]');
+  const canvas = host.querySelector("canvas");
+  const area = host.querySelector<HTMLElement>(".three-render-area");
+  if (!camera || !lens || !aspect || !canvas || !area) throw new Error("Missing 3D controls");
+  const walk = [...camera.options].find((option) => option.text === "Walk");
+  if (!walk) throw new Error("Missing Walk choice");
+  expect(walk.disabled).toBe(false);
+  expect(canvas.tabIndex).toBe(0);
+  vi.spyOn(area, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 1000, 800));
+  async function choose(select: HTMLSelectElement, value: string): Promise<void> {
+    await act(async () => {
+      select.value = value;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+  }
+  await choose(lens, "35");
+  await choose(aspect, "1:1");
+  await choose(camera, walk.value);
+  expect(rendererMocks.selectWalk).toHaveBeenCalledTimes(1);
+  expect(host.textContent).toContain("WASD / arrows to walk");
+  expect(host.textContent).toContain("Left-drag to look");
+  expect(host.textContent).toContain("Option (Mac) / Space (Windows, Linux): slow");
+  expect(canvas.style.width).toBe("800px");
+  await clickControl("Enter Focus view");
+  await act(async () =>
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", cancelable: true })),
+  );
+  expect(host.querySelector("canvas")).toBe(canvas);
+  expect(camera.value).toBe(walk.value);
+  expect(rendererMocks.selectWalk).toHaveBeenCalledTimes(1);
+  expect(rendererMocks.setModel).toHaveBeenCalledTimes(1);
+  expect(rendererMocks.dispose).not.toHaveBeenCalled();
+  for (const id of ["walk", ""]) {
+    await choose(camera, id);
+    expect(rendererMocks.selectCamera).toHaveBeenLastCalledWith(id || null);
+    await choose(camera, walk.value);
+    expect(lens.value).toBe("35");
+    expect(aspect.value).toBe("1:1");
+  }
+  await choose(lens, "");
+  expect(rendererMocks.setFocalLengthOverride).toHaveBeenLastCalledWith(null);
+  expect(camera.value).toBe(walk.value);
+  await pick([file(fixture("valid/minimal-semantic-schema.svg"), "replacement.svg")]);
+  await clickView("3D");
+  expect(host.querySelector<HTMLSelectElement>('[aria-label="3D camera"]')?.value).toBe("");
+  expect(host.querySelector<HTMLSelectElement>('[aria-label="3D focal length"]')?.value).toBe("");
+  expect(
+    host.querySelector<HTMLSelectElement>('[aria-label="3D render aspect ratio"]')?.value,
+  ).toBe("fill");
+  expect(rendererMocks.dispose).toHaveBeenCalledTimes(1);
 });

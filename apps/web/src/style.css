@@ -461,6 +461,10 @@ dd {
   display: block;
   touch-action: none;
 }
+/* Keyboard navigation must not draw focus borders around the rendered image. */
+.three-viewport canvas:focus-visible {
+  outline: none;
+}
 
 .valid-workspace > .viewer {
   flex: 1;
