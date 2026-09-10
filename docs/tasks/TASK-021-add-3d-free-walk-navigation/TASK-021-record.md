@@ -2,17 +2,17 @@
 
 ## Task Metadata
 
-- **Status:** In Progress
+- **Status:** Completed
 - **Created:** 2026-09-09
 - **Issued:** 2026-09-09
-- **Completed:** —
+- **Completed:** 2026-09-10
 - **Agent:** Codex
 - **Repository:** PlanAxis
 - **Description:** `TASK-021-description.md`
 - **Related tasks:** TASK-018, TASK-019, TASK-020
 - **Related ADRs:** ADR-002, ADR-003
 - **Related specifications:** Apartment SVG 2.2
-- **Implementation commits:** —
+- **Implementation commits:** 032545dd6691b638443cf10bfebcfe398e5f76a4
 
 ## Purpose
 
@@ -26,49 +26,64 @@ The authoritative task description is stored in:
 
 `TASK-021-description.md`
 
-The task was formally issued on 2026-09-09 and is now in progress.
+The task was formally issued on 2026-09-09 and completed on 2026-09-10.
 
 ## Execution Record
 
 ### Result
 
-Pending.
+Codex completed the 3D free-walk navigation implementation.
+
+The implementation adds a Walk camera mode anchored to the first embedded Apartment SVG camera, fixed 165 cm eye height, horizontal keyboard movement with normal/fast/slow speed modifiers, simultaneous left-drag mouse look, interrupted-input cleanup, and preservation of Walk pose and existing framing controls across 3D camera-mode changes. Walk is disabled with an explanatory message when the document has no embedded camera, and movement remains intentionally collision-free.
 
 ### Verification
 
-NOT RUN.
+The implementation was reported as completed successfully.
+
+Command-by-command agent verification results were not separately provided during task-record finalization.
 
 ### Deviations from Description
 
-Pending.
+None reported.
 
 ### Agent-Reported Follow-up Items
 
-Pending.
+None reported.
 
 ## Human Review
 
 ### Review Status
 
-Pending
+Accepted
 
 ### Review Notes
 
-Pending.
+The TASK-021 implementation was accepted as successfully completed.
+
+No additional human-review findings were reported.
 
 ### Human Changes After Agent Execution
 
-Pending.
+None reported.
 
 ## Finalization
 
 ### Implementation Commits
 
-—
+```text
+032545dd6691b638443cf10bfebcfe398e5f76a4
+```
 
 ### Commit Messages
 
-—
+```text
+feat(renderer-three): add 3D free-walk navigation
+
+Add camera-anchored walking with keyboard movement and drag-look.
+Preserve view settings, clear interrupted input, and document controls.
+
+Task: TASK-021
+```
 
 ### Supersession
 
@@ -78,4 +93,4 @@ Pending.
 
 Walk mode deliberately requires at least one embedded Apartment SVG camera and uses the first camera as its deterministic starting anchor.
 
-Collision detection is intentionally deferred; this task establishes the free-walk interaction model and renderer lifecycle first.
+Collision detection remains intentionally deferred; this task establishes the free-walk interaction model and renderer lifecycle first.
