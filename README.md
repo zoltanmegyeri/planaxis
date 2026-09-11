@@ -6,15 +6,19 @@
 
 The project is built around the versioned, normative [Apartment SVG 2.2 specification](docs/specifications/apartment-svg/2.2.md), where an SVG document is not merely a drawing: it is the canonical, machine-readable representation of an apartment's geometry and semantics.
 
+PlanAxis has also adopted the versioned [PlanAxis Project Format 1.0 specification](docs/specifications/planaxis-project/1.0.md) as the future top-level container for filesystem-backed renovation projects. The project manifest organizes architecture and project resources without replacing Apartment SVG as the source of architectural truth.
+
 > [!NOTE]
-> The React browser application now provides local SVG loading, validation, and a read-only pan/zoom 2D viewer as the first official user-facing entry point. The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG 2.2 parser and complete validation pipeline, developer validation CLI, and normalized `ValidatedApartment2D` domain model are in place. Validation enforces canonical footprint geometry, complete stationary placement containment, and level-local camera collisions. The trusted model retains the exact-decimal footprint and level-local architectural Z values. Exact, renderer-independent `ArchitecturalModel3D` construction is implemented in `@planaxis/model-3d`. Interactive 3D viewing is implemented in `@planaxis/renderer-three`; see the browser workflow below.
+> The React browser application currently provides local SVG loading, validation, and a read-only pan/zoom 2D viewer as the first official user-facing entry point. The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG 2.2 parser and complete validation pipeline, developer validation CLI, and normalized `ValidatedApartment2D` domain model are in place. Validation enforces canonical footprint geometry, complete stationary placement containment, and level-local camera collisions. The trusted model retains the exact-decimal footprint and level-local architectural Z values. Exact, renderer-independent `ArchitecturalModel3D` construction is implemented in `@planaxis/model-3d`. Interactive 3D viewing is implemented in `@planaxis/renderer-three`; see the browser workflow below. Filesystem-backed project operation defined by Project Format 1.0 and ADR-004 is accepted architecture but is not implemented yet; the current browser workflow remains local drag-and-drop until that implementation lands.
 
 ## Project Goals
 
 The long-term workflow is:
 
 ```text
-Apartment SVG
+PlanAxis project
+    ↓
+active Apartment SVG
     ↓
 validation
     ↓
@@ -38,19 +42,26 @@ The initial implementation focuses on establishing a deterministic and testable 
 - producing a strongly typed in-memory 2D domain model;
 - deriving a renderer-independent 3D architectural model;
 - rendering and exploring the apartment interactively in the browser;
+- establishing a portable filesystem-backed project container for later assets and designs;
 - simulating runtime conditions such as date, time, sunlight, and artificial lighting.
 
 AI-assisted redesign and photorealistic rendering are later stages built on top of this deterministic geometry pipeline.
 
 ## Core Principles
 
-### The SVG is the source of truth
+### The SVG is the source of architectural truth
 
-The Apartment SVG document is the canonical external model.
+The Apartment SVG document is the canonical external model for apartment geometry and semantics.
 
-Geometry must not be inferred from CSS, visual appearance, annotations, natural-language labels, or other non-normative information. Missing required information must result in validation errors rather than guesses.
+Geometry must not be inferred from CSS, visual appearance, annotations, natural-language labels, project metadata, or other non-normative information. Missing required information must result in validation errors rather than guesses.
 
 Apartment SVG 2.2 makes the mandatory apartment-level footprint canonical geometry. The footprint is not inferred from walls or zones; it defines the horizontal physical extent of the modeled level and the XY extent of its implicit floor and default ceiling surfaces.
+
+### The project manifest organizes the project, not its geometry
+
+`planaxis.project.json` is the authoritative project-organization manifest defined by PlanAxis Project Format 1.0. It identifies the project and selects the active Apartment SVG, while architecture remains in Apartment SVG files.
+
+Durable project references are project-relative and portable. The filesystem-backed project root is intended to contain architecture, assets, references, designs, generated output, and disposable PlanAxis internal state without becoming a second apartment model.
 
 ### Validation precedes 3D generation
 
@@ -131,7 +142,8 @@ PlanAxis is a pnpm workspace monorepo organized around the following areas:
 │
 ├── docs/
 │   ├── specifications/
-│   │   └── apartment-svg/
+│   │   ├── apartment-svg/
+│   │   └── planaxis-project/
 │   ├── architecture/
 │   ├── development/
 │   ├── decisions/
@@ -198,6 +210,28 @@ See [ADR-003](docs/decisions/ADR-003-three-renderer-architecture.md).
 React is confined to `apps/web`; see [ADR-002](docs/decisions/ADR-002-react-browser-ui.md).
 The dedicated `@planaxis/renderer-three` adapter provides WebGPU-first Three.js rendering with its supported WebGL2 fallback. It converts exact centimeters to meters only at the renderer boundary, mapping PlanAxis `(X, Y, Z)` to Three.js `(X, Z, Y)`. Valid documents support 2D/3D switching, orbit inspection, embedded-camera viewing, and free-walk navigation; invalid documents retain the 2D diagnostic workflow. Advanced lighting/materials and AI-assisted features remain future stages.
 
+## Adopted Project-Based Workflow
+
+[ADR-004](docs/decisions/ADR-004-filesystem-backed-projects.md) adopts one filesystem-backed PlanAxis project per server process. A project is a physical directory conforming to [PlanAxis Project Format 1.0](docs/specifications/planaxis-project/1.0.md), with a required `planaxis.project.json` manifest and an active Apartment SVG under `architecture/`.
+
+The intended project-based application flow is:
+
+```text
+project root supplied at server startup
+    ↓
+server establishes canonical project-filesystem boundary
+    ↓
+project manifest selects active Apartment SVG
+    ↓
+browser obtains project resources through controlled APIs
+    ↓
+existing parse / validation / 2D / 3D pipeline
+```
+
+The backend will own project filesystem access; persistent paths will be project-relative, symlink traversal below the canonical project root will be prohibited, and `.planaxis/` will contain only disposable internal state. The server will bind to loopback by default when filesystem-backed project operation is implemented.
+
+This workflow is **architecturally accepted but not implemented yet**. Until its implementation is complete, use the local drag-and-drop browser workflow described above.
+
 ## Validate an Apartment SVG
 
 Use the developer CLI from the repository root with exactly one Apartment SVG file path:
@@ -220,9 +254,11 @@ Project documentation lives under [`docs/`](docs/).
 
 ### Specifications
 
-[`docs/specifications/`](docs/specifications/) contains normative domain specifications.
+[`docs/specifications/`](docs/specifications/) contains normative format and domain specifications.
 
-The current normative format definition is the [Apartment SVG 2.2 specification](docs/specifications/apartment-svg/2.2.md). It defines the external file format, validation rules, geometric invariants, reference semantics, footprint and containment semantics, architectural Z semantics, and canonical interpretation rules.
+The [Apartment SVG 2.2 specification](docs/specifications/apartment-svg/2.2.md) defines the external apartment format, validation rules, geometric invariants, reference semantics, footprint and containment semantics, architectural Z semantics, and canonical interpretation rules.
+
+The [PlanAxis Project Format 1.0 specification](docs/specifications/planaxis-project/1.0.md) defines the portable filesystem-backed project container, root manifest, reserved directory roles, project-relative path semantics, and project-root filesystem boundary. It does not redefine Apartment SVG geometry.
 
 ### Architecture
 
@@ -249,6 +285,8 @@ docs/development/agent-task-workflow.md
 [`docs/decisions/`](docs/decisions/) contains Architectural Decision Records (ADRs).
 
 ADRs document significant technical decisions, their context, considered alternatives, and consequences. They preserve the reasoning behind the architecture without turning the current architecture documentation into a historical log.
+
+The filesystem-backed project operating model is recorded in [ADR-004](docs/decisions/ADR-004-filesystem-backed-projects.md).
 
 ### Formal Agent Tasks
 
@@ -284,6 +322,8 @@ Natural-language discussion outside the repository may use any language, but rep
 The executable pipeline through `ValidatedApartment2D` is implemented: Apartment SVG parsing, schema validation, reference validation, geometric/topological validation, the developer validation CLI, and trusted 2D domain-model construction all exist. `GeometryValidApartmentSvgDocument` marks the final trusted SVG boundary before normalized domain construction.
 
 The parser, validator, CLI, and `ValidatedApartment2D` pipeline are aligned with Apartment SVG 2.2. Successful validation guarantees a simple, positive-area orthogonal footprint within the root `viewBox`, complete stationary geometry containment within its closed region, and level-local camera collision checks. Hinged-door open-leaf points may extend beyond the footprint but must remain within the `viewBox`. The trusted domain model exposes the canonical footprint separately from root bounds and includes the same footprint instance in its semantic ID index. Architectural Z values remain level-local, with `metadata.level.baseZ` retained separately for 3D construction. The geometry package now exposes `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`, with exact and tolerance-aware point equality and exact range-height derivation. `@planaxis/model-3d` now exports `buildArchitecturalModel3D(ValidatedApartment2D)`: it constructs floor and default ceiling surfaces, wall envelopes, window/door opening prisms, fixed-element volumes, utility positions, and exact camera definitions. It preserves architectural semantics and resolved relationships through constructed 3D instances and a source-semantic ID index. Model-space Z applies the level offset exactly once; X/Y remain unchanged. No slab thickness, physical door-leaf geometry, mesh processing, or renderer objects are inferred. The renderer adapter, browser inspection workflow, and free-walk navigation are implemented. Advanced lighting/materials and AI-assisted features remain future stages.
+
+PlanAxis Project Format 1.0 and ADR-004 now define the accepted next application foundation: a portable project directory, server-owned project filesystem boundary, one active project per server process, and controlled browser access to project resources. That architecture is documented but not yet implemented; the current browser continues to load Apartment SVG files locally.
 
 Each implementation phase should have explicit acceptance criteria and automated tests.
 

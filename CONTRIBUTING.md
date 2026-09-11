@@ -7,6 +7,7 @@ PlanAxis is an open-source project for deterministic apartment modeling, validat
 Contributions are welcome in areas such as:
 
 - Apartment SVG parsing;
+- PlanAxis project-container and filesystem behavior;
 - schema, referential, geometric, and topological validation;
 - exact geometry utilities;
 - renderer-independent 2D and 3D domain models;
@@ -64,13 +65,21 @@ For Apartment SVG behavior, the normative specification is:
 docs/specifications/apartment-svg/2.2.md
 ```
 
+For PlanAxis project-container, manifest, path, or filesystem-boundary behavior, the normative specification is:
+
+```text
+docs/specifications/planaxis-project/1.0.md
+```
+
 For established architectural decisions, review:
 
 ```text
 docs/decisions/
 ```
 
-The Apartment SVG specification is normative for format semantics. Implementation convenience is not a reason to reinterpret, weaken, or silently extend it.
+For filesystem-backed project operation specifically, see `docs/decisions/ADR-004-filesystem-backed-projects.md`.
+
+The Apartment SVG specification is normative for apartment-format semantics. The PlanAxis Project Format specification is normative for filesystem-backed project semantics. Implementation convenience is not a reason to reinterpret, weaken, or silently extend either format.
 
 ---
 
@@ -78,13 +87,17 @@ The Apartment SVG specification is normative for format semantics. Implementatio
 
 PlanAxis is built around a few non-negotiable engineering principles:
 
-- Apartment SVG is the canonical external model;
+- Apartment SVG is the canonical architectural model;
+- the PlanAxis project manifest organizes a project but does not duplicate architectural geometry;
 - validation must complete before 3D model generation;
 - authoritative geometry uses exact decimal arithmetic;
-- parser, validator, domain, renderer, and HTTP responsibilities remain separated;
+- parser, validator, domain, renderer, project-filesystem, and HTTP responsibilities remain separated;
 - renderer-independent models must not depend on Three.js;
 - invalid input must produce validation errors rather than guessed or silently repaired geometry;
-- deterministic domain logic should be reusable between browser and server environments where practical.
+- deterministic domain logic should be reusable between browser and server environments where practical;
+- persistent project references are project-relative and portable;
+- project filesystem access must stay inside the canonical project root;
+- `.planaxis/` is disposable internal state and must never be the only location of authoritative or irreplaceable project information.
 
 Contributions should preserve these boundaries unless the change explicitly proposes an architectural revision.
 
@@ -169,6 +182,7 @@ Examples:
 
 - fix one validator rule;
 - add support for one documented Apartment SVG construct;
+- implement one documented PlanAxis Project Format rule;
 - add a missing regression fixture;
 - improve one package API;
 - add a documented example;
@@ -192,8 +206,8 @@ Useful information includes:
 - what you expected;
 - what happened;
 - relevant PlanAxis version or commit;
-- relevant Apartment SVG version;
-- minimal Apartment SVG input when applicable;
+- relevant Apartment SVG or PlanAxis Project Format version where applicable;
+- minimal Apartment SVG input or minimal project tree when applicable;
 - validation errors or error codes;
 - operating system and runtime information when relevant;
 - steps to reproduce.
@@ -213,13 +227,14 @@ A feature proposal should explain:
 - the problem being solved;
 - the expected user or developer benefit;
 - whether the feature affects Apartment SVG semantics;
+- whether it affects PlanAxis Project Format semantics;
 - whether it affects architecture or only implementation;
 - likely compatibility impact;
 - any relevant alternatives.
 
-Do not implement undocumented extensions to Apartment SVG as ordinary feature work.
+Do not implement undocumented extensions to Apartment SVG or PlanAxis Project Format as ordinary feature work.
 
-If a proposal requires changing the format, treat it as a specification change.
+If a proposal requires changing either format, treat it as a specification change.
 
 ---
 
@@ -251,6 +266,22 @@ as a side effect of making existing code easier to implement.
 
 If implementation and specification disagree, first determine whether the implementation is wrong or whether a deliberate specification revision is required.
 
+### PlanAxis Project Format changes
+
+The PlanAxis Project Format is also normative and independently versioned.
+
+Do not change `planaxis.project.json` semantics, reserved directory roles, project-relative path rules, symbolic-link policy, project-root containment, or portability requirements merely because an implementation shortcut would be convenient.
+
+Changes to:
+
+```text
+docs/specifications/planaxis-project/
+```
+
+must be deliberate specification work. A format change should include compatibility and migration analysis where relevant, plus updates to architecture, ADRs, implementation, and tests.
+
+Future material, model-asset, and design descriptor formats should receive their own contracts when concrete requirements justify them rather than being silently added to Project Format 1.0.
+
 ---
 
 ## 10. Architectural Changes
@@ -263,11 +294,12 @@ Examples include:
 - adding another geometry engine;
 - changing the authoritative numeric representation;
 - changing the canonical persistence model;
+- changing the project filesystem authorization model;
 - introducing a new cross-cutting infrastructure pattern;
 - moving renderer-specific concepts into core domain packages;
 - splitting or merging major architectural responsibilities.
 
-Architecture documentation describes the current system.
+Architecture documentation describes the current system and accepted direction.
 
 ADRs explain why significant decisions were made.
 
@@ -297,6 +329,8 @@ Important expectations include:
 - avoid hidden global dependencies;
 - do not log directly from core domain libraries;
 - keep environment-specific APIs out of shared core packages;
+- centralize project filesystem resolution and containment;
+- do not persist machine-specific absolute project references;
 - avoid circular dependencies.
 
 Do not weaken compiler or lint rules merely to make new code pass.
@@ -329,6 +363,8 @@ fixtures/valid/
 fixtures/invalid/
 ```
 
+For PlanAxis Project Format and filesystem-boundary work, use focused manifests and isolated temporary project trees that exercise valid and invalid paths, containment, symlink policy, and project/SVG conformance separation.
+
 An invalid fixture should ideally violate one primary rule so that the expected failure remains unambiguous.
 
 Bug fixes should include regression tests when practical.
@@ -340,7 +376,8 @@ Do not make tests pass by:
 - skipping coverage;
 - widening geometric tolerances without normative justification;
 - accepting invalid fixtures;
-- changing expected validation codes arbitrarily.
+- changing expected validation codes arbitrarily;
+- bypassing project-root or path-containment assertions.
 
 ---
 
@@ -549,6 +586,7 @@ Update documentation when a contribution changes:
 
 - public behavior;
 - domain contracts;
+- PlanAxis Project Format behavior;
 - architecture;
 - setup instructions;
 - contributor workflow;
@@ -561,6 +599,8 @@ Do not duplicate large blocks of documentation in multiple places.
 
 Update the document that owns the relevant rule and link to it elsewhere.
 
+Do not describe accepted-but-unimplemented architecture as current user behavior.
+
 ---
 
 ## 20. Code Review Expectations
@@ -569,7 +609,11 @@ Reviewers should evaluate more than whether the code works.
 
 Important review questions include:
 
-- does the behavior match the Apartment SVG specification?
+- does Apartment SVG behavior match the Apartment SVG specification?
+- does project-container/filesystem behavior match PlanAxis Project Format 1.0 when applicable?
+- does the project manifest remain organizational rather than a competing source of architecture?
+- are project resource paths portable and confined to the canonical project root?
+- is `.planaxis/` still disposable?
 - are domain and renderer concerns still separated?
 - is authoritative geometry still exact-decimal based?
 - are invalid inputs rejected rather than guessed or repaired?
@@ -728,6 +772,8 @@ Never commit or publish:
 
 Apartment SVG files contributed as fixtures or examples must be safe for public distribution.
 
+Project-format and filesystem work must treat manifest contents, project-relative paths, and browser-supplied resource identifiers as untrusted until validated. Do not expose an arbitrary local filesystem path through project APIs.
+
 If you discover a security issue, do not include exploit-sensitive private information in a public issue when private reporting is more appropriate.
 
 A formal security-reporting policy may be added as the project gains deployed services and security-sensitive functionality.
@@ -754,7 +800,8 @@ A contribution is normally ready for review when:
 
 - the change has one clear purpose;
 - code follows the coding guidelines;
-- Apartment SVG behavior matches the normative specification;
+- Apartment SVG behavior matches the normative specification when applicable;
+- PlanAxis Project Format behavior matches its normative specification when applicable;
 - architecture boundaries remain intact;
 - tests cover the changed behavior;
 - regression coverage exists for bug fixes where practical;

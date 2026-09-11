@@ -12,7 +12,7 @@ Keep this file concise. Detailed domain, architecture, coding, and testing rules
 
 PlanAxis is a TypeScript-based toolkit and web application for validating, modeling, visualizing, and eventually redesigning apartments described by the Apartment SVG format.
 
-The high-level processing pipeline is:
+The high-level apartment-processing pipeline is:
 
 ```text
 Apartment SVG
@@ -26,7 +26,9 @@ Apartment SVG
     -> interactive visualization / later design workflows
 ```
 
-The React application in `apps/web` is the first official user-facing entry point. `pnpm dev:web` starts local Apartment SVG loading and validation with a safe read-only 2D SVG pan/zoom viewer. React and browser APIs remain application-layer concerns under ADR-002. The dedicated `@planaxis/renderer-three` adapter provides WebGPU-first Three.js rendering with its supported WebGL2 fallback. It converts exact centimeters to meters only at the renderer boundary, mapping PlanAxis `(X, Y, Z)` to Three.js `(X, Z, Y)`. Valid documents support 2D/3D switching, orbit inspection, embedded-camera viewing, and free-walk navigation; invalid documents retain the 2D diagnostic workflow. Advanced lighting/materials and AI-assisted features remain future stages.
+The React application in `apps/web` is the first official user-facing entry point. `pnpm dev:web` currently starts local Apartment SVG loading and validation with a safe read-only 2D SVG pan/zoom viewer and the implemented 3D workflow. React and browser APIs remain application-layer concerns under ADR-002. The dedicated `@planaxis/renderer-three` adapter provides WebGPU-first Three.js rendering with its supported WebGL2 fallback. It converts exact centimeters to meters only at the renderer boundary, mapping PlanAxis `(X, Y, Z)` to Three.js `(X, Z, Y)`. Valid documents support 2D/3D switching, orbit inspection, embedded-camera viewing, and free-walk navigation; invalid documents retain the 2D diagnostic workflow. Advanced lighting/materials and AI-assisted features remain future stages.
+
+ADR-004 and PlanAxis Project Format 1.0 adopt a filesystem-backed project as the future top-level application container. The backend will own access to one explicitly authorized project root per server process, while Apartment SVG remains the source of architectural truth. This project-based operating model is accepted architecture but is not implemented yet; do not describe the current drag-and-drop browser workflow as already replaced until implementation changes make that true.
 
 AI-assisted design and photorealistic rendering are downstream features. They must not replace or weaken the deterministic geometry and validation pipeline.
 
@@ -59,7 +61,7 @@ The normative Apartment SVG specification is:
 docs/specifications/apartment-svg/2.2.md
 ```
 
-The specification defines the external file format, conformance rules, lexical types, geometry, references, validation behavior, and canonical interpretation order.
+The specification defines the external apartment file format, conformance rules, lexical types, geometry, references, validation behavior, and canonical interpretation order.
 
 Treat it as normative.
 
@@ -76,6 +78,29 @@ If an implementation request conflicts with the current specification and the ta
 
 A specification change must be deliberate, reviewed as such, and accompanied by any required versioning, documentation, fixture, validator, and compatibility updates.
 
+### PlanAxis Project Format specification
+
+The normative project-container specification is:
+
+```text
+docs/specifications/planaxis-project/1.0.md
+```
+
+It defines the filesystem-backed project root, `planaxis.project.json`, reserved directory roles, project-relative path syntax, symbolic-link policy, portability requirements, and the separation between project-format conformance and Apartment SVG conformance.
+
+Treat it as normative for project-format and project-filesystem behavior.
+
+Do not:
+
+- make the project manifest a second source of architectural geometry;
+- persist machine-specific absolute paths where the project format requires project-relative paths;
+- bypass project-root containment;
+- traverse project-resource symbolic links contrary to the specification;
+- place irreplaceable or authoritative project information only under `.planaxis/`;
+- invent future material, model-asset, or design schemas as a side effect of project-container work.
+
+A Project Format change must be deliberate and versioned. Do not silently widen or reinterpret the accepted format for implementation convenience.
+
 ### Architecture
 
 The current software architecture is documented under:
@@ -90,7 +115,7 @@ Start with:
 docs/architecture/overview.md
 ```
 
-Architecture documentation describes the current system. Architectural Decision Records explain why significant decisions were made.
+Architecture documentation describes the current system and accepted direction. Architectural Decision Records explain why significant decisions were made.
 
 ### Architectural decisions
 
@@ -100,7 +125,9 @@ Significant decisions are recorded under:
 docs/decisions/
 ```
 
-Follow accepted ADRs. Do not casually replace an established decision with a new pattern, dependency, framework, or abstraction.
+Follow accepted ADRs. In particular, ADR-004 governs the filesystem-backed project operating model.
+
+Do not casually replace an established decision with a new pattern, dependency, framework, or abstraction.
 
 If a task genuinely requires a significant architectural change, update or add the appropriate ADR as part of that work.
 
@@ -125,13 +152,15 @@ Read the relevant documents before modifying implementation code.
 
 The following rules are repository-wide architectural constraints.
 
-### 1. Apartment SVG is the canonical external model
+### 1. Apartment SVG is the canonical architectural model
 
-The Apartment SVG document is the persistent source of geometric and semantic truth.
+The Apartment SVG document is the persistent source of architectural geometric and semantic truth.
 
 `ValidatedApartment2D` is an in-memory, typed, validated representation of that SVG. It is not a second persistence format or competing source of truth.
 
 Derived values may exist in memory when useful, but redundant geometric facts must not be written back into the Apartment SVG when the specification defines them as derivable.
+
+The PlanAxis project manifest may select an Apartment SVG, but it must not duplicate or override the SVG's architecture.
 
 ### 2. Validation must complete before 3D generation
 
@@ -188,6 +217,7 @@ Defaults explicitly defined by the specification are allowed and must be applied
 
 Maintain clear boundaries between:
 
+- project-container and filesystem access;
 - XML/SVG parsing;
 - schema validation;
 - reference resolution;
@@ -200,6 +230,29 @@ Maintain clear boundaries between:
 Do not combine unrelated responsibilities merely to reduce file count.
 
 At the same time, avoid speculative abstraction. Introduce a new abstraction only when the current task demonstrates a concrete need for it.
+
+### 7. Project-format and Apartment SVG conformance remain separate
+
+A structurally valid PlanAxis project may contain an active Apartment SVG that fails Apartment SVG validation. Project loading must not silently reinterpret an Apartment SVG validation failure as project-container invalidity when the project format itself is conforming.
+
+Conversely, a valid Apartment SVG does not make an arbitrary directory a valid PlanAxis project.
+
+Keep project-format validation and Apartment SVG parsing/validation as observable, independently testable concerns.
+
+### 8. The project root is the filesystem authorization boundary
+
+For filesystem-backed project operation under ADR-004:
+
+- the backend owns project filesystem access;
+- one server process initially owns one explicitly configured canonical project root;
+- persistent PlanAxis references use the Project Format's project-relative path rules;
+- project resource access must remain inside the canonical project root;
+- project-resource symbolic links must not be traversed;
+- application routes must not accept arbitrary absolute filesystem paths from the browser;
+- project filesystem resolution must be centralized rather than reimplemented ad hoc;
+- `.planaxis/` is disposable and must never be the only location of authoritative or irreplaceable project information;
+- the complete project root must not be exposed as an unrestricted static directory;
+- filesystem-backed project serving binds to loopback by default unless a later accepted security model explicitly changes that decision.
 
 ## Planned Technology Baseline
 
@@ -310,13 +363,14 @@ In particular, the agent may and, when relevant, must read authoritative documen
 ```text
 AGENTS.md
 docs/specifications/apartment-svg/2.2.md
+docs/specifications/planaxis-project/1.0.md
 docs/architecture/overview.md
 docs/development/coding-guidelines.md
 docs/development/testing.md
 docs/decisions/
 ```
 
-The Apartment SVG specification and other non-task specifications remain valid sources of truth and are not affected by the `docs/tasks/` access restriction.
+The Apartment SVG specification, PlanAxis Project Format specification, and other non-task specifications remain valid sources of truth and are not affected by the `docs/tasks/` access restriction.
 
 If the assigned task description references a relevant repository document outside `docs/tasks/`, read it as required.
 
@@ -358,8 +412,9 @@ For a formal delegated task after the applicable safety check succeeds:
 1. Read only the exact assigned `TASK-NNN-description.md` under `docs/tasks/`.
 2. Read the non-task repository documents explicitly required by that description.
 3. Read the normative Apartment SVG sections relevant to the task when applicable.
-4. Read relevant architecture, coding, testing, and ADR documents.
-5. Inspect the existing implementation, tests, and, during review continuation, the current task working set before introducing further changes.
+4. Read the PlanAxis Project Format specification when the task concerns project containers, project files, project paths, persistence, project-serving APIs, or project filesystem access.
+5. Read relevant architecture, coding, testing, and ADR documents.
+6. Inspect the existing implementation, tests, and, during review continuation, the current task working set before introducing further changes.
 
 For other coding-agent work, after the initial-execution preflight succeeds:
 
@@ -374,6 +429,7 @@ While editing:
 - follow existing package boundaries and naming conventions;
 - add or update tests for behavior changes;
 - add valid and invalid fixtures when parser or validator behavior requires them;
+- add focused project-format/path fixtures or temporary project trees when project behavior requires them;
 - avoid unrelated refactors;
 - avoid adding dependencies when the standard library or an existing dependency is sufficient;
 - do not weaken types merely to make code compile.
@@ -390,7 +446,7 @@ After editing:
 
 - review the diff for unintended changes;
 - run the repository checks relevant to the change;
-- ensure documentation and ADRs remain consistent with the implementation.
+- ensure documentation, specifications, and ADRs remain consistent with the implementation.
 
 ## Required Verification
 
@@ -415,14 +471,16 @@ Do not "fix" failing tests by deleting coverage, weakening assertions, skipping 
 
 The test suite is part of the executable specification of PlanAxis.
 
-For parser and validator work, cover both:
+For Apartment SVG parser and validator work, cover both:
 
 - valid documents that must be accepted;
 - invalid documents that must fail with the intended validation category or error code.
 
-Prefer small, focused fixtures that isolate one rule.
+For PlanAxis Project Format work, cover valid and invalid manifests and paths, root containment, symbolic-link behavior where the host supports it, and the normative separation between project-format validity and Apartment SVG validity.
 
-When implementing a normative Apartment SVG rule, derive expected behavior from the specification, not from the current implementation.
+Prefer small, focused fixtures or isolated temporary project trees that isolate one rule.
+
+When implementing a normative Apartment SVG or PlanAxis Project Format rule, derive expected behavior from the corresponding specification, not from the current implementation.
 
 Regression fixes should include a test that fails without the fix whenever practical.
 
@@ -491,14 +549,14 @@ Keep documentation close to its purpose:
 - `README.md` is the human-facing project entry point;
 - `AGENTS.md` is the coding-agent instruction map;
 - `docs/specifications/` contains normative external format specifications;
-- `docs/architecture/` describes the current architecture;
+- `docs/architecture/` describes the current architecture and accepted direction;
 - `docs/development/` contains implementation and contribution guidance;
 - `docs/decisions/` contains ADRs explaining significant decisions;
 - `docs/tasks/` contains formal agent-task artifacts and shared task-process documents.
 
 Do not duplicate large sections of one document into another. Link to the authoritative document instead.
 
-When behavior changes, update the documentation that owns that behavior.
+When behavior changes, update the documentation that owns that behavior. Do not document accepted-but-unimplemented architecture as current runtime behavior.
 
 ## Git Repository Preflight and Review Continuation
 
@@ -832,7 +890,7 @@ Prefer, in this order:
 1. this repository-level `AGENTS.md` and any more specific applicable `AGENTS.md`;
 2. for a formal delegated task, the exact assigned task description;
 3. for other coding-agent work, the explicit user/task requirements;
-4. the normative Apartment SVG specification for format semantics;
+4. the applicable normative specification for format semantics, including Apartment SVG and PlanAxis Project Format;
 5. accepted ADRs for established architectural decisions;
 6. current architecture documentation;
 7. coding and testing guidelines;

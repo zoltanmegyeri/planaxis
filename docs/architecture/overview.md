@@ -8,13 +8,14 @@ It defines the major architectural layers, their responsibilities, the direction
 
 This document describes **how the system is currently intended to be structured**. It does not record the historical reasoning behind every decision. Significant architectural decisions and their rationale belong in Architectural Decision Records under `docs/decisions/`.
 
-The normative definition of the external apartment file format is the Apartment SVG specification:
+The normative definitions of PlanAxis external formats are:
 
 ```text
 docs/specifications/apartment-svg/2.2.md
+docs/specifications/planaxis-project/1.0.md
 ```
 
-That specification takes precedence for all Apartment SVG semantics.
+The Apartment SVG specification takes precedence for apartment geometry and semantic interpretation. The PlanAxis Project Format specification takes precedence for filesystem-backed project-container, manifest, path, and project-root semantics.
 
 ---
 
@@ -25,22 +26,30 @@ PlanAxis is designed around the following goals:
 - deterministic interpretation of Apartment SVG documents;
 - strict validation before downstream processing;
 - exact arithmetic for authoritative apartment geometry;
-- clear separation between external file format, domain models, 3D architecture, and rendering;
+- a portable filesystem-backed project container for renovation work;
+- clear separation between project organization, external apartment format, domain models, 3D architecture, and rendering;
+- server-owned project filesystem access confined to an explicitly authorized project root;
 - reuse of core TypeScript logic across server-side and browser environments where practical;
 - renderer-independent architectural modeling;
 - testable components with narrow responsibilities;
 - incremental evolution toward interactive visualization and AI-assisted redesign without weakening the deterministic geometry pipeline.
 
-The architecture favors explicit data transformations over implicit behavior.
+The architecture favors explicit data transformations and explicit trust boundaries over implicit behavior.
 
 ---
 
 ## 3. High-Level System Flow
 
-The core processing pipeline is:
+The accepted top-level application flow is:
 
 ```text
-Apartment SVG
+PlanAxis project root
+    │
+    ▼
+project manifest + project-filesystem boundary
+    │
+    ▼
+active Apartment SVG
     │
     ▼
 XML / SVG parsing
@@ -72,16 +81,20 @@ Three.js scene
 interactive browser visualization
 ```
 
+The filesystem-backed project layer is adopted by ADR-004 and PlanAxis Project Format 1.0. It is the accepted next application foundation, but the current user-facing implementation still loads one local Apartment SVG directly in the browser. Section 16 distinguishes implemented behavior from accepted-but-not-yet-implemented architecture.
+
 Later design and AI-assisted workflows are built on top of this validated and deterministic foundation:
 
 ```text
-Validated apartment geometry
+validated apartment geometry
+    +
+project assets / references / design state
     ↓
 design brief / redesign operations
     ↓
-updated apartment model
+updated apartment model and design scenario
     ↓
-3D architectural model
+3D architectural model + presentation state
     ↓
 technical render
     ↓
@@ -96,13 +109,40 @@ AI-generated output is never a replacement for canonical geometric data.
 
 ## 4. Sources of Truth
 
-### 4.1. Apartment SVG
+### 4.1. PlanAxis project manifest
+
+A PlanAxis project is a physical directory conforming to PlanAxis Project Format 1.0.
+
+The required root manifest is:
+
+```text
+planaxis.project.json
+```
+
+The manifest is the source of truth for project organization defined by the Project Format, including the human-readable project name and the currently active Apartment SVG.
+
+It is **not** a source of apartment geometry and must not duplicate or override architectural facts owned by Apartment SVG.
+
+Project Format 1.0 uses durable project-relative paths and reserves top-level areas for:
+
+```text
+architecture/
+assets/
+references/
+designs/
+outputs/
+.planaxis/
+```
+
+The project format is independently versioned from Apartment SVG and from future material, model-asset, and design descriptor formats.
+
+### 4.2. Apartment SVG
 
 The Apartment SVG document is the **canonical external and persistent representation** of apartment geometry and semantics.
 
 It is the source of truth for facts defined by the Apartment SVG specification.
 
-In Apartment SVG 2.2, the mandatory apartment footprint is canonical geometry. It defines the horizontal physical extent of the modeled level and must not be reconstructed from walls, zones, presentation, or visual appearance.
+In Apartment SVG 2.2, the mandatory apartment footprint is canonical geometry. It defines the horizontal physical extent of the modeled level and must not be reconstructed from walls, zones, presentation, project metadata, or visual appearance.
 
 The parser and validator must not infer missing required facts from:
 
@@ -113,14 +153,17 @@ The parser and validator must not infer missing required facts from:
 - annotations;
 - labels;
 - human-readable names;
+- project-manifest fields;
 - unsupported SVG constructs;
 - natural-language assumptions.
 
 If required information is missing or invalid, the correct outcome is a validation error.
 
-### 4.2. `ValidatedApartment2D`
+A project may contain multiple architectural alternatives as independent Apartment SVG documents. The project manifest selects the active one; it does not merge or reinterpret them.
 
-`ValidatedApartment2D` is the typed, normalized, in-memory representation produced after successful validation.
+### 4.3. `ValidatedApartment2D`
+
+`ValidatedApartment2D` is the typed, normalized, in-memory representation produced after successful Apartment SVG validation.
 
 It is **not** a second persistence format and is **not** a competing source of truth.
 
@@ -140,7 +183,7 @@ It may contain derived values that are useful at runtime, for example:
 
 Such values are derived from the canonical SVG and must not create redundant persistent geometry.
 
-### 4.3. `ArchitecturalModel3D`
+### 4.4. `ArchitecturalModel3D`
 
 `ArchitecturalModel3D` is a renderer-independent 3D representation derived from `ValidatedApartment2D`.
 
@@ -161,13 +204,46 @@ For Apartment SVG 2.2, the apartment footprint and level metadata provide determ
 
 It must not contain Three.js-specific types.
 
+### 4.5. Project-format conformance and Apartment SVG conformance
+
+These are separate validation domains.
+
+A project can be Project Format conformant while its active Apartment SVG is invalid. Such a project remains openable so the ordinary Apartment SVG diagnostic workflow can report the SVG failure.
+
+Conversely, an individually valid Apartment SVG does not make an arbitrary directory a conforming PlanAxis project.
+
+Project loading therefore establishes only the project-container guarantees required to locate the active candidate Apartment SVG. Apartment SVG parsing and validation remain downstream and independent.
+
 ---
 
 ## 5. Processing Stages
 
-### 5.1. XML / SVG Parsing
+### 5.1. Project Root Establishment and Project-Format Validation
 
-The parsing layer converts the input document into a structured representation suitable for validation.
+For filesystem-backed project operation, the server receives one explicit project-root path at process startup.
+
+The backend establishes one canonical physical project root and treats that root as the filesystem authorization boundary for the server process.
+
+Project-format processing is responsible for:
+
+- locating `planaxis.project.json`;
+- parsing untrusted manifest JSON;
+- validating the supported Project Format schema identifier;
+- validating the closed manifest structure;
+- validating `architecture.active` using Project Format path semantics;
+- verifying that the active path identifies an accessible regular `.svg` file under `architecture/`;
+- enforcing root containment;
+- enforcing the Project Format symbolic-link policy.
+
+Successful project-format validation does **not** establish Apartment SVG validity.
+
+Project filesystem access should be centralized behind a project-filesystem boundary rather than reproduced independently by routes, asset processors, AI integrations, or other services.
+
+The project-root path itself is environment-specific server configuration and does not become persistent project data.
+
+### 5.2. XML / SVG Parsing
+
+The parsing layer converts the input Apartment SVG document into a structured representation suitable for validation.
 
 Responsibilities include:
 
@@ -181,7 +257,7 @@ The parser does not decide whether the document is geometrically valid.
 
 It also does not construct 3D geometry.
 
-### 5.2. Schema Validation
+### 5.3. Schema Validation
 
 Schema validation verifies structural conformance to the Apartment SVG specification.
 
@@ -210,7 +286,7 @@ Typical responsibilities include:
 
 The implementation should preserve the specification's distinction between XML conformance, schema conformance, and full geometric conformance.
 
-### 5.3. Reference Resolution and Referential Validation
+### 5.4. Reference Resolution and Referential Validation
 
 References such as `data-wall` and `data-radiator-below` are resolved only after identifiers and element types have been validated sufficiently to make resolution safe.
 
@@ -229,7 +305,7 @@ Responsibilities include:
 
 Downstream layers do not need to resolve the same raw reference IDs again.
 
-### 5.4. Geometric and Topological Validation
+### 5.5. Geometric and Topological Validation
 
 The complete Apartment SVG 2.2 geometric-validation stage enforces footprint geometry, stationary placement containment, and level-local Z collision semantics alongside the existing spatial checks.
 
@@ -259,7 +335,7 @@ Validation must report errors rather than silently repair invalid input.
 
 Successful validation produces a nominal `GeometryValidApartmentSvgDocument`. This type preserves the reference-valid document and its exact-decimal geometry unchanged while establishing the final trusted SVG boundary before domain-model construction. An ordinary `ReferenceValidApartmentSvgDocument` is not assignable to this boundary.
 
-### 5.5. Construction of `ValidatedApartment2D`
+### 5.6. Construction of `ValidatedApartment2D`
 
 Only a `GeometryValidApartmentSvgDocument` that has passed every required validation stage may produce a `ValidatedApartment2D`.
 
@@ -281,7 +357,7 @@ The `buildValidatedApartment2D` entry point is owned by `@planaxis/validator`, w
 
 The model retains exact-decimal canonical metadata and semantic geometry while adding deterministic derived values required by downstream code, including wall length, thickness, centerline, and effective height; window and door opening widths; and hinged-door leaf length and closed free endpoint. All element-level architectural Z values remain level-local; `metadata.level.baseZ` is retained separately for the 3D builder. SVG marker radii and raw unresolved reference IDs are not part of this domain representation.
 
-### 5.6. Construction of `ArchitecturalModel3D`
+### 5.7. Construction of `ArchitecturalModel3D`
 
 The 3D model builder transforms validated 2D architectural data and explicit level-local Z metadata into renderer-independent 3D geometry.
 
@@ -305,7 +381,7 @@ The builder must not reinterpret invalid or missing source data and must not rep
 
 Defensive assertions may exist for internal programming errors, but source-document validation belongs upstream.
 
-### 5.7. Renderer Adapter
+### 5.8. Renderer Adapter
 
 A renderer adapter converts `ArchitecturalModel3D` and runtime simulation state into renderer-specific objects.
 
@@ -375,21 +451,17 @@ Values converted for rendering must not flow back into the authoritative model a
 
 ## 7. Runtime Simulation State
 
-Not every value used during visualization belongs in the apartment document.
+Not every value used during visualization belongs in the apartment document or project manifest.
 
 The architecture distinguishes between:
 
 ```text
 persistent apartment facts
-```
-
-and:
-
-```text
+persistent project/design facts
 runtime simulation state
 ```
 
-Examples of persistent facts include:
+Examples of persistent apartment facts include:
 
 - apartment footprint and other canonical geometry;
 - level base Z and default ceiling height;
@@ -399,6 +471,8 @@ Examples of persistent facts include:
 - true-north orientation;
 - optional elevation;
 - optional civil time zone.
+
+Examples of future persistent project/design facts may include material assignments, imported assets, design scenarios, and saved generated outputs, but those contracts must be defined by their own accepted formats rather than guessed into the current project manifest.
 
 Examples of runtime state include:
 
@@ -422,57 +496,82 @@ The architectural model should expose the required persistent metadata without e
 
 ## 8. Frontend and Backend Responsibilities
 
-PlanAxis is intended to be a web application with both browser and server components.
+PlanAxis is a web application with browser and server components.
 
-The exact split may evolve, but responsibilities should remain explicit.
+The exact implementation is evolving, but responsibilities must remain explicit.
 
 ### 8.1. Browser Application
 
-The React application in `apps/web`, built with Vite, is the first official user-facing
-PlanAxis entry point. Start it with `pnpm dev:web`; the command builds its shared
-workspace dependencies before starting Vite. [ADR-002](../decisions/ADR-002-react-browser-ui.md)
-records the UI framework decision.
+The React application in `apps/web`, built with Vite, is the first official user-facing PlanAxis entry point. [ADR-002](../decisions/ADR-002-react-browser-ui.md) records the UI framework decision.
 
-The application loads one local SVG through a file picker or drag-and-drop. It calls
-`parseApartmentSvg`, `validateApartmentSvgSchema`, `validateApartmentSvgReferences`,
-`validateApartmentSvgGeometry`, and `buildValidatedApartment2D` through public shared APIs.
-It stops at the first failed stage, exposes complete diagnostics, and retains the trusted
-model only after all stages succeed. File and unexpected processing failures are separate
-application states. Replacements clear prior results; stale asynchronous reads are ignored.
+The **currently implemented workflow** starts with `pnpm dev:web` and loads one local SVG through a file picker or drag-and-drop. It calls `parseApartmentSvg`, `validateApartmentSvgSchema`, `validateApartmentSvgReferences`, `validateApartmentSvgGeometry`, and `buildValidatedApartment2D` through public shared APIs. It stops at the first failed stage, exposes complete diagnostics, and retains the trusted model only after all stages succeed. File and unexpected processing failures are separate application states. Replacements clear prior results; stale asynchronous reads are ignored.
 
-The source is displayed independently of validation in a blob-backed SVG `<img>`.
-Uploaded markup is never inserted into the application DOM. Preview URLs are released on
-replacement and disposal. A preview decoding failure does not hide validation results.
-The viewer supports fit/reset, mouse and touch pan/zoom, and keyboard navigation.
-Image transforms use viewport pixels and never feed into authoritative geometry.
-React and 2D browser resources and interaction state remain in the application layer; 3D camera controls and their input lifecycle belong to the renderer adapter.
-No server, upload, or persistence is involved. Successful validation also constructs `ArchitecturalModel3D` through its public builder.
+The source is displayed independently of validation in a blob-backed SVG `<img>`. Uploaded markup is never inserted into the application DOM. Preview URLs are released on replacement and disposal. A preview decoding failure does not hide validation results. The viewer supports fit/reset, mouse and touch pan/zoom, and keyboard navigation. Image transforms use viewport pixels and never feed into authoritative geometry. React and 2D browser resources and interaction state remain in the application layer; 3D camera controls and their input lifecycle belong to the renderer adapter.
 
-Valid documents start in 2D and expose a 3D switch without reparsing. The 3D view offers orbit inspection, embedded cameras, and Walk, with horizontal FOV adapted on resize. Walk is disabled with an explanatory message when no embedded camera exists. The browser owns the camera/view selector, independent focal-length and render-aspect controls, and concise navigation help. Focus view changes the layout without remounting the renderer or resetting its pose and projection selections. Unmount and replacement release renderer resources; failures remain explicit application states. Invalid documents retain only 2D preview and diagnostics.
+Successful validation also constructs `ArchitecturalModel3D` through its public builder. Valid documents start in 2D and expose a 3D switch without reparsing. The 3D view offers orbit inspection, embedded cameras, and Walk, with horizontal FOV adapted on resize. Walk is disabled with an explanatory message when no embedded camera exists. The browser owns the camera/view selector, independent focal-length and render-aspect controls, and concise navigation help. Focus view changes the layout without remounting the renderer or resetting its pose and projection selections. Unmount and replacement release renderer resources; failures remain explicit application states. Invalid documents retain only 2D preview and diagnostics.
+
+Under ADR-004, the **accepted project-backed target workflow** changes input acquisition but does not require duplicating the deterministic validation pipeline. The browser will obtain project metadata and the active Apartment SVG through controlled server APIs rather than owning arbitrary local filesystem access. The shared parser/validator/model pipeline may continue to run in the browser where appropriate.
+
+The browser must not send arbitrary absolute filesystem paths to the backend or bypass the project-filesystem boundary.
 
 ### 8.2. Server Application
 
-The server is expected to handle capabilities such as:
+The server application owns Node.js-only application and infrastructure concerns.
 
-- serving the web application;
-- HTTP APIs;
-- project persistence;
-- file storage;
-- versioning;
-- later authentication and collaboration features;
+Under ADR-004, the server becomes the owner of filesystem-backed project access. Initially, one server process owns exactly one project root supplied explicitly at startup.
+
+The server is responsible for:
+
+- establishing the canonical project root;
+- loading and validating the Project Format manifest;
+- enforcing project-relative path and symbolic-link rules;
+- confining all project filesystem access to the canonical root;
+- exposing only deliberate project/resource APIs rather than a generic static view of the project directory;
+- serving the web application where appropriate;
+- project persistence and controlled writes;
+- file storage and future asset processing;
+- later versioning, authentication, and collaboration features if introduced;
 - AI service integration;
 - server-side or headless processing where required.
 
+Filesystem-backed project serving binds to loopback by default. Wider network exposure requires an explicitly accepted security model and configuration.
+
 The server should consume the same domain contracts as the browser rather than defining an incompatible parallel apartment model.
 
-### 8.3. Developer Validation CLI
+Project-format validation and Apartment SVG validation are separate concerns. The server may establish that the project and active SVG path are valid while the browser subsequently reports Apartment SVG validation errors.
 
-The repository also provides a Node.js developer CLI under `apps/cli` for validating one
-Apartment SVG file. The CLI owns command-line argument handling, UTF-8 filesystem access,
-console reporting, and process status. It composes the parser and validator public APIs in the
-same ordered stages described above and does not implement validation rules itself.
+### 8.3. Project Filesystem Boundary
 
-### 8.4. Shared Core
+Project resource access must pass through a centralized backend project-filesystem abstraction.
+
+Conceptually:
+
+```text
+project-relative path
+        ↓
+ProjectFilesystem
+        ↓
+validate canonical syntax
+resolve under canonical root
+reject symlink traversal
+verify root containment
+        ↓
+filesystem operation
+```
+
+HTTP routes, asset processors, AI workflows, thumbnail generators, and other server components should depend on this boundary instead of independently joining user-controlled strings with filesystem paths.
+
+Persistent project descriptors use canonical project-relative paths. Native absolute paths may exist transiently inside the backend but must not become portable project data where the Project Format prohibits them.
+
+`.planaxis/` is PlanAxis-owned disposable state. Deleting it must not remove authoritative or otherwise irreplaceable project information.
+
+### 8.4. Developer Validation CLI
+
+The repository also provides a Node.js developer CLI under `apps/cli` for validating one Apartment SVG file. The CLI owns command-line argument handling, UTF-8 filesystem access, console reporting, and process status. It composes the parser and validator public APIs in the same ordered stages described above and does not implement validation rules itself.
+
+The standalone validation CLI is independent of the project-based web workflow unless a future task deliberately integrates Project Format support into it.
+
+### 8.5. Shared Core
 
 The architecture intentionally favors shared packages for deterministic logic.
 
@@ -492,9 +591,10 @@ Shared code is appropriate for:
 - geometry utilities;
 - parsing;
 - validation;
-- renderer-independent model construction.
+- renderer-independent model construction;
+- deterministic format validation when it does not require environment-specific filesystem operations.
 
-Environment-specific concerns must remain outside shared core packages.
+Environment-specific concerns such as actual filesystem traversal, HTTP transport, DOM APIs, and GPU lifecycle must remain outside shared core packages.
 
 ---
 
@@ -509,8 +609,9 @@ apps/
     web/
 ```
 
-`apps/cli` is a Node.js-only adapter around the shared parser and validator packages. Filesystem,
-console, and process concerns remain there rather than entering the shared core.
+`apps/cli` is a Node.js-only adapter around the shared parser and validator packages. Filesystem, console, and process concerns remain there rather than entering the shared core.
+
+`apps/server` owns backend HTTP and project-filesystem integration. The exact package/module placement of Project Format parsing and path-validation logic should be determined by concrete implementation pressure rather than by creating a speculative package solely because the format exists.
 
 The monorepo defines these shared packages:
 
@@ -565,13 +666,15 @@ It must not depend on Three.js.
 
 Expected responsibilities:
 
-- schema validation;
+- Apartment SVG schema validation;
 - reference validation;
 - geometric, topological, and footprint-containment validation;
 - validation errors and error codes;
 - production of the validated 2D domain model.
 
 It must not produce renderer-specific objects.
+
+PlanAxis Project Format validation must not be casually folded into the Apartment SVG validator merely because both concerns use the word "validation". They validate different external contracts.
 
 ### `model-3d`
 
@@ -586,24 +689,9 @@ It must not depend on Three.js.
 
 Owns Three.js scene construction, deterministic wall opening partitioning, PBR defaults, cameras, controls, and GPU resources. It depends on `model-3d` and exact geometry types, remains independent of React, and exposes explicit initialization, replacement, resize, camera selection, rendering, and disposal. The browser owns ResizeObserver and view state. Rendering is event-driven; no persistent application loop remains when inactive.
 
-The renderer's `selectWalk()` activates a model-local `WalkControls` session. The first
-camera in document order supplies horizontal position, heading, and default horizontal FOV.
-The initial eye position uses `model.floor.z + 165 cm`, independent of source camera Z,
-with neutral pitch and zero roll. Exact coordinates cross the existing centimeters-to-meters
-boundary once. Walk pose, input, and speed are transient renderer state; neither the SVG
-nor the domain model changes. A session preserves its pose across inspection/embedded-camera
-selection and resets when the model is replaced.
+The renderer's `selectWalk()` activates a model-local `WalkControls` session. The first camera in document order supplies horizontal position, heading, and default horizontal FOV. The initial eye position uses `model.floor.z + 165 cm`, independent of source camera Z, with neutral pitch and zero roll. Exact coordinates cross the existing centimeters-to-meters boundary once. Walk pose, input, and speed are transient renderer state; neither the SVG nor the domain model changes. A session preserves its pose across inspection/embedded-camera selection and resets when the model is replaced.
 
-The focused canvas handles WASD/arrows and left-mouse-drag look independently. Translation
-uses yaw only, normalized direction, and elapsed time at 1.5 m/s. Either Shift key doubles
-speed; either macOS Option key or Windows/Linux Space halves it. Fast and slow together
-cancel. The named settings live in `navigation-constants.ts`. Pitch is clamped to ±89°;
-movement has no collision, gravity, or footprint constraint. Input is cleared on pointer
-leave/cancel, canvas/window blur, hidden document visibility, mode exit, replacement, and
-disposal. Keyboard repeats cannot resurrect cleared input. A requestAnimationFrame loop
-exists only while resolved movement is nonzero; modifiers and opposing keys alone leave
-rendering idle. Mouse-only look renders from pointer events. Numeric lens overrides,
-aspect-ratio changes, resize, and Focus view preserve the Walk pose.
+The focused canvas handles WASD/arrows and left-mouse-drag look independently. Translation uses yaw only, normalized direction, and elapsed time at 1.5 m/s. Either Shift key doubles speed; either macOS Option key or Windows/Linux Space halves it. Fast and slow together cancel. The named settings live in `navigation-constants.ts`. Pitch is clamped to ±89°; movement has no collision, gravity, or footprint constraint. Input is cleared on pointer leave/cancel, canvas/window blur, hidden document visibility, mode exit, replacement, and disposal. Keyboard repeats cannot resurrect cleared input. A requestAnimationFrame loop exists only while resolved movement is nonzero; modifiers and opposing keys alone leave rendering idle. Mouse-only look renders from pointer events. Numeric lens overrides, aspect-ratio changes, resize, and Focus view preserve the Walk pose.
 
 Avoid creating packages preemptively without implementation pressure.
 
@@ -611,7 +699,7 @@ Avoid creating packages preemptively without implementation pressure.
 
 ## 10. Dependency Direction
 
-Dependencies should flow toward stable domain concepts.
+Dependencies should flow toward stable domain concepts and explicit adapters.
 
 A conceptual dependency direction is:
 
@@ -636,6 +724,8 @@ A conceptual dependency direction is:
            web app       server app
 ```
 
+Project-format contracts and project-filesystem adapters sit alongside this apartment-processing dependency chain rather than inside the architectural domain model. The server owns physical filesystem access; reusable pure path/manifest validation may be shared if a concrete implementation demonstrates that boundary.
+
 This diagram is conceptual rather than a required literal package graph.
 
 Important constraints are:
@@ -643,6 +733,8 @@ Important constraints are:
 - domain packages do not depend on applications;
 - core packages do not depend on Three.js;
 - HTTP concerns do not leak into domain models;
+- filesystem traversal does not leak into renderer-independent apartment models;
+- project metadata does not redefine Apartment SVG geometry;
 - parsing concerns do not leak into rendering;
 - renderer-specific numeric compromises do not leak into authoritative geometry.
 
@@ -652,7 +744,7 @@ Circular dependencies between core packages should be avoided.
 
 ## 11. Validation Errors
 
-Validation is expected to use structured errors rather than plain unstructured strings.
+Apartment SVG validation is expected to use structured errors rather than plain unstructured strings.
 
 The Apartment SVG specification recommends codes in the form:
 
@@ -675,7 +767,9 @@ At minimum, the implementation should preserve the information required by the s
 - actual value;
 - expected condition.
 
-Exact TypeScript error contracts belong in the domain/coding documentation once finalized.
+Project-format failures are a separate error domain and should remain distinguishable from `APSVG-*` failures. Project errors should identify the relevant manifest/path rule and useful context without exposing unnecessary machine-local filesystem information to untrusted clients.
+
+Exact TypeScript error contracts belong in the relevant format/coding documentation once finalized.
 
 ---
 
@@ -686,6 +780,11 @@ Testing follows the same separation of concerns as production code.
 Examples:
 
 ```text
+project-format tests
+    manifest / temporary project tree
+        ↓
+    project validation / safe path resolution
+
 parser tests
     XML / SVG input
         ↓
@@ -707,6 +806,8 @@ renderer tests
     renderer-facing structures / behavior
 ```
 
+Project tests must protect manifest validation, canonical project-relative path rules, root containment, symbolic-link policy, `.planaxis/` disposability, and the separation between project-format and Apartment SVG validity.
+
 Parser and validator behavior should be exercised with focused Apartment SVG fixtures, including footprint structure, orthogonal geometry, containment, and level-relative Z cases required by the current specification.
 
 The repository distinguishes:
@@ -723,38 +824,53 @@ examples/
 
 for valid user-facing demonstrations.
 
+Filesystem tests should normally use isolated temporary directories rather than writing into repository fixtures or source directories unless a committed fixture is specifically justified.
+
 Detailed testing rules belong in `docs/development/testing.md`.
 
 ---
 
 ## 13. Application State and Persistence
 
-The Apartment SVG remains the canonical external apartment representation.
+PlanAxis Project Format 1.0 is the accepted top-level persistence container for future project-based application operation.
 
-Application persistence may later include additional project-level information such as:
+The project manifest owns project organization. Apartment SVG owns apartment geometry and semantics.
 
-- project metadata;
-- saved runtime/view preferences;
-- design alternatives;
-- generated assets;
-- render outputs;
-- collaboration metadata.
-
-Such persistence must not silently redefine Apartment SVG semantics.
-
-If PlanAxis introduces a broader project format in the future, it must clearly distinguish:
+The Project Format reserves durable areas for:
 
 ```text
-Apartment SVG document
+architecture/    Apartment SVG architectural alternatives
+assets/          normalized usable resources
+references/      source and inspiration material
+designs/         durable design-scenario data
+outputs/         generated user-valued output
 ```
 
-from:
+and one disposable internal area:
+
+```text
+.planaxis/
+```
+
+The complete `.planaxis/` directory may be deleted without losing authoritative or irreplaceable project information.
+
+Persistent PlanAxis descriptors use project-relative paths according to the Project Format. Machine-local absolute paths must not become durable dependencies where the format requires portability.
+
+Project-level persistence must not silently redefine Apartment SVG semantics. In particular:
 
 ```text
 PlanAxis project/application state
 ```
 
-The Apartment SVG specification remains independently versioned.
+is distinct from:
+
+```text
+Apartment SVG architecture
+```
+
+The two specifications remain independently versioned.
+
+Project Format 1.0 intentionally does not define future material, model-asset, or design descriptor schemas. Those formats should be introduced only when concrete implementation requirements establish their correct boundaries.
 
 ---
 
@@ -768,15 +884,20 @@ AI systems may help with:
 - furniture concepts;
 - design briefs;
 - material/style exploration;
+- asset generation or preparation;
 - photorealistic finishing;
 - alternative proposals.
+
+Project references, normalized assets, designs, and generated outputs provide natural persistence locations for those workflows as their contracts are introduced.
 
 However:
 
 - AI output must not override canonical geometry implicitly;
 - geometric changes must be represented explicitly in the apartment model;
 - image generation is not a source of architectural truth;
-- generated visual output should be checked against the deterministic model when geometric fidelity matters.
+- generated visual output should be checked against the deterministic model when geometric fidelity matters;
+- AI integrations must access project files through the same project-filesystem boundary as other backend consumers;
+- AI output stored under `outputs/` is presentation output, not authoritative design or architectural input merely because it exists there.
 
 The reliable pipeline remains model-first rather than image-first.
 
@@ -796,15 +917,18 @@ In particular, avoid premature introduction of:
 - multiple geometry engines;
 - alternative decimal implementations;
 - additional HTTP frameworks;
-- renderer abstractions without a second concrete renderer or another demonstrated need.
+- renderer abstractions without a second concrete renderer or another demonstrated need;
+- global asset catalogs when project-local assets are sufficient;
+- speculative material/model/design descriptor formats before their requirements are concrete.
 
 When a significant new requirement changes an established architectural direction:
 
-1. update the architecture documentation to describe the resulting system;
+1. update the architecture documentation to describe the resulting system or accepted direction;
 2. add or update an ADR to capture the decision and rationale;
-3. update tests and implementation consistently.
+3. update applicable normative specifications;
+4. update tests and implementation consistently.
 
-Architecture documentation describes the **current state**.
+Architecture documentation describes the **current implemented system and accepted architectural direction**. Where accepted architecture is not implemented yet, the distinction must be explicit.
 
 ADRs describe **why significant decisions were made**.
 
@@ -812,40 +936,40 @@ ADRs describe **why significant decisions were made**.
 
 ## 16. Current Implementation Phase
 
-The initial React browser workflow is implemented: local SVG loading and validation, trusted 2D model retention, structured diagnostics, and a safe read-only SVG pan/zoom viewer. `pnpm dev:web` starts this user-facing application.
+The initial React browser workflow is implemented: local SVG loading and validation, trusted 2D model retention, structured diagnostics, a safe read-only SVG pan/zoom viewer, interactive 3D inspection, embedded cameras, and free-walk navigation. `pnpm dev:web` starts this user-facing application.
 
 The executable repository bootstrap, authoritative numeric and geometric foundations, Apartment SVG XML parsing boundary, schema-validation pipeline, reference validation, geometric/topological validation, developer validation CLI, and `ValidatedApartment2D` construction are implemented. The Node.js CLI reads one Apartment SVG file and composes the shared parse, schema, reference, and geometry stages while keeping filesystem and process behavior in the application layer. Schema validation produces a typed, exact-decimal `SchemaValidApartmentSvgDocument`; reference validation resolves its core relationships into `ReferenceValidApartmentSvgDocument`; and the geometry stage establishes the nominal `GeometryValidApartmentSvgDocument` boundary before `@planaxis/validator` constructs the normalized, exact-decimal `ValidatedApartment2D` owned by `@planaxis/model`.
 
-Apartment SVG 2.2 is the normative external format, and the parser, validator, CLI, and trusted 2D domain pipeline are fully aligned with it. Schema and reference stages preserve the mandatory exact-decimal footprint while leaving geometry checks to the geometry stage. Successful geometric validation guarantees footprint topology, positive area, exact orthogonality, root viewBox containment, and complete stationary placement containment within the closed footprint. Hinged-door open-leaf geometry is exempt from footprint containment but remains inside the viewBox. Camera collisions compare level-local Z ranges consistently. `ValidatedApartment2D` retains the canonical footprint and unchanged level-local architectural Z values, with the level offset stored separately. Exact, renderer-independent 3D geometry foundations are implemented in `@planaxis/geometry`: `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`. Point comparisons reuse the centralized geometric tolerance, and range height is derived with exact decimal subtraction. These primitives carry no architectural or transformation semantics. `@planaxis/model-3d` implements deterministic `ArchitecturalModel3D` construction from trusted 2D input using these primitives, preserving architectural semantics and resolved relationships without renderer objects or unsupported physical assumptions. The Three.js adapter and browser 2D/3D workflow are implemented as described in sections 5.7 and 8.1. Free-walk navigation is implemented; advanced lighting/material work remains a future stage.
+Apartment SVG 2.2 is the normative apartment format, and the parser, validator, CLI, and trusted 2D domain pipeline are fully aligned with it. Schema and reference stages preserve the mandatory exact-decimal footprint while leaving geometry checks to the geometry stage. Successful geometric validation guarantees footprint topology, positive area, exact orthogonality, root viewBox containment, and complete stationary placement containment within the closed footprint. Hinged-door open-leaf geometry is exempt from footprint containment but remains inside the viewBox. Camera collisions compare level-local Z ranges consistently. `ValidatedApartment2D` retains the canonical footprint and unchanged level-local architectural Z values, with the level offset stored separately. Exact, renderer-independent 3D geometry foundations are implemented in `@planaxis/geometry`: `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`. Point comparisons reuse the centralized geometric tolerance, and range height is derived with exact decimal subtraction. These primitives carry no architectural or transformation semantics. `@planaxis/model-3d` implements deterministic `ArchitecturalModel3D` construction from trusted 2D input using these primitives, preserving architectural semantics and resolved relationships without renderer objects or unsupported physical assumptions. The Three.js adapter and browser 2D/3D workflow are implemented as described above.
 
-The intended implementation order is broadly:
+PlanAxis Project Format 1.0 and ADR-004 are **accepted and documented but not yet implemented**. The server does not yet own an active project root, and the browser still loads a local SVG directly. Documentation must preserve this distinction until implementation tasks complete the migration.
+
+The intended implementation order is now broadly:
 
 ```text
 repository bootstrap
     ↓
 numeric and geometric foundations
     ↓
-Apartment SVG parsing
-    ↓
-document-level schema validation
-    ↓
-semantic-element schema validation
-    ↓
-reference resolution
-    ↓
-Apartment SVG 2.2 geometric / topological / footprint validation
+Apartment SVG parsing and validation
     ↓
 ValidatedApartment2D
     ↓
 ArchitecturalModel3D
     ↓
-Three.js visualization
+Three.js visualization and navigation
     ↓
-interactive simulation
+PlanAxis Project Format implementation
     ↓
-backend persistence / integrations
+project filesystem boundary + server-backed project workflow
     ↓
-AI-assisted design workflows
+visual rendering / material foundation
+    ↓
+project-local asset and design scenario formats
+    ↓
+lighting and richer design workflows
+    ↓
+AI-assisted design and presentation workflows
 ```
 
-This sequence may be refined as implementation progresses, but downstream features must not bypass the deterministic validation and geometry foundation.
+This sequence may be refined as implementation progresses, but downstream features must not bypass the deterministic validation, project-root, or geometry foundations.
