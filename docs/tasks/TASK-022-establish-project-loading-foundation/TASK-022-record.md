@@ -2,17 +2,17 @@
 
 ## Task Metadata
 
-- **Status:** In Progress
+- **Status:** Completed
 - **Created:** 2026-09-12
 - **Issued:** 2026-09-12
-- **Completed:** —
+- **Completed:** 2026-09-12
 - **Agent:** Codex
 - **Repository:** PlanAxis
 - **Description:** `TASK-022-description.md`
 - **Related tasks:** —
 - **Related ADRs:** ADR-001, ADR-004
 - **Related specifications:** PlanAxis Project Format 1.0
-- **Implementation commits:** —
+- **Implementation commits:** ba332fc5004323635ef5f82cc0e77a4dc96a5d58
 
 ## Purpose
 
@@ -32,11 +32,15 @@ The task was formally issued on 2026-09-12.
 
 ### Result
 
-Pending.
+Codex successfully implemented the PlanAxis Project Format 1.0 loading foundation.
+
+The implementation adds server-side project manifest validation, canonical project-root handling, and a centralized read-only project-filesystem boundary enforcing project-relative path rules, root containment, and symbolic-link restrictions. Apartment SVG content validation remains downstream.
 
 ### Verification
 
-Pending.
+The implementation was reported as completed successfully.
+
+Command-by-command agent verification results were not separately provided during task-record finalization.
 
 ### Deviations from Description
 
@@ -50,11 +54,11 @@ None.
 
 ### Review Status
 
-Pending
+Accepted
 
 ### Review Notes
 
-None.
+The TASK-022 implementation was accepted as successfully completed.
 
 ### Human Changes After Agent Execution
 
@@ -64,11 +68,20 @@ None.
 
 ### Implementation Commits
 
-—
+```text
+ba332fc5004323635ef5f82cc0e77a4dc96a5d58
+```
 
 ### Commit Messages
 
-—
+```text
+feat(server): establish project loading foundation
+
+Validate Project Format 1.0 manifests and provide confined read-only
+resource access with conformance tests and updated documentation.
+
+Task: TASK-022
+```
 
 ### Supersession
 
