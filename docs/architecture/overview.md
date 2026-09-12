@@ -81,7 +81,7 @@ Three.js scene
 interactive browser visualization
 ```
 
-The filesystem-backed project layer is adopted by ADR-004 and PlanAxis Project Format 1.0. Its server-side loading and read-only filesystem foundation is implemented, but the current user-facing implementation still loads one local Apartment SVG directly in the browser. Section 16 distinguishes implemented behavior from accepted-but-not-yet-implemented architecture.
+The filesystem-backed project layer is adopted by ADR-004 and PlanAxis Project Format 1.0. Its server-side loading, read-only filesystem boundary, startup project selection, and controlled HTTP APIs are implemented, but the current user-facing implementation still loads one local Apartment SVG directly in the browser. Section 16 distinguishes implemented behavior from accepted-but-not-yet-implemented architecture.
 
 Later design and AI-assisted workflows are built on top of this validated and deterministic foundation:
 
@@ -518,7 +518,11 @@ The browser must not send arbitrary absolute filesystem paths to the backend or 
 
 The server application owns Node.js-only application and infrastructure concerns.
 
-Under ADR-004, the server becomes the owner of filesystem-backed project access. Initially, one server process owns exactly one project root supplied explicitly at startup.
+Under ADR-004, one server process owns exactly one project root supplied by `--project <path>` at startup. `runServer` parses the invocation and calls `loadProject` before constructing Fastify or listening. Invocation and project-loading failures return a non-zero process status; expected project errors retain their structured code and location in terminal diagnostics. `buildApplication(project)` receives the loaded context explicitly. `startServer` defaults to `127.0.0.1:3000` and retains meaningful port-conflict reporting. See the [startup command](../../README.md#adopted-project-based-workflow).
+
+The implemented HTTP surface preserves `GET /health` and adds `GET /api/project`, which explicitly returns only the validated manifest's `schema`, `name`, and `architecture.active`. `GET /api/project/architecture` reads the selected file through the loaded `ProjectFilesystem` on each request and preserves its bytes, including invalid Apartment SVG contents. It uses `application/octet-stream` and `X-Content-Type-Options: nosniff`. Query parameters receive HTTP 400; post-start read or boundary failures receive a controlled HTTP 500 without physical paths or internal exceptions. The loaded manifest selection remains fixed until restart.
+
+The project root is not statically mounted. Other project resources and `.planaxis/` are not exposed. The server does not yet serve the browser application or provide its proxy/CORS integration.
 
 The server is responsible for:
 
@@ -550,7 +554,7 @@ Loading checks the required manifest and architecture structure, exact reserved-
 
 `ProjectFilesystem.resolve(path, kind)` inspects an existing file or directory. Its absolute path is transient backend metadata, not permission to bypass the boundary for later I/O. Consumers use `readFile(path)` for bytes or `checkReadableFile(path)` for an accessibility check. Each operation validates portable syntax, checks the established root, inspects path components without following symlinks, and verifies physical containment using native path relationships. Reads use a file handle with no-follow flags and recheck path/type/file identity before consuming bytes; handles are always closed. These portable Node.js checks do not provide an atomic directory-tree snapshot against a hostile local process concurrently replacing path components.
 
-This foundation exposes no writes, HTTP routes, startup configuration, or project-switching behavior. The existing server entry point does not yet call the loader.
+Startup and HTTP integration use this foundation as described in section 8.2. The filesystem boundary remains read-only; runtime project switching and writes are not implemented.
 
 Conceptually:
 
@@ -950,7 +954,7 @@ The executable repository bootstrap, authoritative numeric and geometric foundat
 
 Apartment SVG 2.2 is the normative apartment format, and the parser, validator, CLI, and trusted 2D domain pipeline are fully aligned with it. Schema and reference stages preserve the mandatory exact-decimal footprint while leaving geometry checks to the geometry stage. Successful geometric validation guarantees footprint topology, positive area, exact orthogonality, root viewBox containment, and complete stationary placement containment within the closed footprint. Hinged-door open-leaf geometry is exempt from footprint containment but remains inside the viewBox. Camera collisions compare level-local Z ranges consistently. `ValidatedApartment2D` retains the canonical footprint and unchanged level-local architectural Z values, with the level offset stored separately. Exact, renderer-independent 3D geometry foundations are implemented in `@planaxis/geometry`: `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`. Point comparisons reuse the centralized geometric tolerance, and range height is derived with exact decimal subtraction. These primitives carry no architectural or transformation semantics. `@planaxis/model-3d` implements deterministic `ArchitecturalModel3D` construction from trusted 2D input using these primitives, preserving architectural semantics and resolved relationships without renderer objects or unsupported physical assumptions. The Three.js adapter and browser 2D/3D workflow are implemented as described above.
 
-The Project Format 1.0 loading and read-only project-filesystem foundation is implemented in `apps/server/src/project/`, as described in section 8.3. Server startup does not yet select an active project root; project HTTP APIs, loopback binding for project serving, and browser integration remain follow-up work. The browser still loads a local SVG directly.
+The Project Format 1.0 loading and read-only project-filesystem foundation is implemented in `apps/server/src/project/`, as described in section 8.3. Server startup selects and loads one required project root before listening on loopback, and controlled project metadata and active-architecture HTTP APIs are implemented. Browser integration remains follow-up work. The browser still loads a local SVG directly.
 
 The intended implementation order is now broadly:
 

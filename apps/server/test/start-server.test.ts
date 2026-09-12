@@ -1,95 +1,42 @@
-import { createServer } from "node:net";
+import Fastify from "fastify";
+import { describe, expect, it, onTestFinished, vi } from "vitest";
 
-import { describe, expect, it, vi } from "vitest";
-
-import { buildApplication } from "../src/app.js";
 import { startServer } from "../src/start-server.js";
 
-async function occupyEphemeralPort(): Promise<{
-  readonly close: () => Promise<void>;
-  readonly port: number;
-}> {
-  const portOwner = createServer();
-
-  await new Promise<void>((resolve, reject) => {
-    portOwner.once("error", reject);
-    portOwner.listen({ host: "127.0.0.1", port: 0 }, () => {
-      portOwner.off("error", reject);
-      resolve();
-    });
+describe("startServer", () => {
+  it("defaults to loopback on port 3000", async () => {
+    const application = Fastify();
+    onTestFinished(() => application.close());
+    const listenSpy = vi.spyOn(application, "listen").mockResolvedValue(undefined);
+    expect(await startServer(application)).toBe(0);
+    expect(listenSpy).toHaveBeenCalledWith({ host: "127.0.0.1", port: 3000 });
   });
 
-  const address = portOwner.address();
-
-  if (address === null || typeof address === "string") {
-    portOwner.close();
-    throw new Error("Expected the occupied test port to have an IP address.");
-  }
-
-  return {
-    close: async () => {
-      await new Promise<void>((resolve, reject) => {
-        portOwner.close((error) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-
-          resolve();
-        });
-      });
-    },
-    port: address.port,
-  };
-}
-
-describe("startServer", () => {
   it("reports an occupied port and returns a non-zero exit code", async () => {
-    const occupiedPort = await occupyEphemeralPort();
-    const application = buildApplication();
+    const application = Fastify();
+    onTestFinished(() => application.close());
+    const error = Object.assign(new Error("Address in use"), { code: "EADDRINUSE" });
+    vi.spyOn(application, "listen").mockRejectedValue(error);
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    onTestFinished(() => errorSpy.mockRestore());
 
-    try {
-      const exitCode = await startServer(application, {
-        host: "127.0.0.1",
-        port: occupiedPort.port,
-      });
-
-      expect(exitCode).not.toBe(0);
-      expect(errorSpy).toHaveBeenCalledWith(
-        expect.stringMatching(
-          new RegExp(`PlanAxis server.*port ${occupiedPort.port} is already in use`, "i"),
-        ),
-        expect.objectContaining({ code: "EADDRINUSE" }),
-      );
-    } finally {
-      errorSpy.mockRestore();
-      await application.close();
-      await occupiedPort.close();
-    }
+    expect(await startServer(application, { host: "127.0.0.1", port: 3210 })).toBe(1);
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/PlanAxis server.*port 3210 is already in use/i),
+      expect.objectContaining({ code: "EADDRINUSE" }),
+    );
   });
 
   it("does not classify an unrelated startup error as a port conflict", async () => {
-    const application = buildApplication();
+    const application = Fastify();
+    onTestFinished(() => application.close());
     const unexpectedError = new Error("Unexpected startup failure");
     vi.spyOn(application, "listen").mockRejectedValue(unexpectedError);
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    onTestFinished(() => errorSpy.mockRestore());
 
-    try {
-      const exitCode = await startServer(application, {
-        host: "127.0.0.1",
-        port: 3000,
-      });
-
-      expect(exitCode).not.toBe(0);
-      expect(errorSpy).toHaveBeenCalledWith(
-        "Failed to start the PlanAxis server.",
-        unexpectedError,
-      );
-      expect(errorSpy.mock.calls[0]?.[0]).not.toContain("already in use");
-    } finally {
-      errorSpy.mockRestore();
-      await application.close();
-    }
+    expect(await startServer(application)).toBe(1);
+    expect(errorSpy).toHaveBeenCalledWith("Failed to start the PlanAxis server.", unexpectedError);
+    expect(errorSpy.mock.calls[0]?.[0]).not.toContain("already in use");
   });
 });

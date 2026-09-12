@@ -13,7 +13,7 @@ function isAddressInUseError(error: unknown): boolean {
 
 export async function startServer(
   application: FastifyInstance,
-  address: ServerListenAddress,
+  address: ServerListenAddress = { host: "127.0.0.1", port: 3000 },
 ): Promise<0 | 1> {
   try {
     await application.listen(address);

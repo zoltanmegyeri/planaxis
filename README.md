@@ -9,7 +9,7 @@ The project is built around the versioned, normative [Apartment SVG 2.2 specific
 PlanAxis has also adopted the versioned [PlanAxis Project Format 1.0 specification](docs/specifications/planaxis-project/1.0.md) as the future top-level container for filesystem-backed renovation projects. The project manifest organizes architecture and project resources without replacing Apartment SVG as the source of architectural truth.
 
 > [!NOTE]
-> The React browser application currently provides local SVG loading, validation, and a read-only pan/zoom 2D viewer as the first official user-facing entry point. The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG 2.2 parser and complete validation pipeline, developer validation CLI, and normalized `ValidatedApartment2D` domain model are in place. Validation enforces canonical footprint geometry, complete stationary placement containment, and level-local camera collisions. The trusted model retains the exact-decimal footprint and level-local architectural Z values. Exact, renderer-independent `ArchitecturalModel3D` construction is implemented in `@planaxis/model-3d`. Interactive 3D viewing is implemented in `@planaxis/renderer-three`; see the browser workflow below. The Project Format 1.0 loader and read-only project-filesystem foundation are implemented in the server. Startup wiring, HTTP APIs, and browser migration remain future work; the current browser workflow remains local drag-and-drop.
+> The React browser application currently provides local SVG loading, validation, and a read-only pan/zoom 2D viewer as the first official user-facing entry point. The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG 2.2 parser and complete validation pipeline, developer validation CLI, and normalized `ValidatedApartment2D` domain model are in place. Validation enforces canonical footprint geometry, complete stationary placement containment, and level-local camera collisions. The trusted model retains the exact-decimal footprint and level-local architectural Z values. Exact, renderer-independent `ArchitecturalModel3D` construction is implemented in `@planaxis/model-3d`. Interactive 3D viewing is implemented in `@planaxis/renderer-three`; see the browser workflow below. The Project Format 1.0 loader and read-only project-filesystem foundation are implemented in the server. The server now requires one project at startup, binds to loopback, and exposes controlled metadata and active-architecture HTTP APIs. Browser migration remains future work; the current browser workflow remains local drag-and-drop.
 
 ## Project Goals
 
@@ -228,9 +228,26 @@ browser obtains project resources through controlled APIs
 existing parse / validation / 2D / 3D pipeline
 ```
 
-The backend loading foundation now validates Project Format 1.0 manifests and required structure, establishes a canonical physical root, and provides centralized read-only access with project-relative path, containment, and symlink checks. It verifies that the active architecture is an accessible regular `.svg` file without parsing its contents. Optional directories, including disposable `.planaxis/`, may be absent. See the [implemented server API](docs/architecture/overview.md#83-project-filesystem-boundary).
+The backend loading foundation now validates Project Format 1.0 manifests and required structure, establishes a canonical physical root, and provides centralized read-only access with project-relative path, containment, and symlink checks. It verifies that the active architecture is an accessible regular `.svg` file without parsing its contents. Optional directories, including disposable `.planaxis/`, may be absent. See the [project-filesystem boundary](docs/architecture/overview.md#83-project-filesystem-boundary).
 
-Full project-backed application operation remains future work: server startup/root selection, loopback binding for project serving, controlled HTTP APIs, and browser migration are not wired into the application yet. Continue to use the local drag-and-drop browser workflow described above.
+The server operates on one explicitly selected project for its lifetime. From the repository root, build and start it with an existing conforming project:
+
+```bash
+pnpm --filter @planaxis/server build
+node apps/server/dist/index.js --project "/path/to/my-apartment"
+```
+
+The required `--project <path>` accepts an absolute path or a path relative to the current working directory. Quote paths containing spaces; prefix a relative name beginning with `-` with `./`. Missing, duplicate, or unsupported arguments and invalid projects fail before listening with a non-zero process status. The server listens on `127.0.0.1:3000` and reports an occupied port clearly. Restart with another root to switch projects or reload the manifest selection.
+
+The implemented endpoints are:
+
+- `GET /health`: the existing `{ "status": "ok" }` response.
+- `GET /api/project`: only `schema`, `name`, and `architecture.active` from the validated startup manifest; no physical root or filesystem internals.
+- `GET /api/project/architecture`: the current bytes of the selected file, read through the project boundary on each request, with `Content-Type: application/octet-stream` and `X-Content-Type-Options: nosniff`. Query parameters are rejected with HTTP 400. A resource that becomes unavailable or violates the filesystem boundary produces a controlled HTTP 500 error.
+
+Apartment SVG contents are served unchanged even when invalid; parsing and validation remain downstream. The server does not expose the complete project root, other resources, or `.planaxis/`, and does not serve the React application or add CORS integration.
+
+Browser integration remains future work. Continue to use the local file picker or drag-and-drop browser workflow described above.
 
 ## Validate an Apartment SVG
 
@@ -323,7 +340,7 @@ The executable pipeline through `ValidatedApartment2D` is implemented: Apartment
 
 The parser, validator, CLI, and `ValidatedApartment2D` pipeline are aligned with Apartment SVG 2.2. Successful validation guarantees a simple, positive-area orthogonal footprint within the root `viewBox`, complete stationary geometry containment within its closed region, and level-local camera collision checks. Hinged-door open-leaf points may extend beyond the footprint but must remain within the `viewBox`. The trusted domain model exposes the canonical footprint separately from root bounds and includes the same footprint instance in its semantic ID index. Architectural Z values remain level-local, with `metadata.level.baseZ` retained separately for 3D construction. The geometry package now exposes `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`, with exact and tolerance-aware point equality and exact range-height derivation. `@planaxis/model-3d` now exports `buildArchitecturalModel3D(ValidatedApartment2D)`: it constructs floor and default ceiling surfaces, wall envelopes, window/door opening prisms, fixed-element volumes, utility positions, and exact camera definitions. It preserves architectural semantics and resolved relationships through constructed 3D instances and a source-semantic ID index. Model-space Z applies the level offset exactly once; X/Y remain unchanged. No slab thickness, physical door-leaf geometry, mesh processing, or renderer objects are inferred. The renderer adapter, browser inspection workflow, and free-walk navigation are implemented. Advanced lighting/materials and AI-assisted features remain future stages.
 
-PlanAxis Project Format 1.0 and ADR-004 now define the accepted next application foundation: a portable project directory, server-owned project filesystem boundary, one active project per server process, and controlled browser access to project resources. The loader and read-only filesystem boundary are implemented; server startup integration, project APIs, and browser migration remain future work. The current browser continues to load Apartment SVG files locally.
+PlanAxis Project Format 1.0 and ADR-004 now define the accepted next application foundation: a portable project directory, server-owned project filesystem boundary, one active project per server process, and controlled browser access to project resources. The loader, read-only filesystem boundary, project-root startup selection, loopback binding, and controlled project APIs are implemented. Browser migration remains future work. The current browser continues to load Apartment SVG files locally.
 
 Each implementation phase should have explicit acceptance criteria and automated tests.
 
