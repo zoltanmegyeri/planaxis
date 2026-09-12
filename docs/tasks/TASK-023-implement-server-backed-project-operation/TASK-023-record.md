@@ -2,17 +2,17 @@
 
 ## Task Metadata
 
-- **Status:** In Progress
+- **Status:** Completed
 - **Created:** 2026-09-12
 - **Issued:** 2026-09-12
-- **Completed:** —
+- **Completed:** 2026-09-12
 - **Agent:** Codex
 - **Repository:** PlanAxis
 - **Description:** `TASK-023-description.md`
 - **Related tasks:** TASK-002, TASK-022
 - **Related ADRs:** ADR-001, ADR-004
 - **Related specifications:** PlanAxis Project Format 1.0
-- **Implementation commits:** —
+- **Implementation commits:** 48a15c4842a12f5f66cd0e0603cfa6ec4977ec5b
 
 ## Purpose
 
@@ -32,11 +32,15 @@ The task was formally issued on 2026-09-12.
 
 ### Result
 
-Pending.
+Codex successfully implemented server-backed project operation.
+
+The server now requires one `--project <path>` at startup, loads the project before listening on loopback, preserves the existing health endpoint, and exposes controlled project metadata and active-architecture APIs without exposing arbitrary filesystem paths or validating Apartment SVG contents server-side.
 
 ### Verification
 
-Pending.
+The implementation was reported as completed successfully.
+
+Command-by-command agent verification results were not separately provided during task-record finalization.
 
 ### Deviations from Description
 
@@ -50,11 +54,11 @@ None.
 
 ### Review Status
 
-Pending
+Accepted
 
 ### Review Notes
 
-None.
+The TASK-023 implementation was accepted as successfully completed.
 
 ### Human Changes After Agent Execution
 
@@ -64,11 +68,20 @@ None.
 
 ### Implementation Commits
 
-—
+```text
+48a15c4842a12f5f66cd0e0603cfa6ec4977ec5b
+```
 
 ### Commit Messages
 
-—
+```text
+feat(server): implement server-backed project operation
+
+Require a project before listening on loopback and expose controlled
+metadata and architecture APIs. Add tests and startup documentation.
+
+Task: TASK-023
+```
 
 ### Supersession
 
