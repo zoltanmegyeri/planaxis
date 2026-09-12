@@ -2,9 +2,10 @@ import type { ReactElement } from "react";
 import type { DocumentState } from "./use-document.js";
 
 export function ValidationDetails({ document }: { document: DocumentState }): ReactElement {
-  if (document.status === "empty") return <p>Open a document to inspect its validation results.</p>;
-  if (document.status === "processing") return <p>Reading and validating your document…</p>;
-  if (document.status === "failure") return <p role="alert">{document.message}</p>;
+  if (document.status === "loading") return <p>Loading project metadata…</p>;
+  if (document.status === "processing") return <p>Loading and validating active architecture…</p>;
+  if (document.status === "failure" || document.status === "project-failure")
+    return <p role="alert">{document.message}</p>;
   if (document.status === "valid")
     return (
       <>

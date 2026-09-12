@@ -3,5 +3,8 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [react()],
+  server: {
+    proxy: { "^/api/project(?:/architecture)?(?:\\?.*)?$": "http://127.0.0.1:3000" },
+  },
   test: { environment: "happy-dom", include: ["test/**/*.test.{ts,tsx}"] },
 });

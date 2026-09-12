@@ -569,11 +569,11 @@ Use them where component cooperation is itself the behavior being verified.
 
 ## 28. Browser Application Tests
 
-Browser-facing tests may cover the currently implemented local Apartment SVG workflow and, once implemented, the project-backed workflow.
+Browser-facing tests cover the implemented project-backed workflow using deterministic mocked fetch responses.
 
 Current behavior includes loading an Apartment SVG, presenting validation results, creating a renderer from a valid model, switching cameras/modes, and preserving domain state while renderer state changes.
 
-When ADR-004's project-backed workflow is implemented, browser tests should additionally cover loading project metadata/resource responses and consuming the active SVG without gaining arbitrary filesystem-path authority.
+Browser tests cover metadata shape/schema validation, project/API failures separately from SVG diagnostics, cancelled startup requests, and consumption of the active SVG without arbitrary filesystem-path authority. Viewer and renderer lifecycle coverage remains independent of the transport boundary.
 
 Prefer testing application behavior without pixel-perfect rendering unless visual output itself is the feature.
 
@@ -585,9 +585,7 @@ Real-browser tests should be reserved for behavior that cannot be covered reliab
 
 End-to-end tests should be added when stable user workflows exist.
 
-The current high-value workflow may continue to exercise local SVG loading while that is the implemented UI.
-
-Once the project-backed workflow is implemented, a representative E2E flow becomes:
+A representative project-backed E2E flow is:
 
 ```text
 start PlanAxis with a project root

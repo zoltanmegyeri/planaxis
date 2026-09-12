@@ -81,7 +81,7 @@ Three.js scene
 interactive browser visualization
 ```
 
-The filesystem-backed project layer is adopted by ADR-004 and PlanAxis Project Format 1.0. Its server-side loading, read-only filesystem boundary, startup project selection, and controlled HTTP APIs are implemented, but the current user-facing implementation still loads one local Apartment SVG directly in the browser. Section 16 distinguishes implemented behavior from accepted-but-not-yet-implemented architecture.
+The filesystem-backed project layer is adopted by ADR-004 and PlanAxis Project Format 1.0. Its server-side loading, read-only filesystem boundary, startup project selection, controlled HTTP APIs, and browser acquisition of the active Apartment SVG are implemented as Phase 0. Section 16 distinguishes implemented behavior from accepted-but-not-yet-implemented architecture.
 
 Later design and AI-assisted workflows are built on top of this validated and deterministic foundation:
 
@@ -504,13 +504,15 @@ The exact implementation is evolving, but responsibilities must remain explicit.
 
 The React application in `apps/web`, built with Vite, is the first official user-facing PlanAxis entry point. [ADR-002](../decisions/ADR-002-react-browser-ui.md) records the UI framework decision.
 
-The **currently implemented workflow** starts with `pnpm dev:web` and loads one local SVG through a file picker or drag-and-drop. It calls `parseApartmentSvg`, `validateApartmentSvgSchema`, `validateApartmentSvgReferences`, `validateApartmentSvgGeometry`, and `buildValidatedApartment2D` through public shared APIs. It stops at the first failed stage, exposes complete diagnostics, and retains the trusted model only after all stages succeed. File and unexpected processing failures are separate application states. Replacements clear prior results; stale asynchronous reads are ignored.
+The **currently implemented workflow** uses a server started with `--project <path>` and a separate `pnpm dev:web` process. On mount, the browser requests relative `/api/project`, validates the supported schema and metadata shape, then requests `/api/project/architecture` for the source text. The active project-relative path is validated for display, never converted into a resource URL; the browser has no physical-root authority. The project name and active architecture path identify the workspace.
 
-The source is displayed independently of validation in a blob-backed SVG `<img>`. Uploaded markup is never inserted into the application DOM. Preview URLs are released on replacement and disposal. A preview decoding failure does not hide validation results. The viewer supports fit/reset, mouse and touch pan/zoom, and keyboard navigation. Image transforms use viewport pixels and never feed into authoritative geometry. React and 2D browser resources and interaction state remain in the application layer; 3D camera controls and their input lifecycle belong to the renderer adapter.
+The browser calls `parseApartmentSvg`, `validateApartmentSvgSchema`, `validateApartmentSvgReferences`, `validateApartmentSvgGeometry`, and `buildValidatedApartment2D` through the existing `processDocument` composition. It stops at the first failed stage, exposes complete diagnostics, and retains the trusted model only after all stages succeed. Loading metadata, processing architecture, project/API failure, invalid SVG, valid SVG, and unexpected processing/renderer failure have explicit states. API errors use controlled messages without raw response bodies or physical paths and leave no stale preview or trusted model. AbortController cleanup both cancels requests and guards late completions, including repeated setup/cleanup in React StrictMode.
+
+The source is displayed independently of validation in a blob-backed SVG `<img>`. Fetched markup is never inserted into the application DOM. Preview URLs are released on replacement and disposal. A preview decoding failure does not hide validation results. The viewer supports fit/reset, mouse and touch pan/zoom, and keyboard navigation. Image transforms use viewport pixels and never feed into authoritative geometry. React and 2D browser resources and interaction state remain in the application layer; 3D camera controls and their input lifecycle belong to the renderer adapter.
 
 Successful validation also constructs `ArchitecturalModel3D` through its public builder. Valid documents start in 2D and expose a 3D switch without reparsing. The 3D view offers orbit inspection, embedded cameras, and Walk, with horizontal FOV adapted on resize. Walk is disabled with an explanatory message when no embedded camera exists. The browser owns the camera/view selector, independent focal-length and render-aspect controls, and concise navigation help. Focus view changes the layout without remounting the renderer or resetting its pose and projection selections. Unmount and replacement release renderer resources; failures remain explicit application states. Invalid documents retain only 2D preview and diagnostics.
 
-Under ADR-004, the **accepted project-backed target workflow** changes input acquisition but does not require duplicating the deterministic validation pipeline. The browser will obtain project metadata and the active Apartment SVG through controlled server APIs rather than owning arbitrary local filesystem access. The shared parser/validator/model pipeline may continue to run in the browser where appropriate.
+Vite development proxies only the project metadata and active-architecture API paths to `http://127.0.0.1:3000` without rewriting them. Application requests remain same-origin; Fastify needs no permissive CORS. The browser has no local SVG picker/drop-loading fallback or runtime project switch. Restart the server and reload the browser to select another project. Reload the page to reread active SVG bytes; polling and filesystem watching are not implemented.
 
 The browser must not send arbitrary absolute filesystem paths to the backend or bypass the project-filesystem boundary.
 
@@ -522,7 +524,7 @@ Under ADR-004, one server process owns exactly one project root supplied by `--p
 
 The implemented HTTP surface preserves `GET /health` and adds `GET /api/project`, which explicitly returns only the validated manifest's `schema`, `name`, and `architecture.active`. `GET /api/project/architecture` reads the selected file through the loaded `ProjectFilesystem` on each request and preserves its bytes, including invalid Apartment SVG contents. It uses `application/octet-stream` and `X-Content-Type-Options: nosniff`. Query parameters receive HTTP 400; post-start read or boundary failures receive a controlled HTTP 500 without physical paths or internal exceptions. The loaded manifest selection remains fixed until restart.
 
-The project root is not statically mounted. Other project resources and `.planaxis/` are not exposed. The server does not yet serve the browser application or provide its proxy/CORS integration.
+The project root is not statically mounted. Other project resources and `.planaxis/` are not exposed. The server does not serve the browser application. Vite provides the development-only same-origin API proxy described in section 8.1; the server adds no CORS integration.
 
 The server is responsible for:
 
@@ -844,7 +846,7 @@ Detailed testing rules belong in `docs/development/testing.md`.
 
 ## 13. Application State and Persistence
 
-PlanAxis Project Format 1.0 is the accepted top-level persistence container for future project-based application operation.
+PlanAxis Project Format 1.0 is the implemented top-level persistence container for project-based application operation.
 
 The project manifest owns project organization. Apartment SVG owns apartment geometry and semantics.
 
@@ -948,13 +950,13 @@ ADRs describe **why significant decisions were made**.
 
 ## 16. Current Implementation Phase
 
-The initial React browser workflow is implemented: local SVG loading and validation, trusted 2D model retention, structured diagnostics, a safe read-only SVG pan/zoom viewer, interactive 3D inspection, embedded cameras, and free-walk navigation. `pnpm dev:web` starts this user-facing application.
+Phase 0 is implemented: server-selected project loading, browser-side active SVG validation, trusted 2D model retention, structured diagnostics, a safe read-only SVG pan/zoom viewer, interactive 3D inspection, embedded cameras, and free-walk navigation. `pnpm dev:web` starts the browser application and proxies its project API requests to the separately started loopback server.
 
 The executable repository bootstrap, authoritative numeric and geometric foundations, Apartment SVG XML parsing boundary, schema-validation pipeline, reference validation, geometric/topological validation, developer validation CLI, and `ValidatedApartment2D` construction are implemented. The Node.js CLI reads one Apartment SVG file and composes the shared parse, schema, reference, and geometry stages while keeping filesystem and process behavior in the application layer. Schema validation produces a typed, exact-decimal `SchemaValidApartmentSvgDocument`; reference validation resolves its core relationships into `ReferenceValidApartmentSvgDocument`; and the geometry stage establishes the nominal `GeometryValidApartmentSvgDocument` boundary before `@planaxis/validator` constructs the normalized, exact-decimal `ValidatedApartment2D` owned by `@planaxis/model`.
 
 Apartment SVG 2.2 is the normative apartment format, and the parser, validator, CLI, and trusted 2D domain pipeline are fully aligned with it. Schema and reference stages preserve the mandatory exact-decimal footprint while leaving geometry checks to the geometry stage. Successful geometric validation guarantees footprint topology, positive area, exact orthogonality, root viewBox containment, and complete stationary placement containment within the closed footprint. Hinged-door open-leaf geometry is exempt from footprint containment but remains inside the viewBox. Camera collisions compare level-local Z ranges consistently. `ValidatedApartment2D` retains the canonical footprint and unchanged level-local architectural Z values, with the level offset stored separately. Exact, renderer-independent 3D geometry foundations are implemented in `@planaxis/geometry`: `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`. Point comparisons reuse the centralized geometric tolerance, and range height is derived with exact decimal subtraction. These primitives carry no architectural or transformation semantics. `@planaxis/model-3d` implements deterministic `ArchitecturalModel3D` construction from trusted 2D input using these primitives, preserving architectural semantics and resolved relationships without renderer objects or unsupported physical assumptions. The Three.js adapter and browser 2D/3D workflow are implemented as described above.
 
-The Project Format 1.0 loading and read-only project-filesystem foundation is implemented in `apps/server/src/project/`, as described in section 8.3. Server startup selects and loads one required project root before listening on loopback, and controlled project metadata and active-architecture HTTP APIs are implemented. Browser integration remains follow-up work. The browser still loads a local SVG directly.
+The Project Format 1.0 loading and read-only project-filesystem foundation is implemented in `apps/server/src/project/`, as described in section 8.3. Server startup selects and loads one required project root before listening on loopback, and controlled project metadata and active-architecture HTTP APIs are implemented. The browser loads project metadata and active architecture through these APIs, completing the server-backed Phase 0 workflow. Project-format validity and Apartment SVG validity remain independent. Asset, material, design-scenario, and redesign phases remain future work.
 
 The intended implementation order is now broadly:
 

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { act } from "react";
+import { act, StrictMode } from "react";
 import type { ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
@@ -32,6 +32,32 @@ vi.mock("@planaxis/renderer-three", () => ({
 const fixture = (path: string): string =>
   readFileSync(resolve(fileURLToPath(import.meta.url), "../../../../fixtures", path), "utf8");
 const validSource = fixture("valid/minimal-document-schema.svg");
+const metadata = {
+  schema: "planaxis-project/1.0",
+  name: "Renovation project",
+  architecture: { active: "architecture/existing.svg" },
+};
+const fetchMock = vi.fn<typeof fetch>();
+function serveProject(source = validSource): void {
+  fetchMock.mockImplementation(async (url) => {
+    if (url === "/api/project") return Response.json(metadata);
+    if (url === "/api/project/architecture") return new Response(source);
+    throw new Error(`Unexpected URL: ${String(url)}`);
+  });
+}
+function deferred<T>(): {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+  reject: (reason: unknown) => void;
+} {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((yes, no) => {
+    resolve = yes;
+    reject = no;
+  });
+  return { promise, resolve, reject };
+}
 let host: HTMLDivElement;
 let root: Root;
 let nextUrl = 0;
@@ -43,6 +69,9 @@ const revokeUrl = vi.fn();
 
 beforeEach(() => {
   rendererMocks.initialize.mockResolvedValue();
+  fetchMock.mockReset();
+  serveProject();
+  vi.stubGlobal("fetch", fetchMock);
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.spyOn(URL, "createObjectURL").mockImplementation(createUrl);
   vi.spyOn(URL, "revokeObjectURL").mockImplementation(revokeUrl);
@@ -61,44 +90,211 @@ afterEach(async () => {
 async function render(element: ReactElement = <App />): Promise<void> {
   await act(async () => root.render(element));
 }
-function file(source = validSource, name = "apartment.svg"): File {
-  return new File([source], name, { type: "image/svg+xml" });
+async function mountProject(source = validSource): Promise<void> {
+  serveProject(source);
+  await render();
 }
-async function pick(files: File[]): Promise<void> {
-  const input = host.querySelector("input");
-  if (!input) throw new Error("Missing file picker");
-  Object.defineProperty(input, "files", { configurable: true, value: files });
-  await act(async () => {
-    input.dispatchEvent(new Event("change", { bubbles: true }));
-  });
-}
-async function drop(files: File[]): Promise<void> {
-  const event = new Event("drop", { bubbles: true, cancelable: true });
-  Object.defineProperty(event, "dataTransfer", { value: { files } });
-  await act(async () => {
-    host.firstElementChild?.dispatchEvent(event);
-  });
+async function remountProject(source = validSource): Promise<void> {
+  await act(async () => root.unmount());
+  root = createRoot(host);
+  await mountProject(source);
 }
 
-it("starts empty with keyboard-accessible open actions and textual status", async () => {
+it("starts loading without local-file controls", async () => {
+  fetchMock.mockReturnValue(new Promise<Response>(() => {}));
   await render();
-  expect(host.textContent).toContain("Drop your floor plan here");
-  expect(host.querySelector('[role="status"]')?.textContent).toBe("No document");
-  expect([...host.querySelectorAll("button")].map((button) => button.textContent)).toEqual([
-    "Open SVG",
-    "Browse files",
-  ]);
+  expect(host.querySelector('[role="status"]')?.textContent).toBe("Loading project");
+  expect(host.querySelector('input[type="file"]')).toBeNull();
   expect(host.querySelector('[aria-label="Enter Focus view"]')).toBeNull();
   expect(host.querySelector("img")).toBeNull();
+  expect(host.textContent).not.toMatch(/Open SVG|Replace SVG|Browse files|Drop your floor plan/);
 });
 
-it("opens a valid file through the picker and exposes all-stage success", async () => {
+it("loads metadata then active architecture through fixed relative URLs", async () => {
   await render();
-  await pick([file()]);
+  expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+    "/api/project",
+    "/api/project/architecture",
+  ]);
   expect(host.querySelector('[role="status"]')?.textContent).toBe("Valid");
   expect(host.textContent).toContain("trusted 2D apartment model is ready");
-  expect(host.textContent).toContain("apartment.svg");
+  expect(host.textContent).toContain(metadata.name);
+  expect(host.textContent).toContain(metadata.architecture.active);
   expect(host.querySelector("img")?.src).toMatch(/^blob:preview-/);
+});
+
+it("does not load dropped files or create drop overlays", async () => {
+  await render();
+  const image = host.querySelector("img");
+  const dropped = new File(["<svg/>"], "dropped.svg");
+  const read = vi.spyOn(dropped, "text");
+  for (const type of ["dragenter", "dragover", "drop", "dragleave"]) {
+    const event = new Event(type, { bubbles: true, cancelable: true });
+    Object.defineProperty(event, "dataTransfer", { value: { files: [dropped] } });
+    await act(async () => host.firstElementChild?.dispatchEvent(event));
+  }
+  expect(read).not.toHaveBeenCalled();
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+  expect(host.querySelector("img")).toBe(image);
+  expect(host.querySelector(".drop-overlay")).toBeNull();
+});
+
+it("identifies architecture processing while its response is pending", async () => {
+  const pending = deferred<Response>();
+  fetchMock.mockResolvedValueOnce(Response.json(metadata)).mockReturnValueOnce(pending.promise);
+  await render();
+  expect(host.querySelector('[role="status"]')?.textContent).toBe("Processing");
+  expect(host.textContent).toContain(metadata.name);
+  expect(host.querySelector("img")).toBeNull();
+  await act(async () => pending.resolve(new Response(validSource)));
+  expect(host.querySelector('[role="status"]')?.textContent).toBe("Valid");
+});
+
+it.each([
+  null,
+  [],
+  {},
+  { ...metadata, schema: "planaxis-project/2.0" },
+  { ...metadata, name: 42 },
+  { ...metadata, name: "  " },
+  { ...metadata, architecture: null },
+  { ...metadata, architecture: [] },
+  { ...metadata, architecture: {} },
+  { ...metadata, architecture: { active: 42 } },
+])("rejects malformed or unsupported metadata: %j", async (value) => {
+  fetchMock.mockResolvedValueOnce(Response.json(value));
+  await render();
+  expect(host.querySelector('[role="status"]')?.textContent).toBe("Project / API failure");
+  expect(host.textContent).toContain("malformed or unsupported project metadata");
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+  expect(host.querySelector("img, aside")).toBeNull();
+});
+
+it.each([
+  "/private/project/architecture/a.svg",
+  "C:/project/a.svg",
+  "architecture/../a.svg",
+  "architecture//a.svg",
+  "architecture/./a.svg",
+  "architecture/a.txt",
+  "architecture/a\\b.svg",
+  "architecture/a\0.svg",
+])("rejects unsafe display paths: %s", async (active) => {
+  fetchMock.mockResolvedValueOnce(Response.json({ ...metadata, architecture: { active } }));
+  await render();
+  expect(host.textContent).toContain("invalid active architecture path");
+  expect(host.textContent).not.toContain(active);
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+});
+
+it.each(["metadata", "architecture"])(
+  "keeps %s HTTP failures separate from SVG failures",
+  async (stage) => {
+    if (stage === "architecture") fetchMock.mockResolvedValueOnce(Response.json(metadata));
+    fetchMock.mockResolvedValueOnce(
+      new Response("Internal error at /private/project", { status: 500 }),
+    );
+    await render();
+    expect(host.querySelector('[role="status"]')?.textContent).toBe("Project / API failure");
+    expect(host.textContent).toContain("HTTP 500");
+    expect(host.textContent).not.toContain("/private/project");
+    expect(host.querySelector("img, canvas, aside")).toBeNull();
+  },
+);
+
+it.each(["metadata", "architecture"])("sanitizes %s network errors", async (stage) => {
+  if (stage === "architecture") fetchMock.mockResolvedValueOnce(Response.json(metadata));
+  fetchMock.mockRejectedValueOnce(new Error("Network error at /private/project"));
+  await render();
+  expect(host.querySelector('[role="status"]')?.textContent).toBe("Project / API failure");
+  expect(host.textContent).toContain("Unable to load");
+  expect(host.textContent).not.toContain("/private/project");
+});
+
+it("rejects malformed JSON without exposing its contents", async () => {
+  fetchMock.mockResolvedValueOnce(new Response("invalid /private/project"));
+  await render();
+  expect(host.textContent).toContain("unreadable project metadata");
+  expect(host.textContent).not.toContain("/private/project");
+});
+
+it("does not retain a previous workspace when a fresh mount fails", async () => {
+  await render();
+  await clickView("3D");
+  await act(async () => root.unmount());
+  root = createRoot(host);
+  fetchMock.mockRejectedValueOnce(new Error("offline"));
+  await render();
+  expect(host.querySelector("img, canvas")).toBeNull();
+  expect(host.textContent).not.toContain(metadata.name);
+  expect(rendererMocks.dispose).toHaveBeenCalledTimes(1);
+});
+
+it.each(["metadata", "architecture", "body"])(
+  "ignores late %s completion after unmount",
+  async (stage) => {
+    const pending = deferred<Response>();
+    const body = deferred<string>();
+    if (stage !== "metadata") fetchMock.mockResolvedValueOnce(Response.json(metadata));
+    if (stage === "body") {
+      const response = new Response();
+      vi.spyOn(response, "text").mockReturnValue(body.promise);
+      fetchMock.mockResolvedValueOnce(response);
+    } else fetchMock.mockReturnValueOnce(pending.promise);
+    const process = vi.spyOn(processing, "processDocument");
+    await render();
+    const signal = fetchMock.mock.calls.at(-1)?.[1]?.signal;
+    await act(async () => root.unmount());
+    expect(signal?.aborted).toBe(true);
+    root = createRoot(host);
+    await act(async () => {
+      pending.resolve(stage === "metadata" ? Response.json(metadata) : new Response(validSource));
+      body.resolve(validSource);
+    });
+    expect(process).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(stage === "metadata" ? 1 : 2);
+    expect(host.textContent).toBe("");
+  },
+);
+
+it.each(["success", "failure"])(
+  "ignores obsolete StrictMode metadata %s after newer startup succeeds",
+  async (outcome) => {
+    const pending = deferred<Response>();
+    fetchMock.mockReturnValueOnce(pending.promise);
+    await render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    );
+    expect(fetchMock.mock.calls[0]?.[1]?.signal?.aborted).toBe(true);
+    expect(host.querySelector('[role="status"]')?.textContent).toBe("Valid");
+    await act(async () => {
+      if (outcome === "success")
+        pending.resolve(Response.json({ ...metadata, name: "Stale project" }));
+      else pending.reject(new Error("late failure"));
+    });
+    expect(host.textContent).toContain(metadata.name);
+    expect(host.textContent).not.toContain("Stale project");
+    expect(host.querySelector('[role="status"]')?.textContent).toBe("Valid");
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  },
+);
+
+it("retains the trusted model after server acquisition", async () => {
+  let state: DocumentState = { status: "loading" };
+  const currentState = (): DocumentState => state;
+  function Probe(): ReactElement {
+    state = useDocument().document;
+    return <span>{state.status}</span>;
+  }
+  await render(<Probe />);
+  const trusted = currentState();
+  if (trusted.status !== "valid") throw new Error("Expected retained model");
+  expect(trusted.model.footprint).toBe(
+    trusted.model.semanticElementsById.get("apartment-footprint"),
+  );
+  expect(trusted.model.metadata.level.defaultCeilingHeight.toString()).toBe("242");
 });
 
 describe("stage diagnostics", () => {
@@ -110,8 +306,9 @@ describe("stage diagnostics", () => {
   ])(
     "presents %s without treating invalid input as a processing failure",
     async (path, stage, code) => {
-      await render();
-      await drop([file(fixture(path))]);
+      await mountProject(fixture(path));
+      expect(host.querySelector("img")).not.toBeNull();
+      expect(host.querySelector('[aria-label="Apartment view"]')).toBeNull();
       expect(host.querySelector('[role="status"]')?.textContent).toBe("Invalid");
       expect(host.textContent).toContain(`${stage} validation failed`);
       expect(host.textContent).toContain(code);
@@ -133,11 +330,10 @@ describe("stage diagnostics", () => {
 
 it("keeps renderable invalid source in a safe image and releases replaced/disposed URLs", async () => {
   await render();
-  await pick([file()]);
   const firstUrl = host.querySelector("img")?.src;
   const invalid =
     '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100"><script>window.bad = true</script><rect width="100" height="100"/></svg>';
-  await drop([file(invalid, "drawing.txt")]);
+  await remountProject(invalid);
   expect(host.querySelector('[role="status"]')?.textContent).toBe("Invalid");
   expect(host.querySelector("img")).not.toBeNull();
   expect(host.querySelector("svg, script, object, iframe")).toBeNull();
@@ -152,7 +348,6 @@ it("keeps renderable invalid source in a safe image and releases replaced/dispos
 
 it("shows preview failure independently of validation and lets details collapse", async () => {
   await render();
-  await pick([file()]);
   await act(async () => {
     host.querySelector("img")?.dispatchEvent(new Event("error"));
   });
@@ -164,73 +359,14 @@ it("shows preview failure independently of validation and lets details collapse"
   expect(toggle?.getAttribute("aria-expanded")).toBe("false");
 });
 
-it("handles read errors, multiple drops, and unexpected processing failures", async () => {
-  await render();
-  const unreadable = file();
-  vi.spyOn(unreadable, "text").mockRejectedValue(new Error("Read denied"));
-  await pick([unreadable]);
-  expect(host.textContent).toContain("File read failure: Read denied");
-  await drop([file(), file()]);
-  expect(host.textContent).toContain("Open exactly one SVG file");
+it("keeps source available after unexpected processing failure", async () => {
   vi.spyOn(processing, "processDocument").mockImplementation(() => {
     throw new Error("Internal invariant failed");
   });
-  await pick([file()]);
+  await render();
   expect(host.textContent).toContain("Unexpected processing failure: Internal invariant failed");
-  expect(host.querySelector('[role="status"]')?.textContent).toBe("File / processing failure");
+  expect(host.querySelector('[role="status"]')?.textContent).toBe("Processing failure");
   expect(host.querySelector("img")).not.toBeNull();
-});
-
-it("retains the trusted model and clears it immediately on replacement, ignoring stale reads", async () => {
-  let state: DocumentState = { status: "empty" };
-  const currentState = (): DocumentState => state;
-  let load: (files: File[]) => Promise<void> = async () => {
-    throw new Error("Not mounted");
-  };
-  function Probe(): ReactElement {
-    const controller = useDocument();
-    state = controller.document;
-    load = controller.load;
-    return <span>{state.status}</span>;
-  }
-  await render(<Probe />);
-  await act(async () => load([file()]));
-  expect(state.status).toBe("valid");
-  const trusted = currentState();
-  if (trusted.status !== "valid") throw new Error("Expected retained model");
-  expect(trusted.model.footprint).toBe(
-    trusted.model.semanticElementsById.get("apartment-footprint"),
-  );
-  expect(trusted.model.metadata.level.defaultCeilingHeight.toString()).toBe("242");
-  const slow = file();
-  let finish: (text: string) => void = () => {
-    throw new Error("No pending read");
-  };
-  vi.spyOn(slow, "text").mockImplementation(
-    () =>
-      new Promise((resolve) => {
-        finish = resolve;
-      }),
-  );
-  let pending: Promise<void> | undefined;
-  await act(async () => {
-    pending = load([slow]);
-  });
-  expect(state.status).toBe("processing");
-  expect(state).not.toHaveProperty("model");
-  await act(async () =>
-    load([file('<svg xmlns="http://www.w3.org/2000/svg"/>', "replacement.svg")]),
-  );
-  expect(state.status).toBe("invalid");
-  expect(state).not.toHaveProperty("model");
-  await act(async () => {
-    finish(validSource);
-    await pending;
-  });
-  expect(state).toMatchObject({ status: "invalid", name: "replacement.svg" });
-  await act(async () => load([file()]));
-  expect(state.status).toBe("valid");
-  expect(state).not.toHaveProperty("errors");
 });
 
 async function clickView(name: string): Promise<void> {
@@ -247,7 +383,6 @@ async function clickControl(label: string): Promise<void> {
 
 it("focuses the 2D viewport without remounting it or resetting workspace state", async () => {
   await render();
-  await pick([file()]);
   const surface = host.querySelector<HTMLDivElement>(".drawing-surface");
   const image = host.querySelector<HTMLImageElement>("img");
   const details = host.querySelector("aside");
@@ -282,8 +417,7 @@ it("focuses the 2D viewport without remounting it or resetting workspace state",
 });
 
 it("exits Focus view with Escape while preserving the active 3D view and camera", async () => {
-  await render();
-  await pick([file(fixture("valid/minimal-semantic-schema.svg"))]);
+  await mountProject(fixture("valid/minimal-semantic-schema.svg"));
   await clickView("3D");
   const canvas = host.querySelector("canvas");
   const select = host.querySelector<HTMLSelectElement>("select");
@@ -312,8 +446,7 @@ it("exits Focus view with Escape while preserving the active 3D view and camera"
 });
 
 it("keeps camera, lens, and fitted image selections independent through Focus view", async () => {
-  await render();
-  await pick([file(fixture("valid/minimal-semantic-schema.svg"))]);
+  await mountProject(fixture("valid/minimal-semantic-schema.svg"));
   await clickView("3D");
   const application = host.querySelector<HTMLElement>(".application");
   const area = host.querySelector<HTMLDivElement>(".three-render-area");
@@ -395,8 +528,7 @@ it("keeps camera, lens, and fitted image selections independent through Focus vi
 });
 
 it("offers Focus view for an invalid document with a 2D preview", async () => {
-  await render();
-  await pick([file(fixture("invalid/missing-cameras-group.svg"), "invalid.svg")]);
+  await mountProject(fixture("invalid/missing-cameras-group.svg"));
   const image = host.querySelector("img");
   expect(host.querySelector('[role="status"]')?.textContent).toBe("Invalid");
   expect(image).not.toBeNull();
@@ -411,10 +543,7 @@ it("offers Focus view for an invalid document with a 2D preview", async () => {
 it("switches valid views without processing again, selects embedded cameras and cleans up", async () => {
   const process = vi.spyOn(processing, "processDocument");
   const svg = fixture("valid/minimal-semantic-schema.svg");
-  const selectedFile = file(svg);
-  const read = vi.spyOn(selectedFile, "text");
-  await render();
-  await pick([selectedFile]);
+  await mountProject(svg);
   expect(host.querySelector("canvas")).toBeNull();
   await clickView("3D");
   expect(host.querySelector("canvas")).not.toBeNull();
@@ -443,20 +572,19 @@ it("switches valid views without processing again, selects embedded cameras and 
   expect(host.querySelector("img")).not.toBeNull();
   await clickView("3D");
   expect(process).toHaveBeenCalledTimes(1);
-  expect(read).toHaveBeenCalledTimes(1);
-  await pick([file(svg, "replacement.svg")]);
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+  await remountProject(svg);
   expect(rendererMocks.dispose).toHaveBeenCalledTimes(2);
   expect(host.querySelector("canvas")).toBeNull();
   expect(host.querySelector("img")).not.toBeNull();
-  await pick([file('<svg xmlns="http://www.w3.org/2000/svg"/>')]);
+  await remountProject('<svg xmlns="http://www.w3.org/2000/svg"/>');
   expect(host.querySelector('[aria-label="Apartment view"]')).toBeNull();
 });
 it("shows renderer initialization failure as an application failure", async () => {
   rendererMocks.initialize.mockRejectedValueOnce(new Error("No GPU backend"));
   await render();
-  await pick([file()]);
   await clickView("3D");
-  expect(host.querySelector('[role="status"]')?.textContent).toBe("File / processing failure");
+  expect(host.querySelector('[role="status"]')?.textContent).toBe("Renderer failure");
   expect(host.textContent).toContain("Unexpected renderer failure: No GPU backend");
   expect(rendererMocks.dispose).toHaveBeenCalledTimes(1);
   expect(host.querySelector("canvas")).toBeNull();
@@ -469,7 +597,6 @@ it("disposes immediately when leaving 3D during initialization and ignores late 
     }),
   );
   await render();
-  await pick([file()]);
   await clickView("3D");
   await clickView("2D");
   expect(rendererMocks.dispose).toHaveBeenCalledTimes(1);
@@ -483,7 +610,6 @@ it("surfaces unexpected architectural construction errors before enabling 3D", a
     throw new Error("Architectural invariant failed");
   });
   await render();
-  await pick([file()]);
   expect(host.textContent).toContain(
     "Unexpected processing failure: Architectural invariant failed",
   );
@@ -492,7 +618,6 @@ it("surfaces unexpected architectural construction errors before enabling 3D", a
 
 it("disables Walk without source cameras and explains the requirement", async () => {
   await render();
-  await pick([file()]);
   await clickView("3D");
   const camera = host.querySelector<HTMLSelectElement>('[aria-label="3D camera"]');
   const walk = [...(camera?.options ?? [])].find((option) => option.text === "Walk");
@@ -511,10 +636,9 @@ it("disables Walk without source cameras and explains the requirement", async ()
 });
 
 it("selects Walk independently of embedded IDs, lens, aspect ratio, and Focus view", async () => {
-  await render();
-  await pick([
-    file(fixture("valid/minimal-semantic-schema.svg").replace('id="camera-1"', 'id="walk"')),
-  ]);
+  await mountProject(
+    fixture("valid/minimal-semantic-schema.svg").replace('id="camera-1"', 'id="walk"'),
+  );
   await clickView("3D");
   const camera = host.querySelector<HTMLSelectElement>('[aria-label="3D camera"]');
   const lens = host.querySelector<HTMLSelectElement>('[aria-label="3D focal length"]');
@@ -560,7 +684,7 @@ it("selects Walk independently of embedded IDs, lens, aspect ratio, and Focus vi
   await choose(lens, "");
   expect(rendererMocks.setFocalLengthOverride).toHaveBeenLastCalledWith(null);
   expect(camera.value).toBe(walk.value);
-  await pick([file(fixture("valid/minimal-semantic-schema.svg"), "replacement.svg")]);
+  await remountProject(fixture("valid/minimal-semantic-schema.svg"));
   await clickView("3D");
   expect(host.querySelector<HTMLSelectElement>('[aria-label="3D camera"]')?.value).toBe("");
   expect(host.querySelector<HTMLSelectElement>('[aria-label="3D focal length"]')?.value).toBe("");

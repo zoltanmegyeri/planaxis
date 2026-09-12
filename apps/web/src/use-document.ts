@@ -1,76 +1,83 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { processDocument } from "./process-document.js";
 import type { DocumentResult } from "./process-document.js";
+import { fetchActiveArchitecture, fetchProjectMetadata, ProjectLoadError } from "./project-api.js";
+import type { ProjectMetadata } from "./project-api.js";
 
 export type DocumentState =
-  | { status: "empty" }
-  | { status: "processing"; name: string }
-  | { status: "failure"; name: string; message: string; source?: string }
-  | (DocumentResult & { name: string; source: string; revision: number });
+  | { status: "loading" }
+  | { status: "project-failure"; message: string }
+  | { status: "processing"; project: ProjectMetadata }
+  | {
+      status: "failure";
+      kind: "processing" | "renderer";
+      project: ProjectMetadata;
+      message: string;
+      source: string;
+    }
+  | (DocumentResult & { project: ProjectMetadata; source: string });
 
 export function useDocument(): {
   document: DocumentState;
-  load: (files: readonly File[]) => Promise<void>;
   rendererFailure: (error: unknown) => void;
 } {
-  const [document, setDocument] = useState<DocumentState>({ status: "empty" });
-  const generation = useRef(0);
-  useEffect(
-    () => () => {
-      generation.current += 1;
-    },
-    [],
-  );
-
-  async function load(files: readonly File[]): Promise<void> {
-    const request = ++generation.current;
-    const file = files[0];
-    if (files.length !== 1 || file === undefined) {
-      setDocument({
-        status: "failure",
-        name: "No document",
-        message: "Open exactly one SVG file at a time.",
-      });
-      return;
-    }
-    setDocument({ status: "processing", name: file.name });
-    let source: string;
-    try {
-      source = await file.text();
-    } catch (error: unknown) {
-      if (request === generation.current)
+  const [document, setDocument] = useState<DocumentState>({ status: "loading" });
+  useEffect(() => {
+    const controller = new AbortController();
+    const { signal } = controller;
+    async function load(): Promise<void> {
+      let project: ProjectMetadata;
+      let source: string;
+      let stage = "project metadata";
+      try {
+        project = await fetchProjectMetadata(signal);
+        if (signal.aborted) return;
+        setDocument({ status: "processing", project });
+        stage = "active architecture";
+        source = await fetchActiveArchitecture(signal);
+      } catch (error: unknown) {
+        // Raw response bodies and transport exceptions can contain physical filesystem paths.
+        if (!signal.aborted)
+          setDocument({
+            status: "project-failure",
+            message:
+              error instanceof ProjectLoadError
+                ? error.message
+                : `Unable to load ${stage}. Check that the PlanAxis server is running, then reload this page.`,
+          });
+        return;
+      }
+      if (signal.aborted) return;
+      try {
+        setDocument({ ...processDocument(source), source, project });
+      } catch (error: unknown) {
         setDocument({
           status: "failure",
-          name: file.name,
-          message: `File read failure: ${describeError(error)}`,
+          kind: "processing",
+          project,
+          source,
+          message: `Unexpected processing failure: ${describeError(error)}`,
         });
-      return;
+      }
     }
-    if (request !== generation.current) return;
-    try {
-      setDocument({ ...processDocument(source), source, name: file.name, revision: request });
-    } catch (error: unknown) {
-      setDocument({
-        status: "failure",
-        name: file.name,
-        source,
-        message: `Unexpected processing failure: ${describeError(error)}`,
-      });
-    }
-  }
+    void load();
+    return () => controller.abort();
+  }, []);
+
   const rendererFailure = useCallback((error: unknown): void => {
     setDocument((current) =>
       current.status === "valid"
         ? {
             status: "failure",
-            name: current.name,
+            kind: "renderer",
+            project: current.project,
             source: current.source,
             message: `Unexpected renderer failure: ${describeError(error)}`,
           }
         : current,
     );
   }, []);
-  return { document, load, rendererFailure };
+  return { document, rendererFailure };
 }
 
 function describeError(error: unknown): string {

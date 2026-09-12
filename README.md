@@ -6,10 +6,10 @@
 
 The project is built around the versioned, normative [Apartment SVG 2.2 specification](docs/specifications/apartment-svg/2.2.md), where an SVG document is not merely a drawing: it is the canonical, machine-readable representation of an apartment's geometry and semantics.
 
-PlanAxis has also adopted the versioned [PlanAxis Project Format 1.0 specification](docs/specifications/planaxis-project/1.0.md) as the future top-level container for filesystem-backed renovation projects. The project manifest organizes architecture and project resources without replacing Apartment SVG as the source of architectural truth.
+PlanAxis has also adopted the versioned [PlanAxis Project Format 1.0 specification](docs/specifications/planaxis-project/1.0.md) as the top-level container for filesystem-backed renovation projects. The project manifest organizes architecture and project resources without replacing Apartment SVG as the source of architectural truth.
 
 > [!NOTE]
-> The React browser application currently provides local SVG loading, validation, and a read-only pan/zoom 2D viewer as the first official user-facing entry point. The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG 2.2 parser and complete validation pipeline, developer validation CLI, and normalized `ValidatedApartment2D` domain model are in place. Validation enforces canonical footprint geometry, complete stationary placement containment, and level-local camera collisions. The trusted model retains the exact-decimal footprint and level-local architectural Z values. Exact, renderer-independent `ArchitecturalModel3D` construction is implemented in `@planaxis/model-3d`. Interactive 3D viewing is implemented in `@planaxis/renderer-three`; see the browser workflow below. The Project Format 1.0 loader and read-only project-filesystem foundation are implemented in the server. The server now requires one project at startup, binds to loopback, and exposes controlled metadata and active-architecture HTTP APIs. Browser migration remains future work; the current browser workflow remains local drag-and-drop.
+> The React browser application is the first official user-facing entry point. It automatically loads the server-selected project’s active SVG for validation and read-only 2D/3D viewing. The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG 2.2 parser and complete validation pipeline, developer validation CLI, and normalized `ValidatedApartment2D` domain model are in place. Validation enforces canonical footprint geometry, complete stationary placement containment, and level-local camera collisions. The trusted model retains the exact-decimal footprint and level-local architectural Z values. Exact, renderer-independent `ArchitecturalModel3D` construction is implemented in `@planaxis/model-3d`. Interactive 3D viewing is implemented in `@planaxis/renderer-three`; see the browser workflow below. The Project Format 1.0 loader and read-only project-filesystem foundation are implemented in the server. The server now requires one project at startup, binds to loopback, and exposes controlled metadata and active-architecture HTTP APIs. The browser validates the API metadata and feeds the fetched SVG into the existing browser-side pipeline, completing Phase 0.
 
 ## Project Goals
 
@@ -165,21 +165,39 @@ The exact package structure may be refined during implementation. Architectural 
 ## Open a Floor Plan in the Browser
 
 The React browser application is the first official user-facing PlanAxis entry point.
-Start it from the repository root:
+Start the backend with an existing conforming [PlanAxis project](#adopted-project-based-workflow),
+from the repository root in one terminal:
+
+```bash
+pnpm --filter @planaxis/server build
+node apps/server/dist/index.js --project "/path/to/my-apartment"
+```
+
+In a second terminal, also from the repository root:
 
 ```bash
 pnpm dev:web
 ```
 
-This builds the shared packages and starts Vite. Open the local URL printed in the terminal.
-Browse for one SVG or drop it anywhere in the application. The file is read, parsed,
-validated, and converted to `ValidatedApartment2D` locally, without a server or upload.
+This builds the shared browser dependencies and starts Vite. Open the local Vite URL printed
+in the terminal. Vite proxies only the project metadata and active-architecture API paths to
+`http://127.0.0.1:3000`; browser requests use relative URLs with no CORS configuration.
+The browser automatically loads `/api/project`, validates its supported schema and metadata
+shape, then fetches `/api/project/architecture`. The project name and project-relative active
+architecture path identify the workspace; the physical root stays on the server.
+
+The fetched SVG is parsed, validated, and converted to `ValidatedApartment2D` in the browser.
 The status and collapsible validation panel expose parser and structured validation diagnostics.
+Project/API/network failures appear separately from invalid Apartment SVG content. A valid
+project container may contain an invalid SVG, which still reaches the diagnostic workflow.
+There is no file picker, drop-loading fallback, polling, or automatic file watching. Reload the
+page to fetch the active SVG again; restart the server and reload the page to switch projects
+or update the manifest selection.
 
 The read-only 2D viewer displays the original SVG in a restricted image context, including
 renderable drawings that fail Apartment SVG validation. Drag to pan, scroll or pinch to
 zoom, and use **Fit / Reset** to frame the drawing. With the viewport focused, use the
-arrow keys, `+` / `-`, and `0`. Open another file to replace the document. Use **Focus view**
+arrow keys, `+` / `-`, and `0`. Use **Focus view**
 to expand the active 2D or 3D viewport across the browser client area without resetting its
 navigation state; close it with the corner control or `Escape`. This layout mode does not use
 the browser Fullscreen API, so browser and operating-system chrome remain unchanged.
@@ -191,8 +209,8 @@ embedded SVG cameras, **Walk**, or **Inspection / orbit**. The independent **Foc
 selector keeps each camera's default projection or applies a 16–85 mm full-frame preset.
 The **Aspect ratio** selector either fills the viewport or centers the largest fitting
 16:9, 3:2, 1:1, 2:3, or 9:16 render surface. Framing choices survive camera changes,
-resizing, and Focus view transitions. Every replacement starts in 2D; switching views does
-not reparse the file. A browser needs WebGPU or WebGL2 for 3D.
+resizing, and Focus view transitions. Each page load starts in 2D; switching views does
+not refetch or reparse the SVG. A browser needs WebGPU or WebGL2 for 3D.
 
 **Walk** requires at least one embedded camera. It starts at the first camera's horizontal
 position and heading, with a fixed eye height of 165 cm above the floor and a level gaze.
@@ -202,7 +220,7 @@ for twice the speed, or **Option** on macOS / **Space** on Windows and Linux for
 Fast and slow together use normal speed. Movement stays horizontal and has no collisions:
 you can pass through walls and move outside the apartment. Leaving the canvas or losing
 focus clears held controls. Returning to Walk from another 3D camera mode restores the
-Walk pose; replacing the document starts a new session. **Camera default** uses the first
+Walk pose; reloading the page starts a new session. **Camera default** uses the first
 embedded camera's horizontal FOV in Walk; lens and aspect-ratio choices remain independent.
 
 See [ADR-003](docs/decisions/ADR-003-three-renderer-architecture.md).
@@ -214,7 +232,7 @@ The dedicated `@planaxis/renderer-three` adapter provides WebGPU-first Three.js 
 
 [ADR-004](docs/decisions/ADR-004-filesystem-backed-projects.md) adopts one filesystem-backed PlanAxis project per server process. A project is a physical directory conforming to [PlanAxis Project Format 1.0](docs/specifications/planaxis-project/1.0.md), with a required `planaxis.project.json` manifest and an active Apartment SVG under `architecture/`.
 
-The intended project-based application flow is:
+The implemented Phase 0 project-based application flow is:
 
 ```text
 project root supplied at server startup
@@ -223,7 +241,7 @@ server establishes canonical project-filesystem boundary
     ↓
 project manifest selects active Apartment SVG
     ↓
-browser obtains project resources through controlled APIs
+browser validates project metadata, then fetches active Apartment SVG
     ↓
 existing parse / validation / 2D / 3D pipeline
 ```
@@ -247,7 +265,7 @@ The implemented endpoints are:
 
 Apartment SVG contents are served unchanged even when invalid; parsing and validation remain downstream. The server does not expose the complete project root, other resources, or `.planaxis/`, and does not serve the React application or add CORS integration.
 
-Browser integration remains future work. Continue to use the local file picker or drag-and-drop browser workflow described above.
+The browser uses the two project APIs through the development-only Vite proxy described above. Fastify does not serve the React build; the two-process development flow is the supported browser startup workflow. Later asset, material, design-scenario, and redesign phases remain unimplemented.
 
 ## Validate an Apartment SVG
 
@@ -340,7 +358,7 @@ The executable pipeline through `ValidatedApartment2D` is implemented: Apartment
 
 The parser, validator, CLI, and `ValidatedApartment2D` pipeline are aligned with Apartment SVG 2.2. Successful validation guarantees a simple, positive-area orthogonal footprint within the root `viewBox`, complete stationary geometry containment within its closed region, and level-local camera collision checks. Hinged-door open-leaf points may extend beyond the footprint but must remain within the `viewBox`. The trusted domain model exposes the canonical footprint separately from root bounds and includes the same footprint instance in its semantic ID index. Architectural Z values remain level-local, with `metadata.level.baseZ` retained separately for 3D construction. The geometry package now exposes `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`, with exact and tolerance-aware point equality and exact range-height derivation. `@planaxis/model-3d` now exports `buildArchitecturalModel3D(ValidatedApartment2D)`: it constructs floor and default ceiling surfaces, wall envelopes, window/door opening prisms, fixed-element volumes, utility positions, and exact camera definitions. It preserves architectural semantics and resolved relationships through constructed 3D instances and a source-semantic ID index. Model-space Z applies the level offset exactly once; X/Y remain unchanged. No slab thickness, physical door-leaf geometry, mesh processing, or renderer objects are inferred. The renderer adapter, browser inspection workflow, and free-walk navigation are implemented. Advanced lighting/materials and AI-assisted features remain future stages.
 
-PlanAxis Project Format 1.0 and ADR-004 now define the accepted next application foundation: a portable project directory, server-owned project filesystem boundary, one active project per server process, and controlled browser access to project resources. The loader, read-only filesystem boundary, project-root startup selection, loopback binding, and controlled project APIs are implemented. Browser migration remains future work. The current browser continues to load Apartment SVG files locally.
+PlanAxis Project Format 1.0 and ADR-004 define the implemented Phase 0 application foundation: a portable project directory, server-owned project filesystem boundary, one active project per server process, and controlled browser access to project resources. The loader, read-only filesystem boundary, project-root startup selection, loopback binding, and controlled project APIs are implemented. The browser automatically loads validated project metadata and the active SVG through those APIs while retaining browser-side Apartment SVG validation and the 2D/3D workflow.
 
 Each implementation phase should have explicit acceptance criteria and automated tests.
 
