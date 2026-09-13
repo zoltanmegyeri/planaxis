@@ -5,6 +5,7 @@ import {
   FrontSide,
   Mesh,
   MeshStandardMaterial,
+  MeshPhysicalMaterial,
   Raycaster,
   Vector3,
 } from "three/webgpu";
@@ -344,7 +345,9 @@ it("consumes base surface targets with neutral materials and never renders space
       throw new Error("Expected neutral standard material.");
     expect(mesh.material.map).toBeNull();
     expect(mesh.material.envMap).toBeNull();
-    expect(mesh.material.roughness).toBe(0.8);
+    expect(mesh.material.roughness).toBe(
+      mesh.material instanceof MeshPhysicalMaterial ? 0.05 : 0.8,
+    );
     expect(mesh.material.metalness).toBe(0);
   }
   for (const owner of model.walls) {

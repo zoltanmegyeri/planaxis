@@ -19,11 +19,12 @@ import {
   verticalFov,
 } from "./cameras.js";
 import type { FullFrameFocalLength } from "./cameras.js";
+import type { RuntimeFinishOptions } from "./runtime-materials.js";
 import { WalkControls } from "./walk-controls.js";
 
 export interface ApartmentRenderer {
   initialize(): Promise<void>;
-  setModel(model: ArchitecturalModel3D): void;
+  setModel(model: ArchitecturalModel3D, finishes?: RuntimeFinishOptions): void;
   resize(width: number, height: number, pixelRatio?: number): void;
   selectCamera(sourceId: string | null): void;
   selectWalk(): void;
@@ -142,9 +143,9 @@ export function createApartmentRenderer(
         });
       return initialization;
     },
-    setModel(next) {
+    setModel(next, finishes) {
       if (disposed) throw new Error("Renderer is disposed.");
-      const replacement = buildApartmentScene(next);
+      const replacement = buildApartmentScene(next, finishes);
       walk?.dispose();
       walk = undefined;
       isWalking = false;

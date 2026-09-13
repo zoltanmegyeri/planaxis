@@ -10,6 +10,7 @@ import type {
   RectangularSurfacePatch3D,
   SpaceFinishTarget,
 } from "./architectural-surfaces.js";
+import { createSurfaceMapping } from "./surface-mapping.js";
 import { deriveWallSurfaces, minDecimal, maxDecimal } from "./wall-surfaces.js";
 
 /** Derives physical surfaces and optional semantic coverage from trusted exact architecture. */
@@ -19,6 +20,12 @@ export function deriveArchitecturalSurfaces(
   const surfaces: ArchitecturalSurface3D[] = (["floor", "ceiling"] as const).map((kind) => ({
     kind,
     finishTargetId: horizontalFinishTargetId(kind),
+    mapping: createSurfaceMapping(
+      "z",
+      kind === "floor" ? "positive" : "negative",
+      model[kind].z,
+      model.floor.z,
+    ),
     patches: [
       {
         kind: "horizontal",
@@ -29,15 +36,20 @@ export function deriveArchitecturalSurfaces(
   }));
   surfaces.push(...deriveWallSurfaces(model));
   const finishTargets: FinishTarget[] = surfaces.flatMap((surface) =>
-    "finishTargetId" in surface ? [{ scope: "base", id: surface.finishTargetId }] : [],
+    "finishTargetId" in surface
+      ? [{ scope: "base", id: surface.finishTargetId, mapping: surface.mapping }]
+      : [],
   );
   for (const space of model.spaces) {
     for (const kind of ["floor", "ceiling"] as const) {
       const base = horizontalFinishTargetId(kind);
+      const baseTarget = finishTargets.find((target) => target.id === base);
+      if (!baseTarget) throw new Error("Missing horizontal base finish target.");
       finishTargets.push({
         scope: "space",
         id: spaceFinishTargetId(space.id, base),
         spaceId: space.id,
+        mapping: baseTarget.mapping,
         baseTargetId: base,
         coverage: [
           {
@@ -58,6 +70,7 @@ export function deriveArchitecturalSurfaces(
         id: spaceFinishTargetId(space.id, surface.finishTargetId),
         spaceId: space.id,
         baseTargetId: surface.finishTargetId,
+        mapping: surface.mapping,
         coverage,
       };
       finishTargets.push(target);

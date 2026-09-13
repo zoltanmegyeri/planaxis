@@ -44,3 +44,13 @@ export type {
   WallSide,
   WallSideFinishTargetId,
 } from "./architectural-surfaces.js";
+
+export { createSurfaceMapping, surfaceMappingDistances } from "./surface-mapping.js";
+export type { PhysicalSurfaceMapping } from "./surface-mapping.js";
+export { resolveRuntimeFinish, validateRuntimePbrMaterial } from "./runtime-pbr-material.js";
+export type {
+  RuntimePbrMaterial,
+  RuntimePbrTextures,
+  RuntimeTextureReference,
+  RuntimeFinishAssignments,
+} from "./runtime-pbr-material.js";

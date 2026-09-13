@@ -401,11 +401,44 @@ Every space supplies `space:<space-id>:floor` and `space:<space-id>:ceiling`. A 
 
 Space coverage is semantic data over existing physical surfaces, not additional coplanar render geometry. Uncovered footprint regions use only the base floor/ceiling addresses. The surface layer neither assigns finishes nor introduces precedence between nonoverlapping spaces.
 
+Every material-bearing surface and base target exposes an immutable `PhysicalSurfaceMapping` with an exact centimeter origin and exact unit U/V directions. Space targets share their base target's frame object. Floor U/V are +X/+Y, ceiling U/V are +X/-Y, with origins `(0, 0, surfaceZ)`. Vertical frames use V = +Z and U × V = the outward normal, anchored at global longitudinal zero and the level's floor Z. Horizontal reveals follow the floor/ceiling orientation rule at their own plane Z. Wall-side frames derive from the wall envelope even for empty surfaces; reveal frames use their supporting plane. No origin depends on a patch, opening subdivision, triangulation, or space boundary. `surfaceMappingDistances` measures signed exact U/V centimeter distances; no material dimensions or UVs are stored in the surface model.
+
 ### 5.9. Renderer Adapter
 
 A renderer adapter converts `ArchitecturalModel3D`, its derived architectural surfaces, and runtime simulation state into renderer-specific objects.
 
-`@planaxis/renderer-three` implements direct Three.js adaptation with WebGPU-first rendering and supported WebGL2 fallback. Exact centimeters become meters at this boundary, with `(X, Y, Z)` mapped to `(X, Z, Y)`. Triangulation, normals, mesh geometry, materials, controls, and GPU resources are renderer-owned. Floor, ceiling, wall-side, and reveal geometry consume the exact surface set; the adapter does not derive finish semantics. Wall meshes retain source-ID grouping and base-target index ranges while sharing the existing neutral `MeshStandardMaterial` appearance. Space coverage produces no extra meshes. See [ADR-003](../decisions/ADR-003-three-renderer-architecture.md).
+`@planaxis/renderer-three` implements direct Three.js adaptation with WebGPU-first rendering and supported WebGL2 fallback. Exact centimeters become meters at this boundary, with `(X, Y, Z)` mapped to `(X, Z, Y)`. Triangulation, UVs, normals, mesh geometry, materials, controls, and GPU resources are renderer-owned. Floor, ceiling, wall-side, and reveal geometry consume the exact surface set; the adapter does not derive finish semantics. Wall meshes retain source-ID grouping and base-target index ranges. The adapter projects patches into the exact base mapping frame before number conversion, triangulates horizontal polygons, and splits convex render cells against triangles of explicitly assigned space coverage. This handles concave/diagonal spaces and disconnected coverage as disjoint draw groups in the same physical mesh, without offset or coplanar override geometry. Unassigned coverage needs no extra subdivision. Normal/winding conversion accounts for the renderer basis's handedness change. See [ADR-003](../decisions/ADR-003-three-renderer-architecture.md).
+
+`@planaxis/model-3d` exports a separate runtime-only `RuntimePbrMaterial` vocabulary and `RuntimeFinishAssignments` map. These are presentation inputs, never members of `ArchitecturalModel3D`. `resolveRuntimeFinish` applies explicit space assignment → base assignment → undefined (neutral renderer default). Scalars are validated as finite [0,1] values and texture dimensions as exact positive centimeters. Base color is an sRGB RGB tuple. Optional alpha behavior supports opaque (default), mask (opacity and cutoff), and blend (opacity without depth writing).
+
+`RuntimePbrTextures` gives all maps one physical repeat width/height. The adapter computes `u = physicalUDistanceCm / widthCm` and `v = physicalVDistanceCm / heightCm`, permitting negative UVs and repeats beyond one. Base-color maps use sRGB; roughness (green channel), metalness (blue channel), and tangent-space normal maps use non-color data. Normal +Y follows mapping +V. All maps use UV channel zero, repeat wrapping, and identity texture transforms; repeat density comes entirely from physical dimensions. The resolver must provide consistently oriented, already loaded pixels (+U right / +V up), using the source texture's upload orientation. Routine tests resolve deterministic in-memory `DataTexture` fixtures.
+
+The renderer accepts `RuntimeFinishOptions` through scene construction or `setModel`. Texture references are opaque in-process symbols, with no paths, asset IDs, or persistent schema. The synchronous resolver returns borrowed Three.js textures; callers finish asynchronous loading before assignment and retain ownership of source textures/images. The adapter clones texture objects so color-space and transform configuration cannot mutate borrowed sources or conflict when a source serves multiple map roles. Each scene explicitly owns and disposes its cloned textures, adapted materials, glass, and geometry, including partial construction failures. Model replacement atomically builds the replacement before releasing the previous scene and uses the existing event-driven render lifecycle.
+
+```ts
+const reference = Symbol();
+const material: RuntimePbrMaterial = {
+  baseColor: [1, 1, 1],
+  roughness: 0.8,
+  metalness: 0,
+  textures: {
+    widthCm: createDecimal("60"),
+    heightCm: createDecimal("30"),
+    baseColorMap: reference,
+  },
+};
+renderer.setModel(model, {
+  assignments: new Map([["floor", material]]),
+  resolveTexture: (key) => {
+    if (key !== reference) throw new Error("Unknown runtime texture reference.");
+    return alreadyLoadedTexture;
+  },
+});
+```
+
+No assignments preserve the neutral opaque surface materials. Fixed elements and utility markers remain neutral. Windows retain their zero-thickness opening-center planes and use `MeshPhysicalMaterial` transmission with opacity 1 and thickness 0, consistent with [Three.js thin-surface transmission](https://threejs.org/docs/pages/MeshPhysicalMaterial.html). Deterministic defaults use IOR 1.5, roughness 0.05 for clear/unspecified/other, roughness 0.5 for frosted, and a neutral gray tint for tinted glass. These are qualitative visualization choices, not manufacturer properties or inferred glazing construction. No environment lighting is supplied yet, so this establishes material capability rather than photorealism.
+
+Persistent material assets/design scenarios, IBL, exposure, and tone-mapping controls remain future work. No material resource API, project path, material-selection UI, or persistent descriptor is introduced.
 
 Responsibilities may include:
 
@@ -716,13 +749,14 @@ Expected responsibilities:
 
 - renderer-independent 3D architectural types;
 - deterministic `ValidatedApartment2D` → `ArchitecturalModel3D` transformation;
-- exact exposed architectural surfaces, stable finish targets, and space-scoped override coverage.
+- exact exposed architectural surfaces, stable finish targets, shared physical mapping frames, and space-scoped override coverage;
+- a separate renderer-independent runtime PBR vocabulary, without visual state in the architectural model.
 
 It must not depend on Three.js.
 
 ### `renderer-three`
 
-Owns Three.js scene construction, triangulation of derived architectural surfaces, neutral PBR defaults, cameras, controls, and GPU resources. It depends on `model-3d` and exact geometry types, remains independent of React, and exposes explicit initialization, replacement, resize, camera selection, rendering, and disposal. The browser owns ResizeObserver and view state. Rendering is event-driven; no persistent application loop remains when inactive.
+Owns Three.js scene construction, triangulation of derived architectural surfaces, physical UV generation, transient texture-capable PBR assignment, transmissive glass, neutral defaults, cameras, controls, and GPU resources. It depends on `model-3d` and exact geometry types, remains independent of React, and exposes explicit initialization, replacement, resize, camera selection, rendering, and disposal. The browser owns ResizeObserver and view state. Rendering is event-driven; no persistent application loop remains when inactive.
 
 The renderer's `selectWalk()` activates a model-local `WalkControls` session. The first camera in document order supplies horizontal position, heading, and default horizontal FOV. The initial eye position uses `model.floor.z + 165 cm`, independent of source camera Z, with neutral pitch and zero roll. Exact coordinates cross the existing centimeters-to-meters boundary once. Walk pose, input, and speed are transient renderer state; neither the SVG nor the domain model changes. A session preserves its pose across inspection/embedded-camera selection and resets when the model is replaced.
 
@@ -977,9 +1011,9 @@ The executable repository bootstrap, authoritative numeric and geometric foundat
 
 Apartment SVG 2.2 is the normative apartment format, and the parser, validator, CLI, and trusted 2D domain pipeline are fully aligned with it. Schema and reference stages preserve the mandatory exact-decimal footprint while leaving geometry checks to the geometry stage. Successful geometric validation guarantees footprint topology, positive area, exact orthogonality, root viewBox containment, and complete stationary placement containment within the closed footprint. Hinged-door open-leaf geometry is exempt from footprint containment but remains inside the viewBox. Camera collisions compare level-local Z ranges consistently. `ValidatedApartment2D` retains the canonical footprint and unchanged level-local architectural Z values, with the level offset stored separately. Exact, renderer-independent 3D geometry foundations are implemented in `@planaxis/geometry`: `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`. Point comparisons reuse the centralized geometric tolerance, and range height is derived with exact decimal subtraction. These primitives carry no architectural or transformation semantics. `@planaxis/model-3d` implements deterministic `ArchitecturalModel3D` construction from trusted 2D input using these primitives, preserving architectural semantics and resolved relationships without renderer objects or unsupported physical assumptions. The Three.js adapter and browser 2D/3D workflow are implemented as described above.
 
-The Project Format 1.0 loading and read-only project-filesystem foundation is implemented in `apps/server/src/project/`, as described in section 8.3. Server startup selects and loads one required project root before listening on loopback, and controlled project metadata and active-architecture HTTP APIs are implemented. The browser loads project metadata and active architecture through these APIs, completing the server-backed Phase 0 workflow. Project-format validity and Apartment SVG validity remain independent. Asset, material, design-scenario, and redesign phases remain future work.
+The Project Format 1.0 loading and read-only project-filesystem foundation is implemented in `apps/server/src/project/`, as described in section 8.3. Server startup selects and loads one required project root before listening on loopback, and controlled project metadata and active-architecture HTTP APIs are implemented. The browser loads project metadata and active architecture through these APIs, completing the server-backed Phase 0 workflow. Project-format validity and Apartment SVG validity remain independent. Persistent assets, material management, design scenarios, and redesign remain future work.
 
-Phase 1 now includes the designable surface foundation described in section 5.8. UVs, texture-capable materials, real finish assignment, material assets, image-based/environment lighting (IBL), improved glass, exposure/tone-mapping controls, and design scenarios remain subsequent work.
+Phase 1 includes exact designable surfaces with shared physical mapping frames, renderer UV generation, transient texture-capable metallic/roughness PBR finish assignments with non-overlapping coverage, and zero-thickness transmissive glass (sections 5.8–5.9). Persistent material assets, image-based/environment lighting (IBL), exposure/tone-mapping controls, and design scenarios remain subsequent work.
 
 The intended implementation order is now broadly:
 

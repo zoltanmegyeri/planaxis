@@ -3,7 +3,7 @@ import { beforeEach, expect, it, vi } from "vitest";
 import type { PerspectiveCamera, Scene } from "three/webgpu";
 import { modelFixture } from "./model-fixture.js";
 import { navigationSurface } from "./navigation-surface.js";
-import { Vector3 } from "three/webgpu";
+import { Vector3, DataTexture, Mesh, MeshStandardMaterial } from "three/webgpu";
 
 const gpu = vi.hoisted(() => ({
   init: vi.fn<() => Promise<void>>(),
@@ -290,4 +290,59 @@ it("rejects Walk without an embedded camera and keeps inspection available", asy
   expect(camera.position).toEqual(inspection);
   expect(camera.fov).toBe(50);
   renderer.dispose();
+});
+
+it("replaces transient finishes, disposes their textures, and retains the scene after a failed replacement", async () => {
+  const renderer = createApartmentRenderer(canvas, vi.fn());
+  const model = modelFixture();
+  const reference = Symbol();
+  const source = new DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
+  const finishes = {
+    assignments: new Map([
+      [
+        "floor" as const,
+        {
+          baseColor: [1, 1, 1] as const,
+          roughness: 0.4,
+          metalness: 0,
+          textures: { widthCm: decimal("50"), heightCm: decimal("50"), baseColorMap: reference },
+        },
+      ],
+    ]),
+    resolveTexture: () => source,
+  };
+  renderer.setModel(model, finishes);
+  await renderer.initialize();
+  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  const floor = scene.getObjectByName("floor");
+  if (
+    !(floor instanceof Mesh) ||
+    !(floor.material instanceof MeshStandardMaterial) ||
+    !floor.material.map
+  )
+    throw new Error("Missing mapped floor.");
+  const textureDispose = vi.spyOn(floor.material.map, "dispose");
+  const materialDispose = vi.spyOn(floor.material, "dispose");
+  expect(() =>
+    renderer.setModel(model, {
+      ...finishes,
+      resolveTexture: () => {
+        throw new Error("Unavailable texture");
+      },
+    }),
+  ).toThrow("Unavailable texture");
+  expect(scene.getObjectByName("floor")).toBe(floor);
+  expect(textureDispose).not.toHaveBeenCalled();
+  renderer.selectCamera("camera-1");
+  renderer.resize(400, 300);
+  renderer.setModel(model);
+  expect(textureDispose).toHaveBeenCalledTimes(1);
+  expect(materialDispose).toHaveBeenCalledTimes(1);
+  const replacement = scene.getObjectByName("floor");
+  if (!(replacement instanceof Mesh) || !(replacement.material instanceof MeshStandardMaterial))
+    throw new Error("Missing neutral floor.");
+  expect(replacement.material.map).toBeNull();
+  renderer.dispose();
+  expect(textureDispose).toHaveBeenCalledTimes(1);
+  source.dispose();
 });

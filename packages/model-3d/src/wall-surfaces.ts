@@ -9,6 +9,7 @@ import type {
   SurfaceAxis,
 } from "./architectural-surfaces.js";
 
+import { createSurfaceMapping } from "./surface-mapping.js";
 interface Bounds {
   readonly min: Point3D;
   readonly max: Point3D;
@@ -115,6 +116,12 @@ export function deriveWallSurfaces(model: ArchitecturalModel3D): ArchitecturalSu
         sourceId: wall.id,
         side,
         finishTargetId: wallSideFinishTargetId(wall.id, side),
+        mapping: createSurfaceMapping(
+          transverse,
+          side === "side-negative" ? "negative" : "positive",
+          prismBounds(wall.volume)[side === "side-negative" ? "min" : "max"][transverse],
+          model.floor.z,
+        ),
         patches: exposed.filter(
           (face) =>
             face.normalAxis === transverse &&
@@ -145,15 +152,24 @@ export function deriveWallSurfaces(model: ArchitecturalModel3D): ArchitecturalSu
       entry.patches.push(face);
       reveals.set(id, entry);
     }
-    for (const { openingId, reveal, patches } of reveals.values())
+    for (const { openingId, reveal, patches } of reveals.values()) {
+      const face = patches[0];
+      if (!face) throw new Error("Missing reveal surface.");
       result.push({
         kind: "opening-reveal",
         sourceId: wall.id,
         openingId,
         reveal,
         finishTargetId: revealFinishTargetId(wall.id, openingId, reveal),
+        mapping: createSurfaceMapping(
+          face.normalAxis,
+          face.normalSign,
+          face.min[face.normalAxis],
+          model.floor.z,
+        ),
         patches,
       });
+    }
     if (structural.length)
       result.push({ kind: "wall-structure", sourceId: wall.id, patches: structural });
     return result;

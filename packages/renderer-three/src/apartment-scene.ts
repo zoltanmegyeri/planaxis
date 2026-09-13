@@ -1,10 +1,9 @@
 import { deriveArchitecturalSurfaces } from "@planaxis/model-3d";
-import type { ArchitecturalModel3D } from "@planaxis/model-3d";
+import type { ArchitecturalModel3D, ArchitecturalSurface3D } from "@planaxis/model-3d";
 import {
   Box3,
   BoxGeometry,
   BufferGeometry,
-  DoubleSide,
   Float32BufferAttribute,
   FrontSide,
   Group,
@@ -15,6 +14,8 @@ import {
   Vector3,
 } from "three/webgpu";
 import { rendererBox, rendererPoint } from "./coordinates.js";
+import { RuntimeMaterials, windowGlass } from "./runtime-materials.js";
+import type { RuntimeFinishOptions } from "./runtime-materials.js";
 import { surfaceGeometry } from "./surface-geometry.js";
 
 export interface ApartmentScene {
@@ -24,37 +25,37 @@ export interface ApartmentScene {
   dispose(): void;
 }
 
-export function buildApartmentScene(model: ArchitecturalModel3D): ApartmentScene {
+export function buildApartmentScene(
+  model: ArchitecturalModel3D,
+  finishes: RuntimeFinishOptions = {},
+): ApartmentScene {
   const group = new Group();
   const objectsBySourceId = new Map<string, Group>();
   const geometries = new Set<BufferGeometry>();
-  const materials = new Set<Material>();
+  const materials = new RuntimeMaterials(finishes.resolveTexture);
   let disposed = false;
   const dispose = (): void => {
     if (disposed) return;
     disposed = true;
     for (const geometry of geometries) geometry.dispose();
-    for (const material of materials) material.dispose();
+    materials.dispose();
     group.clear();
     objectsBySourceId.clear();
   };
-  const material = (color: number, transparent = false): MeshStandardMaterial => {
+  const material = (color: number): MeshStandardMaterial => {
     const result = new MeshStandardMaterial({
       color,
       roughness: 0.8,
       metalness: 0,
       // Back-face shadow maps leak light at floor contacts and intersecting wall corners.
       shadowSide: FrontSide,
-      ...(transparent
-        ? { transparent: true, opacity: 0.2, depthWrite: false, side: DoubleSide }
-        : {}),
     });
-    materials.add(result);
+    materials.own(result);
     return result;
   };
   const mesh = (
     geometry: BufferGeometry,
-    finish: Material,
+    finish: Material | Material[],
     parent: Group,
     shadows = true,
   ): Mesh => {
@@ -74,7 +75,6 @@ export function buildApartmentScene(model: ArchitecturalModel3D): ApartmentScene
   try {
     const wallFinish = material(0xdedbd4);
     const fixedFinish = material(0x9eaaa9);
-    const glass = material(0xadc6cf, true);
     for (const element of model.sourceElementsById.values()) {
       const sourceGroup = new Group();
       sourceGroup.name = element.id;
@@ -88,11 +88,38 @@ export function buildApartmentScene(model: ArchitecturalModel3D): ApartmentScene
       return result;
     };
     const derived = deriveArchitecturalSurfaces(model);
+    const surfaceMesh = (
+      surfaces: readonly ArchitecturalSurface3D[],
+      neutral: Material,
+      parent: Group,
+      shadows = true,
+    ): Mesh => {
+      const palette: Material[] = [];
+      const geometry = surfaceGeometry(surfaces, {
+        targets: derived.finishTargets,
+        assignments: finishes.assignments ?? new Map(),
+        materialIndex: (input) => {
+          const finish = input ? materials.adapt(input) : neutral;
+          let index = palette.indexOf(finish);
+          if (index < 0) {
+            index = palette.length;
+            palette.push(finish);
+          }
+          return index;
+        },
+      });
+      return mesh(
+        geometry,
+        palette.length > 1 ? palette : (palette[0] ?? neutral),
+        parent,
+        shadows,
+      );
+    };
     for (const kind of ["floor", "ceiling"] as const) {
       const surfaces = derived.surfaces.filter((surface) => surface.kind === kind);
       // Inward-facing boundaries expose the interior without invented slab thickness.
-      mesh(
-        surfaceGeometry(surfaces),
+      surfaceMesh(
+        surfaces,
         material(kind === "floor" ? 0xb5afa4 : 0xe9e7e1),
         group,
         kind === "floor",
@@ -102,7 +129,7 @@ export function buildApartmentScene(model: ArchitecturalModel3D): ApartmentScene
       const surfaces = derived.surfaces.filter(
         (surface) => "sourceId" in surface && surface.sourceId === wall.id,
       );
-      mesh(surfaceGeometry(surfaces), wallFinish, sourceGroup(wall.id));
+      surfaceMesh(surfaces, wallFinish, sourceGroup(wall.id));
     }
     for (const window of model.windows) {
       const bounds = rendererBox(window.opening);
@@ -116,7 +143,12 @@ export function buildApartmentScene(model: ArchitecturalModel3D): ApartmentScene
       c.y = b.y;
       const d = b.clone();
       d.y = a.y;
-      mesh(quadGeometry(a, d, b, c), glass, sourceGroup(window.id), false);
+      mesh(
+        quadGeometry(a, d, b, c),
+        materials.own(windowGlass(window.glassType)),
+        sourceGroup(window.id),
+        false,
+      );
     }
     // Leaf thickness and sliding tracks are unspecified; doors remain unobstructed openings.
     for (const element of model.fixedElements)

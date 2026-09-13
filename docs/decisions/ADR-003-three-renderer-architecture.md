@@ -42,7 +42,7 @@ back into the authoritative model.
 
 ## Geometry and visualization
 
-Triangulate the trusted floor and ceiling polygons with Three.js ShapeGeometry. They
+Triangulate the trusted floor and ceiling polygons with Three.js polygon triangulation. They
 have no slab thickness. Floor faces upward; ceiling faces downward and does not cast
 shadows, allowing inspection from above while showing the ceiling from inside.
 
@@ -65,13 +65,12 @@ target remain neutral structural surfaces. No renderer tessellation is stored in
 
 The adapter triangulates these derived patches, computes normals, and converts shared
 coordinates identically to prevent partition seams in shadow maps. One mesh per source
-wall retains base finish-target index ranges while sharing the existing neutral material.
-Floor and ceiling likewise consume derived physical surfaces. UVs, material assignment,
-material assets, IBL, improved glass, and presentation controls remain subsequent work.
+wall retains base finish-target index ranges. Floor and ceiling likewise consume derived
+physical surfaces. The texture-capable refinement below adds UVs and runtime assignments.
 
-Windows have transparent, zero-thickness center planes spanning the trusted opening.
+Windows have transmissive, zero-thickness center planes spanning the trusted opening.
 Doors remain openings: physical leaf thickness and sliding-track geometry are absent
-from the model. No frames, trim, hardware, or finishes are inferred. Fixed elements use
+from the model. No frames, trim, hardware, or source finishes are inferred. Fixed elements use
 their trusted prisms. Utility spheres are explicitly visualization markers, not physical
 fixture dimensions or active lights. Source-ID groups retain a practical scene mapping,
 including empty groups for cameras and door openings.
@@ -82,7 +81,22 @@ shadows so the shadow map records light-entry surfaces instead of solid exit sur
 this prevents bright leaks at wall corners and floor contacts. A renderer-only normal
 bias of two shadow texels scales with the apartment bounds to suppress self-shadow
 banding without changing architectural meshes. These settings do not describe source
-material or luminaire semantics. Free-walk navigation, advanced lighting, materials, and design workflows remain
+material or luminaire semantics. Advanced lighting, persistent material assets, and design workflows remain future work.
+
+### Texture-capable surface refinement (2026-09-13)
+
+The surface model owns exact physical mapping frames with outward-oriented U/V directions;
+space targets share base frames. A separate runtime-only PBR vocabulary in `model-3d`
+allows transient finish assignments without adding presentation state to architecture or
+defining a persistent material format. Renderer-side coverage tessellation yields disjoint
+material draw groups. UVs divide physical centimeter distances by runtime texture dimensions.
+The adapter configures color/data maps and owns cloned textures and materials; callers own
+already loaded source textures resolved by in-process references. Window glass uses physical
+transmission with zero thickness and qualitative glass-type defaults. This refines the
+existing boundary without adding dependencies or changing Apartment SVG semantics. See
+[the current runtime contract](../architecture/overview.md#59-renderer-adapter).
+
+Persistent material assets, design scenarios, IBL, exposure, and tone-mapping controls remain
 future work.
 
 ## Cameras and lifecycle
@@ -95,7 +109,7 @@ and resize. Returning to inspection reframes the model; navigation never edits s
 
 The public lifecycle is create, initialize, setModel, resize, selectCamera, render, dispose.
 Rendering is event-driven without a persistent application animation loop. Pixel ratio is
-capped at two. Model replacement disposes old mesh geometries and shared materials; final
+capped at two. Model replacement disposes old mesh geometries, owned textures, and shared materials; final
 disposal also disconnects controls and releases shadow and renderer resources. The React
 component disconnects its ResizeObserver. In-flight initialization finishes releasing its
 backend after unmount and cannot render a stale scene.

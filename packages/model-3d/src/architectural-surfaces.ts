@@ -1,5 +1,7 @@
 import type { HorizontalPolygonSurface3D, Point3D } from "@planaxis/geometry";
 
+import type { PhysicalSurfaceMapping } from "./surface-mapping.js";
+
 export type WallSide = "side-negative" | "side-positive";
 export type OpeningReveal = "reveal-start" | "reveal-end" | "reveal-top" | "reveal-bottom";
 export type HorizontalFinishTargetId = "floor" | "ceiling";
@@ -57,6 +59,7 @@ export type ArchitecturalSurfacePatch3D = RectangularSurfacePatch3D | Horizontal
 export type ArchitecturalSurface3D =
   | {
       readonly kind: "floor" | "ceiling";
+      readonly mapping: PhysicalSurfaceMapping;
       readonly finishTargetId: HorizontalFinishTargetId;
       readonly patches: readonly HorizontalSurfacePatch3D[];
     }
@@ -64,6 +67,7 @@ export type ArchitecturalSurface3D =
       readonly kind: "wall-side";
       readonly sourceId: string;
       readonly side: WallSide;
+      readonly mapping: PhysicalSurfaceMapping;
       readonly finishTargetId: WallSideFinishTargetId;
       readonly patches: readonly RectangularSurfacePatch3D[];
     }
@@ -72,6 +76,7 @@ export type ArchitecturalSurface3D =
       readonly sourceId: string;
       readonly openingId: string;
       readonly reveal: OpeningReveal;
+      readonly mapping: PhysicalSurfaceMapping;
       readonly finishTargetId: RevealFinishTargetId;
       readonly patches: readonly RectangularSurfacePatch3D[];
     }
@@ -83,12 +88,14 @@ export type ArchitecturalSurface3D =
 
 export interface BaseFinishTarget {
   readonly scope: "base";
+  readonly mapping: PhysicalSurfaceMapping;
   readonly id: BaseFinishTargetId;
 }
 
 /** Coverage on an existing base surface, never an additional physical render surface. */
 export interface SpaceFinishTarget {
   readonly scope: "space";
+  readonly mapping: PhysicalSurfaceMapping;
   readonly id: SpaceFinishTargetId;
   readonly spaceId: string;
   readonly baseTargetId: HorizontalFinishTargetId | WallSideFinishTargetId;

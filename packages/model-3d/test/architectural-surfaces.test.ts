@@ -4,6 +4,7 @@ import type { ApartmentSpace } from "@planaxis/model";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import {
   buildArchitecturalModel3D,
+  surfaceMappingDistances,
   deriveArchitecturalSurfaces,
   horizontalFinishTargetId,
   revealFinishTargetId,
@@ -546,5 +547,103 @@ describe("architectural surfaces", () => {
       }
     };
     inspect(result);
+  });
+});
+
+describe("physical surface mapping", () => {
+  it("anchors floor and ceiling to global XY with exact interior-facing frames", () => {
+    const result = deriveArchitecturalSurfaces(model());
+    for (const [id, sign, z] of [
+      ["floor", "1", "300.1"],
+      ["ceiling", "-1", "542.3"],
+    ] as const) {
+      const frame = required(result.finishTargets.find((target) => target.id === id)).mapping;
+      expect(coordinates(frame.origin)).toEqual(["0", "0", z]);
+      expect(coordinates(frame.uDirection)).toEqual(["1", "0", "0"]);
+      expect(coordinates(frame.vDirection)).toEqual(["0", sign, "0"]);
+      const distances = surfaceMappingDistances(frame, {
+        x: decimal("-12.345678901234567890123"),
+        y: decimal("42.125"),
+        z: decimal(z),
+      });
+      expect(distances.uCm.toString()).toBe("-12.345678901234567890123");
+      expect(distances.vCm.toString()).toBe(id === "floor" ? "42.125" : "-42.125");
+      expect(Object.isFrozen(frame)).toBe(true);
+      expect(Object.isFrozen(frame.origin)).toBe(true);
+    }
+  });
+
+  it.each(["x", "y"] as const)(
+    "orients %s wall sides and every reveal with U cross V outward",
+    (axis) => {
+      const result = deriveArchitecturalSurfaces(windowModel(axis));
+      for (const surface of result.surfaces) {
+        if (!("mapping" in surface)) continue;
+        const { uDirection: u, vDirection: v } = surface.mapping;
+        const cross = {
+          x: u.y.times(v.z).minus(u.z.times(v.y)),
+          y: u.z.times(v.x).minus(u.x.times(v.z)),
+          z: u.x.times(v.y).minus(u.y.times(v.x)),
+        };
+        for (const patch of surface.patches) {
+          const normalAxis = patch.kind === "horizontal" ? "z" : patch.normalAxis;
+          expect(coordinates(cross)).toEqual(
+            ["x", "y", "z"].map((a) =>
+              a === normalAxis ? (patch.normalSign === "positive" ? "1" : "-1") : "0",
+            ),
+          );
+          if (normalAxis !== "z") expect(coordinates(v)).toEqual(["0", "0", "1"]);
+        }
+      }
+      const negative = required(
+        result.finishTargets.find((target) => target.id === "wall:wall:side-negative"),
+      ).mapping;
+      const positive = required(
+        result.finishTargets.find((target) => target.id === "wall:wall:side-positive"),
+      ).mapping;
+      expect(coordinates(negative.uDirection)).toEqual(
+        axis === "x" ? ["1", "0", "0"] : ["0", "-1", "0"],
+      );
+      expect(coordinates(positive.uDirection)).toEqual(
+        axis === "x" ? ["-1", "0", "0"] : ["0", "1", "0"],
+      );
+      expect(result.surfaces.filter((surface) => surface.kind === "opening-reveal")).toHaveLength(
+        4,
+      );
+    },
+  );
+
+  it("shares base frames with space coverage and keeps wall phase through opening subdivision", () => {
+    const architecture = windowModel();
+    const withSpace = {
+      ...architecture,
+      spaces: [
+        space([
+          ["20", "20"],
+          ["80", "20"],
+          ["80", "80"],
+          ["20", "80"],
+        ]),
+      ],
+    };
+    const result = deriveArchitecturalSurfaces(withSpace);
+    for (const target of result.finishTargets) {
+      if (target.scope === "space")
+        expect(target.mapping).toBe(
+          required(result.finishTargets.find((base) => base.id === target.baseTargetId)).mapping,
+        );
+    }
+    const id = "wall:wall:side-positive";
+    const frame = required(result.finishTargets.find((target) => target.id === id)).mapping;
+    const noOpenings = deriveArchitecturalSurfaces({ ...architecture, windows: [] });
+    expect(frame).toEqual(
+      required(noOpenings.finishTargets.find((target) => target.id === id)).mapping,
+    );
+    expect(patches(result, id).length).toBeGreaterThan(1);
+    for (const patch of patches(result, id)) {
+      const { uCm, vCm } = surfaceMappingDistances(frame, patch.min);
+      expect(uCm.toString()).toBe(patch.min.x.negated().toString());
+      expect(vCm.toString()).toBe(patch.min.z.minus(decimal("300.1")).toString());
+    }
   });
 });

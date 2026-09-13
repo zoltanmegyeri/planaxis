@@ -8,3 +8,5 @@ export {
   isFullFrameFocalLength,
 } from "./cameras.js";
 export type { FullFrameFocalLength } from "./cameras.js";
+
+export type { RuntimeFinishOptions } from "./runtime-materials.js";
