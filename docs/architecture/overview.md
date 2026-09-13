@@ -72,6 +72,9 @@ ArchitecturalModel3D
     ├──────────────► server-side consumers
     │
     ▼
+exact architectural surfaces + finish targets
+    │
+    ▼
 renderer adapter
     │
     ▼
@@ -198,7 +201,8 @@ It exposes:
 - doors;
 - fixed architectural elements;
 - utility positions;
-- camera definitions.
+- camera definitions;
+- validated spaces as semantic override regions.
 
 For Apartment SVG 2.2, the apartment footprint and level metadata provide deterministic source data for the implicit floor and default ceiling surfaces. Their XY geometry is the footprint; their model-space Z positions are `level.baseZ` and `level.baseZ + level.defaultCeilingHeight` respectively. This does not imply slab thickness, construction material, or other physical properties not present in the specification.
 
@@ -369,9 +373,9 @@ modelZ = metadata.level.baseZ + localZ
 
 `@planaxis/model-3d` owns the public `ArchitecturalModel3D` contracts and `buildArchitecturalModel3D(apartment: ValidatedApartment2D)` builder. It depends on `@planaxis/model` for trusted input and shared semantics and on `@planaxis/geometry` for exact geometry primitives.
 
-The builder constructs a normalized read-only object graph with `metadata`, `floor`, `ceiling`, `walls`, `windows`, `doors`, `fixedElements`, `utilities`, `cameras`, and `sourceElementsById`. It preserves source X/Y unchanged. Floor and default ceiling are `HorizontalPolygonSurface3D` boundaries derived from the canonical footprint, independent of explicit wall heights. Walls and fixed elements expose `RectangularPrism3D` volumes; windows and doors expose separate opening prisms describing void extents within the wall envelope. No boolean subtraction or mesh splitting occurs.
+The builder constructs a normalized read-only object graph with `metadata`, `floor`, `ceiling`, `spaces`, `walls`, `windows`, `doors`, `fixedElements`, `utilities`, `cameras`, and `sourceElementsById`. It preserves source X/Y unchanged. Floor and default ceiling are `HorizontalPolygonSurface3D` boundaries derived from the canonical footprint, independent of explicit wall heights. Walls and fixed elements expose `RectangularPrism3D` volumes; windows and doors expose separate opening prisms describing void extents within the wall envelope. The builder retains envelopes and voids; the separate surface derivation resolves their exposed boundaries without renderer tessellation.
 
-Windows, doors, radiators, and wall-associated utilities reference constructed 3D walls; optional window-to-radiator relationships likewise reference constructed radiators. The read-only source-semantic ID index contains the same instances as the typed collections. Derived floor and ceiling surfaces have no invented source IDs; footprint and space elements are not added to the index or extruded into room volumes.
+Windows, doors, radiators, and wall-associated utilities reference constructed 3D walls; optional window-to-radiator relationships likewise reference constructed radiators. The read-only source-semantic ID index contains the same instances as the typed collections. Derived floor and ceiling surfaces have no invented source IDs; footprint and space elements are not added to the selection index or extruded into room volumes. The `spaces` collection shares validated space IDs, boundaries, and semantics with the trusted input.
 
 Source metadata and immutable plan geometry are shared with the trusted input. Window opening/frame/glass details, door types and status, fixed-element descriptions, and utility semantics remain available. Hinged-door hinge, open-leaf, leaf length, and closed endpoint remain exact plan-view reference geometry. Camera positions are `Point3D`, while heading, pitch, and horizontal FOV remain exact degree values without trigonometric conversion. Heights remain dimensions, and window sill height remains a level-local source measurement; prism ranges and point Z coordinates are model-space values.
 
@@ -381,11 +385,27 @@ The builder must not reinterpret invalid or missing source data and must not rep
 
 Defensive assertions may exist for internal programming errors, but source-document validation belongs upstream.
 
-### 5.8. Renderer Adapter
+### 5.8. Architectural Surface Derivation
 
-A renderer adapter converts `ArchitecturalModel3D` and runtime simulation state into renderer-specific objects.
+`deriveArchitecturalSurfaces(model)` in `@planaxis/model-3d` returns an `ArchitecturalSurfaceSet3D` containing physical surfaces and finish targets. Horizontal polygon patches and axis-aligned rectangle patches retain exact centimeter coordinates and model-space orientation. A semantic surface can contain multiple disconnected patches. No triangles, renderer numbers, material objects, textures, or design assignments enter this contract.
 
-`@planaxis/renderer-three` implements direct Three.js adaptation with WebGPU-first rendering and supported WebGL2 fallback. Exact centimeters become meters at this boundary, with `(X, Y, Z)` mapped to `(X, Z, Y)`. Geometry, materials, controls, and GPU resources are renderer-owned. See [ADR-003](../decisions/ADR-003-three-renderer-architecture.md).
+Base finish targets use centralized typed ID constructors:
+
+- `floor` and `ceiling` retain the apartment footprint;
+- `wall:<wall-id>:side-negative` and `wall:<wall-id>:side-positive` address the wall's minimum and maximum transverse faces: Y for X-axis walls, X for Y-axis walls;
+- `wall:<wall-id>:opening:<opening-id>:reveal-start`, `reveal-end`, `reveal-top`, and `reveal-bottom` address physically exposed opening reveals. Start/end follow increasing wall-longitudinal coordinates; top/bottom follow model Z. Absent faces receive no reveal targets.
+
+The exact wall derivation partitions wall envelopes along opening edges, omits void cells through the full validated wall thickness, cancels internal cell faces, and clips boundary patches against neighboring retained wall cells. Buried/contact faces disappear. Coincident exterior patches retain the earlier source wall's ownership, preserving the existing document-order selection policy. Each wall keeps both side targets even when a side has no exposed patches. Caps and ends outside the required target vocabulary remain neutral, non-designable `wall-structure` surfaces.
+
+Every space supplies `space:<space-id>:floor` and `space:<space-id>:ceiling`. A positive-length boundary contact with an exposed wall side also supplies `space:<space-id>:wall:<wall-id>:side-negative` or `side-positive`. Each space target carries its `baseTargetId` fallback and exact coverage patches. Coverage clips to exposed vertical wall geometry, excluding openings and buried faces; disconnected intervals retain one identity. Polygon contact uses the geometry package's exact topology convention: corner touches, diagonal near-contact, and small gaps do not create adjacency. Enclosure classifications do not change this rule. Opening reveals have no space overrides.
+
+Space coverage is semantic data over existing physical surfaces, not additional coplanar render geometry. Uncovered footprint regions use only the base floor/ceiling addresses. The surface layer neither assigns finishes nor introduces precedence between nonoverlapping spaces.
+
+### 5.9. Renderer Adapter
+
+A renderer adapter converts `ArchitecturalModel3D`, its derived architectural surfaces, and runtime simulation state into renderer-specific objects.
+
+`@planaxis/renderer-three` implements direct Three.js adaptation with WebGPU-first rendering and supported WebGL2 fallback. Exact centimeters become meters at this boundary, with `(X, Y, Z)` mapped to `(X, Z, Y)`. Triangulation, normals, mesh geometry, materials, controls, and GPU resources are renderer-owned. Floor, ceiling, wall-side, and reveal geometry consume the exact surface set; the adapter does not derive finish semantics. Wall meshes retain source-ID grouping and base-target index ranges while sharing the existing neutral `MeshStandardMaterial` appearance. Space coverage produces no extra meshes. See [ADR-003](../decisions/ADR-003-three-renderer-architecture.md).
 
 Responsibilities may include:
 
@@ -695,13 +715,14 @@ PlanAxis Project Format validation must not be casually folded into the Apartmen
 Expected responsibilities:
 
 - renderer-independent 3D architectural types;
-- deterministic `ValidatedApartment2D` → `ArchitecturalModel3D` transformation.
+- deterministic `ValidatedApartment2D` → `ArchitecturalModel3D` transformation;
+- exact exposed architectural surfaces, stable finish targets, and space-scoped override coverage.
 
 It must not depend on Three.js.
 
 ### `renderer-three`
 
-Owns Three.js scene construction, deterministic wall opening partitioning, PBR defaults, cameras, controls, and GPU resources. It depends on `model-3d` and exact geometry types, remains independent of React, and exposes explicit initialization, replacement, resize, camera selection, rendering, and disposal. The browser owns ResizeObserver and view state. Rendering is event-driven; no persistent application loop remains when inactive.
+Owns Three.js scene construction, triangulation of derived architectural surfaces, neutral PBR defaults, cameras, controls, and GPU resources. It depends on `model-3d` and exact geometry types, remains independent of React, and exposes explicit initialization, replacement, resize, camera selection, rendering, and disposal. The browser owns ResizeObserver and view state. Rendering is event-driven; no persistent application loop remains when inactive.
 
 The renderer's `selectWalk()` activates a model-local `WalkControls` session. The first camera in document order supplies horizontal position, heading, and default horizontal FOV. The initial eye position uses `model.floor.z + 165 cm`, independent of source camera Z, with neutral pitch and zero roll. Exact coordinates cross the existing centimeters-to-meters boundary once. Walk pose, input, and speed are transient renderer state; neither the SVG nor the domain model changes. A session preserves its pose across inspection/embedded-camera selection and resets when the model is replaced.
 
@@ -957,6 +978,8 @@ The executable repository bootstrap, authoritative numeric and geometric foundat
 Apartment SVG 2.2 is the normative apartment format, and the parser, validator, CLI, and trusted 2D domain pipeline are fully aligned with it. Schema and reference stages preserve the mandatory exact-decimal footprint while leaving geometry checks to the geometry stage. Successful geometric validation guarantees footprint topology, positive area, exact orthogonality, root viewBox containment, and complete stationary placement containment within the closed footprint. Hinged-door open-leaf geometry is exempt from footprint containment but remains inside the viewBox. Camera collisions compare level-local Z ranges consistently. `ValidatedApartment2D` retains the canonical footprint and unchanged level-local architectural Z values, with the level offset stored separately. Exact, renderer-independent 3D geometry foundations are implemented in `@planaxis/geometry`: `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`. Point comparisons reuse the centralized geometric tolerance, and range height is derived with exact decimal subtraction. These primitives carry no architectural or transformation semantics. `@planaxis/model-3d` implements deterministic `ArchitecturalModel3D` construction from trusted 2D input using these primitives, preserving architectural semantics and resolved relationships without renderer objects or unsupported physical assumptions. The Three.js adapter and browser 2D/3D workflow are implemented as described above.
 
 The Project Format 1.0 loading and read-only project-filesystem foundation is implemented in `apps/server/src/project/`, as described in section 8.3. Server startup selects and loads one required project root before listening on loopback, and controlled project metadata and active-architecture HTTP APIs are implemented. The browser loads project metadata and active architecture through these APIs, completing the server-backed Phase 0 workflow. Project-format validity and Apartment SVG validity remain independent. Asset, material, design-scenario, and redesign phases remain future work.
+
+Phase 1 now includes the designable surface foundation described in section 5.8. UVs, texture-capable materials, real finish assignment, material assets, image-based/environment lighting (IBL), improved glass, exposure/tone-mapping controls, and design scenarios remain subsequent work.
 
 The intended implementation order is now broadly:
 

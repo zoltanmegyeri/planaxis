@@ -17,3 +17,30 @@ export type {
   ArchitecturalWindow3D,
 } from "./architectural-model-3d.js";
 export { buildArchitecturalModel3D } from "./build-architectural-model-3d.js";
+export { deriveArchitecturalSurfaces } from "./derive-architectural-surfaces.js";
+export {
+  horizontalFinishTargetId,
+  wallSideFinishTargetId,
+  revealFinishTargetId,
+  spaceFinishTargetId,
+} from "./architectural-surfaces.js";
+export type {
+  ArchitecturalSurface3D,
+  ArchitecturalSurfacePatch3D,
+  ArchitecturalSurfaceSet3D,
+  BaseFinishTarget,
+  BaseFinishTargetId,
+  FinishTarget,
+  FinishTargetId,
+  HorizontalFinishTargetId,
+  HorizontalSurfacePatch3D,
+  OpeningReveal,
+  RectangularSurfacePatch3D,
+  RevealFinishTargetId,
+  SpaceFinishTarget,
+  SpaceFinishTargetId,
+  SurfaceAxis,
+  SurfaceSign,
+  WallSide,
+  WallSideFinishTargetId,
+} from "./architectural-surfaces.js";

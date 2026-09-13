@@ -1,9 +1,18 @@
 import { createDecimal as decimal } from "@planaxis/geometry";
-import { BackSide, Box3, FrontSide, Mesh, Raycaster, Vector3 } from "three/webgpu";
+import {
+  BackSide,
+  Box3,
+  FrontSide,
+  Mesh,
+  MeshStandardMaterial,
+  Raycaster,
+  Vector3,
+} from "three/webgpu";
 import { expect, it, vi } from "vitest";
 import { buildApartmentScene } from "../src/index.js";
 import { meters, rendererPoint } from "../src/coordinates.js";
-import { buildWallGeometries, wallCells } from "../src/wall-geometry.js";
+import { deriveArchitecturalSurfaces } from "@planaxis/model-3d";
+import { surfaceGeometry } from "../src/surface-geometry.js";
 import { modelFixture } from "./model-fixture.js";
 
 it("casts shadows from entry surfaces at wall corners and floor contacts", () => {
@@ -89,18 +98,41 @@ it("partitions multiple vertically separated openings on a vertical wall without
       verticalRange: { minZ: decimal("300"), maxZ: decimal("600") },
     },
   };
-  const cells = wallCells(wall, [prism("320", "400"), prism("450", "550")]);
+  const window = model.windows[0];
+  if (!window) throw new Error("Missing window");
+  const surfaces = deriveArchitecturalSurfaces({
+    ...model,
+    walls: [wall],
+    doors: [],
+    windows: [prism("320", "400"), prism("450", "550")].map((opening, index) => ({
+      ...window,
+      id: `opening-${index}`,
+      wall,
+      opening,
+    })),
+  }).surfaces.filter((surface) => "sourceId" in surface);
+  const geometry = surfaceGeometry(surfaces);
+  const mesh = new Mesh(geometry);
   const occupied = (height: number): boolean =>
-    cells.some((cell) => cell.containsPoint(new Vector3(0.05, height, 0.4)));
+    new Raycaster(new Vector3(1, height, 0.4), new Vector3(-1, 0, 0)).intersectObject(mesh).length >
+    0;
   expect(occupied(3.5)).toBe(false);
   expect(occupied(4.25)).toBe(true);
   expect(occupied(5)).toBe(false);
   expect(occupied(5.75)).toBe(true);
-  const volume = cells.reduce((sum, cell) => {
-    const size = cell.getSize(new Vector3());
-    return sum + size.x * size.y * size.z;
-  }, 0);
+  let volume = 0;
+  const positions = geometry.getAttribute("position");
+  const indices = geometry.getIndex();
+  if (!indices) throw new Error("Missing triangles");
+  for (let i = 0; i < indices.count; i += 3) {
+    const a = new Vector3().fromBufferAttribute(positions, indices.getX(i));
+    const b = new Vector3().fromBufferAttribute(positions, indices.getX(i + 1));
+    const c = new Vector3().fromBufferAttribute(positions, indices.getX(i + 2));
+    volume += a.dot(b.cross(c)) / 6;
+  }
   expect(volume).toBeCloseTo(0.3 - 0.4 * 0.1 * 1.8);
+  geometry.dispose();
+  for (const material of [mesh.material].flat()) material.dispose();
 });
 
 it("triangulates concave floor and ceiling with inward normals and no invented thickness", () => {
@@ -233,7 +265,17 @@ it.each([false, true])(
       },
       openings: [],
     }));
-    const geometries = buildWallGeometries(walls);
+    const derived = deriveArchitecturalSurfaces({
+      ...modelFixture(),
+      walls: walls.map(({ wall }) => wall),
+      windows: [],
+      doors: [],
+    });
+    const geometries = walls.map(({ wall }) =>
+      surfaceGeometry(
+        derived.surfaces.filter((surface) => "sourceId" in surface && surface.sourceId === wall.id),
+      ),
+    );
     let area = 0;
     let volume = 0;
     let topArea = 0;
@@ -258,3 +300,71 @@ it.each([false, true])(
     expect(volume).toBeCloseTo((20 - 4.8 * 3.8) * 3, 5);
   },
 );
+
+it("consumes base surface targets with neutral materials and never renders space overrides twice", () => {
+  const model = modelFixture();
+  const room = {
+    id: "finish-room",
+    kind: "zone" as const,
+    name: "Finish room",
+    function: "living-room" as const,
+    enclosure: "partial" as const,
+    boundary: [
+      ["10", "10"],
+      ["90", "10"],
+      ["90", "100"],
+      ["10", "100"],
+    ].map(([x, y]) => ({ x: decimal(x ?? "0"), y: decimal(y ?? "0") })),
+  };
+  const withSpace = { ...model, spaces: [room] };
+  const derived = deriveArchitecturalSurfaces(withSpace);
+  expect(
+    derived.finishTargets.some(
+      (target) => target.id === "space:finish-room:wall:wall-1:side-positive",
+    ),
+  ).toBe(true);
+  const plain = buildApartmentScene({ ...model, spaces: [] });
+  const scene = buildApartmentScene(withSpace);
+  const meshes = (root: typeof scene.group): Mesh[] => {
+    const result: Mesh[] = [];
+    root.traverse((object) => {
+      if (object instanceof Mesh) result.push(object);
+    });
+    return result;
+  };
+  const actual = meshes(scene.group);
+  const baseline = meshes(plain.group);
+  expect(actual).toHaveLength(baseline.length);
+  expect(actual.map((mesh) => [...mesh.geometry.getAttribute("position").array])).toEqual(
+    baseline.map((mesh) => [...mesh.geometry.getAttribute("position").array]),
+  );
+  for (const mesh of actual) {
+    expect(mesh.material).toBeInstanceOf(MeshStandardMaterial);
+    if (!(mesh.material instanceof MeshStandardMaterial))
+      throw new Error("Expected neutral standard material.");
+    expect(mesh.material.map).toBeNull();
+    expect(mesh.material.envMap).toBeNull();
+    expect(mesh.material.roughness).toBe(0.8);
+    expect(mesh.material.metalness).toBe(0);
+  }
+  for (const owner of model.walls) {
+    const mesh = scene.objectsBySourceId.get(owner.id)?.children[0];
+    if (!(mesh instanceof Mesh)) throw new Error("Missing wall mesh.");
+    expect(mesh.parent?.userData.sourceId).toBe(owner.id);
+    const expectedRanges = [];
+    let start = 0;
+    for (const surface of derived.surfaces.filter(
+      (surface) => "sourceId" in surface && surface.sourceId === owner.id,
+    )) {
+      const count = surface.patches.length * 6;
+      if ("finishTargetId" in surface)
+        expectedRanges.push({ finishTargetId: surface.finishTargetId, start, count });
+      start += count;
+    }
+    expect(mesh.geometry.userData.finishTargetRanges).toEqual(expectedRanges);
+    expect(mesh.geometry.getIndex()?.count).toBe(start);
+  }
+  expect(scene.objectsBySourceId.has(room.id)).toBe(false);
+  scene.dispose();
+  plain.dispose();
+});

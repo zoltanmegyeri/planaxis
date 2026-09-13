@@ -1,4 +1,4 @@
-import type { HorizontalPolygonSurface3D } from "@planaxis/geometry";
+import { deriveArchitecturalSurfaces } from "@planaxis/model-3d";
 import type { ArchitecturalModel3D } from "@planaxis/model-3d";
 import {
   Box3,
@@ -11,14 +11,11 @@ import {
   Material,
   Mesh,
   MeshStandardMaterial,
-  Shape,
-  ShapeGeometry,
   SphereGeometry,
-  Vector2,
   Vector3,
 } from "three/webgpu";
-import { meters, rendererBox, rendererPoint } from "./coordinates.js";
-import { buildWallGeometries } from "./wall-geometry.js";
+import { rendererBox, rendererPoint } from "./coordinates.js";
+import { surfaceGeometry } from "./surface-geometry.js";
 
 export interface ApartmentScene {
   readonly group: Group;
@@ -90,23 +87,23 @@ export function buildApartmentScene(model: ArchitecturalModel3D): ApartmentScene
       if (!result) throw new Error(`Missing renderer source group: ${id}`);
       return result;
     };
-    mesh(surfaceGeometry(model.floor, false), material(0xb5afa4), group).name = "floor";
-    // Inward-facing boundaries expose the interior from above without invented slab thickness.
-    mesh(surfaceGeometry(model.ceiling, true), material(0xe9e7e1), group, false).name = "ceiling";
-    const walls = model.walls.map((wall) => ({
-      wall,
-      openings: [...model.windows, ...model.doors]
-        .filter((opening) => opening.wall.id === wall.id)
-        .map((opening) => opening.opening),
-    }));
-    const wallGeometries = buildWallGeometries(walls);
-    // Register all allocations before attaching meshes so failure cleanup owns them too.
-    for (const geometry of wallGeometries) geometries.add(geometry);
-    walls.forEach(({ wall }, index) => {
-      const geometry = wallGeometries[index];
-      if (!geometry) throw new Error(`Missing wall geometry: ${wall.id}`);
-      mesh(geometry, wallFinish, sourceGroup(wall.id));
-    });
+    const derived = deriveArchitecturalSurfaces(model);
+    for (const kind of ["floor", "ceiling"] as const) {
+      const surfaces = derived.surfaces.filter((surface) => surface.kind === kind);
+      // Inward-facing boundaries expose the interior without invented slab thickness.
+      mesh(
+        surfaceGeometry(surfaces),
+        material(kind === "floor" ? 0xb5afa4 : 0xe9e7e1),
+        group,
+        kind === "floor",
+      ).name = kind;
+    }
+    for (const wall of model.walls) {
+      const surfaces = derived.surfaces.filter(
+        (surface) => "sourceId" in surface && surface.sourceId === wall.id,
+      );
+      mesh(surfaceGeometry(surfaces), wallFinish, sourceGroup(wall.id));
+    }
     for (const window of model.windows) {
       const bounds = rendererBox(window.opening);
       const center = bounds.getCenter(new Vector3());
@@ -141,27 +138,6 @@ export function buildApartmentScene(model: ArchitecturalModel3D): ApartmentScene
     dispose();
     throw error;
   }
-}
-
-function surfaceGeometry(surface: HorizontalPolygonSurface3D, downward: boolean): BufferGeometry {
-  const shape = new Shape(
-    surface.boundary.map((point) => new Vector2(meters(point.x), meters(point.y))),
-  );
-  const geometry = new ShapeGeometry(shape);
-  // Map SVG +Y to Three +Z. The rotated normal points down; reverse floor winding.
-  geometry.rotateX(Math.PI / 2);
-  geometry.translate(0, meters(surface.z), 0);
-  if (!downward) {
-    const index = geometry.getIndex();
-    if (index)
-      for (let i = 0; i < index.count; i += 3) {
-        const first = index.getX(i);
-        index.setX(i, index.getX(i + 2));
-        index.setX(i + 2, first);
-      }
-    geometry.computeVertexNormals();
-  }
-  return geometry;
 }
 
 function quadGeometry(a: Vector3, b: Vector3, c: Vector3, d: Vector3): BufferGeometry {

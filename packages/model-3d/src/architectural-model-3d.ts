@@ -9,6 +9,7 @@ import type {
   ApartmentOtherFixedElement,
   ApartmentRadiator,
   ApartmentSlidingDoor,
+  ApartmentSpace,
   ApartmentWall,
   ApartmentWallUtility,
   ApartmentWindow,
@@ -115,6 +116,8 @@ export interface ArchitecturalModel3D {
   readonly metadata: ApartmentMetadata;
   readonly floor: HorizontalPolygonSurface3D;
   readonly ceiling: HorizontalPolygonSurface3D;
+  /** Semantic override regions; these do not redefine the physical footprint. */
+  readonly spaces: readonly ApartmentSpace[];
   readonly walls: readonly ArchitecturalWall3D[];
   readonly windows: readonly ArchitecturalWindow3D[];
   readonly doors: readonly ArchitecturalDoor3D[];

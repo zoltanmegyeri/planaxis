@@ -75,6 +75,7 @@ export function buildArchitecturalModel3D(apartment: ValidatedApartment2D): Arch
 
   return Object.freeze({
     metadata: apartment.metadata,
+    spaces: apartment.spaces,
     floor: Object.freeze({ boundary: apartment.footprint.boundary, z: baseZ }),
     ceiling: Object.freeze({
       boundary: apartment.footprint.boundary,

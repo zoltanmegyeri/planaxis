@@ -15,6 +15,8 @@ Use Three.js directly in the non-React `@planaxis/renderer-three` package. The b
 calls `buildArchitecturalModel3D` only with trusted `ValidatedApartment2D`, selects the
 view and camera, and owns mounting and resize observation. The renderer owns all mesh
 construction, camera adaptation, controls, materials, lighting, and GPU lifecycle.
+The surface foundation refinement below places exact architectural boundary derivation
+and finish-target semantics in `model-3d`, before this mesh-construction boundary.
 React Three Fiber would introduce another scene/lifecycle abstraction without a current
 need; React remains responsible for application UI only.
 
@@ -44,16 +46,28 @@ Triangulate the trusted floor and ceiling polygons with Three.js ShapeGeometry. 
 have no slab thickness. Floor faces upward; ceiling faces downward and does not cast
 shadows, allowing inspection from above while showing the ceiling from inside.
 
-For each wall, collect all associated door/window openings. Partition the longitudinal
-and vertical extents at every opening edge and omit cells inside the opening rectangles.
-Each retained cell spans the wall thickness. Emit one wall mesh containing only the
-boundary faces of the retained-cell union. Cancel shared internal faces and convert
-shared boundary coordinates identically, preventing partition seams in shadow maps. This supports multiple openings, different
-sill/lintel heights, and either wall axis without a generic CSG dependency. Validated
-thickness matches are interpreted as through-openings, including permitted tolerance.
-The original exact model remains unchanged. Wall boundary rectangles are clipped against neighboring retained cells, removing
-buried/contact faces and assigning coincident exterior patches to one source wall. This
-renders the solid union without competing corner caps, including unequal wall heights; no renderer tessellation is stored in `model-3d`.
+### Surface foundation refinement (2026-09-13)
+
+Derive exact architectural surfaces in `@planaxis/model-3d` before constructing meshes.
+The model retains validated spaces, and its separate surface builder owns stable base
+finish targets, explicit space-override fallback/coverage, wall-side orientation, and
+physically existing opening-reveal ownership. This keeps semantic finish identity and
+architectural adjacency independent of renderer precision and tessellation. Space
+coverage does not add coplanar physical surfaces or assign materials.
+
+For each wall, partition exact longitudinal and vertical extents at opening edges and
+omit void cells spanning the validated full wall thickness, including permitted thickness
+tolerance. Cancel internal faces and clip boundary rectangles against neighboring retained
+cells. Buried/contact faces disappear; coincident exterior patches belong to the earlier
+source wall. This preserves the existing solid union and source ownership, including
+unequal wall heights, without a generic CSG dependency. Caps and ends without a designable
+target remain neutral structural surfaces. No renderer tessellation is stored in `model-3d`.
+
+The adapter triangulates these derived patches, computes normals, and converts shared
+coordinates identically to prevent partition seams in shadow maps. One mesh per source
+wall retains base finish-target index ranges while sharing the existing neutral material.
+Floor and ceiling likewise consume derived physical surfaces. UVs, material assignment,
+material assets, IBL, improved glass, and presentation controls remain subsequent work.
 
 Windows have transparent, zero-thickness center planes spanning the trusted opening.
 Doors remain openings: physical leaf thickness and sliding-track geometry are absent
