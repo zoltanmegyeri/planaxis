@@ -2,17 +2,17 @@
 
 ## Task Metadata
 
-- **Status:** In Progress
+- **Status:** Completed
 - **Created:** 2026-09-13
 - **Issued:** 2026-09-13
-- **Completed:** —
+- **Completed:** 2026-09-13
 - **Agent:** Codex
 - **Repository:** PlanAxis
 - **Description:** `TASK-025-description.md`
 - **Related tasks:** TASK-016, TASK-018, TASK-024
 - **Related ADRs:** ADR-001, ADR-003
 - **Related specifications:** Apartment SVG 2.2
-- **Implementation commits:** —
+- **Implementation commits:** 3a78ea5acee8f4eec886b546d33820c82810ca30
 
 ## Purpose
 
@@ -26,17 +26,21 @@ The authoritative task description is stored in:
 
 `TASK-025-description.md`
 
-The task was formally issued on 2026-09-13.
+The task was formally issued on 2026-09-13 and completed on 2026-09-13.
 
 ## Execution Record
 
 ### Result
 
-Pending.
+Codex successfully established renderer-independent designable architectural surfaces and stable finish targets.
+
+The implementation retains validated spaces in `ArchitecturalModel3D`, derives exact exposed surfaces and space-scoped override coverage in `@planaxis/model-3d`, and adapts the Three.js renderer to consume those surfaces while preserving the existing neutral appearance and source ownership behavior.
 
 ### Verification
 
-Pending.
+The implementation was reported as completed successfully.
+
+Command-by-command agent verification results were not separately provided during task-record finalization.
 
 ### Deviations from Description
 
@@ -50,11 +54,11 @@ None.
 
 ### Review Status
 
-Pending
+Accepted
 
 ### Review Notes
 
-None.
+The TASK-025 implementation was accepted as successfully completed.
 
 ### Human Changes After Agent Execution
 
@@ -64,11 +68,20 @@ None.
 
 ### Implementation Commits
 
-—
+```text
+3a78ea5acee8f4eec886b546d33820c82810ca30
+```
 
 ### Commit Messages
 
-—
+```text
+feat(model-3d): establish designable architectural surfaces
+
+Derive exact surfaces and stable finish targets with space overrides.
+Adapt neutral rendering and cover geometry and ownership with tests.
+
+Task: TASK-025
+```
 
 ### Supersession
 
