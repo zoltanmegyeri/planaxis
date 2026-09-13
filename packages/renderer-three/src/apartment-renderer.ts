@@ -2,12 +2,12 @@ import type { ArchitecturalModel3D } from "@planaxis/model-3d";
 import {
   Color,
   DirectionalLight,
-  HemisphereLight,
   PerspectiveCamera,
   Scene,
   Vector3,
   WebGPURenderer,
 } from "three/webgpu";
+import type { RenderTarget } from "three/webgpu";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { buildApartmentScene } from "./apartment-scene.js";
 import type { ApartmentScene } from "./apartment-scene.js";
@@ -21,6 +21,9 @@ import {
 import type { FullFrameFocalLength } from "./cameras.js";
 import type { RuntimeFinishOptions } from "./runtime-materials.js";
 import { WalkControls } from "./walk-controls.js";
+import { applyPresentationSettings, DEFAULT_PRESENTATION_SETTINGS } from "./presentation.js";
+import type { RendererPresentationSettings } from "./presentation.js";
+import { createStudioEnvironment } from "./studio-environment.js";
 
 export interface ApartmentRenderer {
   initialize(): Promise<void>;
@@ -29,6 +32,7 @@ export interface ApartmentRenderer {
   selectCamera(sourceId: string | null): void;
   selectWalk(): void;
   setFocalLengthOverride(focalLengthMm: FullFrameFocalLength | null): void;
+  setPresentationSettings(settings: RendererPresentationSettings): void;
   render(): void;
   dispose(): void;
 }
@@ -42,7 +46,8 @@ export function createApartmentRenderer(
   renderer.shadowMap.enabled = true;
   const scene = new Scene();
   scene.background = new Color(0xe8ecec);
-  scene.add(new HemisphereLight(0xffffff, 0x8b8984, 2.5));
+  applyPresentationSettings(renderer, scene, DEFAULT_PRESENTATION_SETTINGS);
+  let environment: RenderTarget | undefined;
   const light = new DirectionalLight(0xffffff, 3);
   light.castShadow = true;
   light.shadow.mapSize.set(2048, 2048);
@@ -65,6 +70,8 @@ export function createApartmentRenderer(
   const releaseRenderer = (): void => {
     if (resourcesReleased) return;
     resourcesReleased = true;
+    scene.environment = null;
+    environment?.dispose();
     renderer.dispose();
   };
   const render = (): void => {
@@ -134,6 +141,8 @@ export function createApartmentRenderer(
             releaseRenderer();
             return;
           }
+          environment = createStudioEnvironment(renderer);
+          scene.environment = environment.texture;
           initialized = true;
           render();
         })
@@ -205,6 +214,11 @@ export function createApartmentRenderer(
       }
       focalLengthOverride = focalLengthMm;
       applyEffectiveProjection();
+      render();
+    },
+    setPresentationSettings(settings) {
+      if (disposed) return;
+      applyPresentationSettings(renderer, scene, settings);
       render();
     },
     render,

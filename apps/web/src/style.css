@@ -417,6 +417,15 @@ dd {
   padding: 0.4rem;
   max-width: 100%;
 }
+.presentation-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.presentation-slider input {
+  width: 10rem;
+  max-width: 100%;
+}
 .three-render-area {
   position: relative;
   flex: 1;

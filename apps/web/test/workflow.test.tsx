@@ -20,10 +20,12 @@ const rendererMocks = vi.hoisted(() => ({
   selectCamera: vi.fn(),
   selectWalk: vi.fn(),
   setFocalLengthOverride: vi.fn(),
+  setPresentationSettings: vi.fn(),
   render: vi.fn(),
   dispose: vi.fn(),
 }));
-vi.mock("@planaxis/renderer-three", () => ({
+vi.mock("@planaxis/renderer-three", async (original) => ({
+  ...(await original<typeof import("@planaxis/renderer-three")>()),
   createApartmentRenderer: () => rendererMocks,
   FULL_FRAME_FOCAL_LENGTHS: [16, 24, 35, 50, 70, 85],
   isFullFrameFocalLength: (value: number) => [16, 24, 35, 50, 70, 85].includes(value),
@@ -691,5 +693,129 @@ it("selects Walk independently of embedded IDs, lens, aspect ratio, and Focus vi
   expect(
     host.querySelector<HTMLSelectElement>('[aria-label="3D render aspect ratio"]')?.value,
   ).toBe("fill");
+  expect(rendererMocks.dispose).toHaveBeenCalledTimes(1);
+});
+
+it("labels presentation controls, waits for readiness, and applies each transient setting immediately", async () => {
+  const startup = deferred<void>();
+  rendererMocks.initialize.mockReturnValueOnce(startup.promise);
+  await mountProject(fixture("valid/minimal-semantic-schema.svg"));
+  await clickView("3D");
+  function control(label: string): HTMLInputElement | HTMLSelectElement {
+    const element = host.querySelector<HTMLInputElement | HTMLSelectElement>(
+      `[aria-label="${label}"]`,
+    );
+    if (!element) throw new Error(`Missing ${label}`);
+    return element;
+  }
+  const tone = control("3D tone mapping");
+  const exposure = control("3D exposure (EV)");
+  const intensity = control("3D environment intensity");
+  const rotation = control("3D environment rotation (degrees)");
+  const controls = [tone, exposure, intensity, rotation];
+  for (const element of controls) expect(element.disabled).toBe(true);
+  expect(tone.value).toBe("AgX");
+  expect(exposure.value).toBe("0");
+  expect(intensity.value).toBe("1");
+  expect(rotation.value).toBe("0");
+  expect([...tone.querySelectorAll("option")].map((option) => option.textContent)).toEqual([
+    "AgX",
+    "ACES Filmic",
+    "Neutral",
+  ]);
+  expect([
+    exposure.getAttribute("min"),
+    exposure.getAttribute("max"),
+    exposure.getAttribute("step"),
+  ]).toEqual(["-4", "4", "0.1"]);
+  expect([
+    intensity.getAttribute("min"),
+    intensity.getAttribute("max"),
+    intensity.getAttribute("step"),
+  ]).toEqual(["0", "4", "0.1"]);
+  expect([
+    rotation.getAttribute("min"),
+    rotation.getAttribute("max"),
+    rotation.getAttribute("step"),
+  ]).toEqual(["0", "360", "1"]);
+  await act(async () => startup.resolve());
+  for (const element of controls) expect(element.disabled).toBe(false);
+  async function change(
+    element: HTMLInputElement | HTMLSelectElement,
+    value: string,
+  ): Promise<void> {
+    await act(async () => {
+      // Bypass React's input tracker to simulate a native slider interaction.
+      if (element instanceof HTMLInputElement) {
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(
+          element,
+          value,
+        );
+        element.dispatchEvent(new Event("input", { bubbles: true }));
+      } else {
+        element.value = value;
+        element.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    });
+  }
+  await change(tone, "ACES Filmic");
+  expect(rendererMocks.setPresentationSettings).toHaveBeenLastCalledWith({
+    environmentIntensity: 1,
+    environmentRotationDegrees: 0,
+    toneMapping: "ACES Filmic",
+    exposureEv: 0,
+  });
+  await change(exposure, "-1.5");
+  expect(rendererMocks.setPresentationSettings).toHaveBeenLastCalledWith({
+    environmentIntensity: 1,
+    environmentRotationDegrees: 0,
+    toneMapping: "ACES Filmic",
+    exposureEv: -1.5,
+  });
+  await change(intensity, "2.4");
+  expect(rendererMocks.setPresentationSettings).toHaveBeenLastCalledWith({
+    environmentIntensity: 2.4,
+    environmentRotationDegrees: 0,
+    toneMapping: "ACES Filmic",
+    exposureEv: -1.5,
+  });
+  await change(rotation, "135");
+  await change(tone, "Neutral");
+  expect(rendererMocks.setPresentationSettings).toHaveBeenLastCalledWith({
+    environmentIntensity: 2.4,
+    environmentRotationDegrees: 135,
+    toneMapping: "Neutral",
+    exposureEv: -1.5,
+  });
+  const calls = rendererMocks.setPresentationSettings.mock.calls.length;
+  await change(control("3D camera"), "camera-1");
+  await change(control("3D camera"), "@walk");
+  await change(control("3D focal length"), "35");
+  await change(control("3D render aspect ratio"), "1:1");
+  await clickControl("Enter Focus view");
+  expect(host.querySelector<HTMLElement>(".three-toolbar")?.hidden).toBe(true);
+  await act(async () =>
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", cancelable: true })),
+  );
+  expect(controls.map((element) => element.value)).toEqual(["Neutral", "-1.5", "2.4", "135"]);
+  expect(rendererMocks.setPresentationSettings).toHaveBeenCalledTimes(calls);
+  expect(rendererMocks.setModel).toHaveBeenCalledTimes(1);
+  expect(rendererMocks.dispose).not.toHaveBeenCalled();
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+});
+
+it("reports a presentation API failure through the existing renderer failure workflow", async () => {
+  await render();
+  await clickView("3D");
+  rendererMocks.setPresentationSettings.mockImplementationOnce(() => {
+    throw new Error("Presentation update failed");
+  });
+  const tone = host.querySelector<HTMLSelectElement>('[aria-label="3D tone mapping"]');
+  if (!tone) throw new Error("Missing tone mapping");
+  await act(async () => {
+    tone.value = "Neutral";
+    tone.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  expect(host.textContent).toContain("Unexpected renderer failure: Presentation update failed");
   expect(rendererMocks.dispose).toHaveBeenCalledTimes(1);
 });

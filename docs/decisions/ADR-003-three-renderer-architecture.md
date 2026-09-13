@@ -75,7 +75,7 @@ their trusted prisms. Utility spheres are explicitly visualization markers, not 
 fixture dimensions or active lights. Source-ID groups retain a practical scene mapping,
 including empty groups for cameras and door openings.
 
-Neutral standard PBR materials, hemisphere illumination, a directional light, and bounded
+Neutral standard PBR materials, built-in environment illumination, a directional light, and bounded
 2048 × 2048 shadow maps are visualization defaults. Opaque surfaces cast front-face
 shadows so the shadow map records light-entry surfaces instead of solid exit surfaces;
 this prevents bright leaks at wall corners and floor contacts. A renderer-only normal
@@ -96,8 +96,21 @@ transmission with zero thickness and qualitative glass-type defaults. This refin
 existing boundary without adding dependencies or changing Apartment SVG semantics. See
 [the current runtime contract](../architecture/overview.md#59-renderer-adapter).
 
-Persistent material assets, design scenarios, IBL, exposure, and tone-mapping controls remain
-future work.
+### Runtime presentation refinement (2026-09-13)
+
+The renderer generates a deterministic built-in room PMREM after backend initialization,
+replacing hemisphere ambient illumination while retaining the directional key/shadow light.
+Lighting/reflections use `scene.environment`; the neutral background stays independent.
+The renderer-owned presentation contract supports environment intensity, architectural yaw,
+AgX (default) / ACES Filmic / Neutral tone mapping, and exposure as EV (`2 ** EV`).
+React owns transient toolbar selections; updates render immediately without rebuilding
+architecture or creating a persistent loop. Settings survive camera/view changes and model
+replacement in the same instance. Generation resources and the owned output target are
+released through the renderer lifecycle. This uses the existing Three.js dependency and
+preserves the domain/rendering boundary.
+
+Persistent material/environment assets, presentation and design-scenario persistence,
+lighting design, and post-processing remain future work.
 
 ## Cameras and lifecycle
 

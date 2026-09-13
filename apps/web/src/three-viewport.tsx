@@ -3,8 +3,15 @@ import {
   createApartmentRenderer,
   FULL_FRAME_FOCAL_LENGTHS,
   isFullFrameFocalLength,
+  DEFAULT_PRESENTATION_SETTINGS,
+  PRESENTATION_TONE_MAPPINGS,
+  isPresentationToneMapping,
 } from "@planaxis/renderer-three";
-import type { ApartmentRenderer, FullFrameFocalLength } from "@planaxis/renderer-three";
+import type {
+  ApartmentRenderer,
+  FullFrameFocalLength,
+  RendererPresentationSettings,
+} from "@planaxis/renderer-three";
 import { useEffect, useRef, useState } from "react";
 import type { ReactElement } from "react";
 import {
@@ -36,6 +43,19 @@ export function ThreeViewport({
   const aspectRatioRef = useRef<RenderAspectRatio>(aspectRatio);
   aspectRatioRef.current = aspectRatio;
   const [ready, setReady] = useState(false);
+  const [presentation, setPresentation] = useState(DEFAULT_PRESENTATION_SETTINGS);
+  const presentationRef = useRef(presentation);
+  presentationRef.current = presentation;
+  const updatePresentation = (update: Partial<RendererPresentationSettings>): void => {
+    const next = { ...presentationRef.current, ...update };
+    try {
+      renderer.current?.setPresentationSettings(next);
+      presentationRef.current = next;
+      setPresentation(next);
+    } catch (error) {
+      onFailure(error);
+    }
+  };
   useEffect(() => {
     const element = canvas.current;
     const area = renderArea.current;
@@ -43,12 +63,14 @@ export function ThreeViewport({
     let active = true;
     let instance: ApartmentRenderer | undefined;
     let observer: ResizeObserver | undefined;
+    setReady(false);
     const fail = (error: unknown): void => {
       if (active) onFailure(error);
     };
     try {
       instance = createApartmentRenderer(element, fail);
       renderer.current = instance;
+      instance.setPresentationSettings(presentationRef.current);
       const resize = (): void => {
         try {
           const rect = area.getBoundingClientRect();
@@ -165,6 +187,67 @@ export function ThreeViewport({
               </option>
             ))}
           </select>
+        </label>
+        <label>
+          Tone mapping{" "}
+          <select
+            aria-label="3D tone mapping"
+            value={presentation.toneMapping}
+            disabled={!ready}
+            onChange={(event) => {
+              const toneMapping = event.target.value;
+              if (isPresentationToneMapping(toneMapping)) updatePresentation({ toneMapping });
+            }}
+          >
+            {PRESENTATION_TONE_MAPPINGS.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="presentation-slider">
+          Exposure: {presentation.exposureEv} EV
+          <input
+            type="range"
+            aria-label="3D exposure (EV)"
+            min={-4}
+            max={4}
+            step={0.1}
+            value={presentation.exposureEv}
+            disabled={!ready}
+            onChange={(event) => updatePresentation({ exposureEv: Number(event.target.value) })}
+          />
+        </label>
+        <label className="presentation-slider">
+          Environment intensity: {presentation.environmentIntensity}
+          <input
+            type="range"
+            aria-label="3D environment intensity"
+            min={0}
+            max={4}
+            step={0.1}
+            value={presentation.environmentIntensity}
+            disabled={!ready}
+            onChange={(event) =>
+              updatePresentation({ environmentIntensity: Number(event.target.value) })
+            }
+          />
+        </label>
+        <label className="presentation-slider">
+          Environment rotation: {presentation.environmentRotationDegrees}°
+          <input
+            type="range"
+            aria-label="3D environment rotation (degrees)"
+            min={0}
+            max={360}
+            step={1}
+            value={presentation.environmentRotationDegrees}
+            disabled={!ready}
+            onChange={(event) =>
+              updatePresentation({ environmentRotationDegrees: Number(event.target.value) })
+            }
+          />
         </label>
         <span>
           {ready

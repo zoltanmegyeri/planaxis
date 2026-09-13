@@ -1,9 +1,21 @@
 import { createDecimal as decimal } from "@planaxis/geometry";
 import { beforeEach, expect, it, vi } from "vitest";
-import type { PerspectiveCamera, Scene } from "three/webgpu";
+import type { PerspectiveCamera, Scene, WebGPURenderer } from "three/webgpu";
 import { modelFixture } from "./model-fixture.js";
 import { navigationSurface } from "./navigation-surface.js";
-import { Vector3, DataTexture, Mesh, MeshStandardMaterial } from "three/webgpu";
+import {
+  Vector3,
+  DataTexture,
+  Mesh,
+  MeshStandardMaterial,
+  Color,
+  DirectionalLight,
+  AgXToneMapping,
+  ACESFilmicToneMapping,
+  NeutralToneMapping,
+  RenderTarget,
+} from "three/webgpu";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
 const gpu = vi.hoisted(() => ({
   init: vi.fn<() => Promise<void>>(),
@@ -11,6 +23,10 @@ const gpu = vi.hoisted(() => ({
   dispose: vi.fn(),
   setSize: vi.fn(),
   setPixelRatio: vi.fn(),
+  instances: [] as WebGPURenderer[],
+  environmentDispose: vi.fn(),
+  generatorDispose: vi.fn(),
+  fromScene: vi.fn(),
 }));
 const orbit = vi.hoisted(() => ({
   dispose: vi.fn(),
@@ -21,7 +37,14 @@ vi.mock("three/webgpu", async (original) => {
   const actual = await original<typeof import("three/webgpu")>();
   return {
     ...actual,
+    PMREMGenerator: class {
+      fromScene = gpu.fromScene;
+      dispose = gpu.generatorDispose;
+    },
     WebGPURenderer: class {
+      constructor() {
+        gpu.instances.push(this as unknown as WebGPURenderer);
+      }
       shadowMap = { enabled: false };
       init = gpu.init;
       render = gpu.render;
@@ -44,12 +67,20 @@ vi.mock("three/addons/controls/OrbitControls.js", async () => {
     },
   };
 });
-import { createApartmentRenderer } from "../src/index.js";
+import { createApartmentRenderer, DEFAULT_PRESENTATION_SETTINGS } from "../src/index.js";
+import type { RendererPresentationSettings } from "../src/index.js";
 import { fullFrameHorizontalFov, verticalFov } from "../src/cameras.js";
 
 beforeEach(() => {
   vi.clearAllMocks();
   gpu.init.mockResolvedValue();
+  gpu.instances.length = 0;
+  gpu.fromScene.mockImplementation(
+    (_room, _sigma, _near, _far, options: { renderTarget: RenderTarget }) => {
+      options.renderTarget.addEventListener("dispose", gpu.environmentDispose);
+      return options.renderTarget;
+    },
+  );
 });
 const canvas = {} as HTMLCanvasElement;
 it("resizes embedded FOV, caps DPR, replaces models and releases owned resources", async () => {
@@ -97,6 +128,7 @@ it("defers backend disposal until pending initialization settles and never rende
   await pending;
   expect(gpu.dispose).toHaveBeenCalledTimes(1);
   expect(gpu.render).not.toHaveBeenCalled();
+  expect(gpu.fromScene).not.toHaveBeenCalled();
 });
 it("reports initialization and draw failures", async () => {
   gpu.init.mockRejectedValueOnce(new Error("No rendering backend"));
@@ -345,4 +377,141 @@ it("replaces transient finishes, disposes their textures, and retains the scene 
   renderer.dispose();
   expect(textureDispose).toHaveBeenCalledTimes(1);
   source.dispose();
+});
+
+it("creates IBL once while keeping the neutral background and deterministic shadow light", async () => {
+  const roomDispose = vi.spyOn(RoomEnvironment.prototype, "dispose");
+  const renderer = createApartmentRenderer(canvas, vi.fn());
+  renderer.setModel(modelFixture());
+  expect(gpu.fromScene).not.toHaveBeenCalled();
+  await renderer.initialize();
+  await renderer.initialize();
+  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  expect(scene.environment).toBe(gpu.fromScene.mock.results[0]?.value.texture);
+  expect(scene.background).toEqual(new Color(0xe8ecec));
+  expect(scene.environmentIntensity).toBe(1);
+  expect(scene.environmentRotation.toArray()).toEqual([0, 0, 0, "XYZ"]);
+  expect(scene.children.some((object) => object.type === "HemisphereLight")).toBe(false);
+  const light = scene.children.find((object) => object instanceof DirectionalLight);
+  expect(light).toBeInstanceOf(DirectionalLight);
+  if (!(light instanceof DirectionalLight)) throw new Error("Missing key light");
+  expect(light.intensity).toBe(3);
+  expect(light.castShadow).toBe(true);
+  expect(light.shadow.mapSize.toArray()).toEqual([2048, 2048]);
+  expect(light.shadow.camera.far).toBeGreaterThan(light.shadow.camera.near);
+  expect(light.position.y).toBeGreaterThan(light.target.position.y);
+  expect(gpu.instances[0]?.toneMapping).toBe(AgXToneMapping);
+  expect(gpu.instances[0]?.toneMappingExposure).toBe(1);
+  expect(gpu.fromScene).toHaveBeenCalledTimes(1);
+  expect(gpu.generatorDispose).toHaveBeenCalledTimes(1);
+  expect(roomDispose).toHaveBeenCalledTimes(1);
+  expect(gpu.environmentDispose).not.toHaveBeenCalled();
+  renderer.dispose();
+  renderer.dispose();
+  expect(scene.environment).toBeNull();
+  expect(gpu.environmentDispose).toHaveBeenCalledTimes(1);
+  roomDispose.mockRestore();
+});
+
+it("applies presentation in one frame without rebuilding or starting an idle loop, retaining it through view changes", async () => {
+  const surface = navigationSurface();
+  const renderer = createApartmentRenderer(surface.canvas, vi.fn());
+  renderer.setModel(modelFixture());
+  const settings: RendererPresentationSettings = {
+    environmentIntensity: 2.3,
+    environmentRotationDegrees: 450,
+    toneMapping: "ACES Filmic",
+    exposureEv: 2,
+  };
+  renderer.setPresentationSettings(settings);
+  expect(gpu.render).not.toHaveBeenCalled();
+  await renderer.initialize();
+  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  const environment = scene.environment;
+  const floor = scene.getObjectByName("floor");
+  const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+  const position = camera.position.clone();
+  const renders = gpu.render.mock.calls.length;
+  renderer.setPresentationSettings({ ...settings, toneMapping: "Neutral" });
+  expect(gpu.render).toHaveBeenCalledTimes(renders + 1);
+  expect(gpu.instances[0]?.toneMapping).toBe(NeutralToneMapping);
+  expect(scene.getObjectByName("floor")).toBe(floor);
+  expect(camera.position).toEqual(position);
+  renderer.setPresentationSettings(settings);
+  for (const change of [
+    () => renderer.selectCamera("camera-1"),
+    () => renderer.selectWalk(),
+    () => renderer.resize(400, 800),
+    () => renderer.setFocalLengthOverride(35),
+    () => renderer.selectCamera(null),
+    () => renderer.setModel(modelFixture()),
+  ]) {
+    change();
+    expect(scene.environment).toBe(environment);
+    expect(scene.environmentIntensity).toBe(2.3);
+    expect(scene.environmentRotation.y).toBeCloseTo(-Math.PI / 2);
+    expect(scene.background).toEqual(new Color(0xe8ecec));
+    expect(gpu.instances[0]?.toneMapping).toBe(ACESFilmicToneMapping);
+    expect(gpu.instances[0]?.toneMappingExposure).toBe(4);
+    expect(surface.frames.size).toBe(0);
+  }
+  renderer.setPresentationSettings({ ...settings, environmentIntensity: 0 });
+  expect(scene.environmentIntensity).toBe(0);
+  expect(scene.children.some((object) => object.type === "HemisphereLight")).toBe(false);
+  expect(gpu.fromScene).toHaveBeenCalledTimes(1);
+  renderer.dispose();
+});
+
+it.each([
+  { environmentIntensity: -1 },
+  { environmentIntensity: NaN },
+  { environmentIntensity: Infinity },
+  { environmentRotationDegrees: NaN },
+  { environmentRotationDegrees: Infinity },
+  { toneMapping: "Linear" },
+  { toneMapping: "toString" },
+  { exposureEv: NaN },
+  { exposureEv: Infinity },
+  { exposureEv: -Infinity },
+  { exposureEv: 1024 },
+  { exposureEv: -1075 },
+])("rejects invalid presentation atomically: %j", async (invalid) => {
+  const renderer = createApartmentRenderer(canvas, vi.fn());
+  renderer.setModel(modelFixture());
+  await renderer.initialize();
+  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  const renders = gpu.render.mock.calls.length;
+  expect(() =>
+    renderer.setPresentationSettings({
+      ...DEFAULT_PRESENTATION_SETTINGS,
+      environmentIntensity: 2,
+      ...invalid,
+    } as RendererPresentationSettings),
+  ).toThrow();
+  expect(scene.environmentIntensity).toBe(1);
+  expect(scene.environmentRotation.y).toBe(0);
+  expect(gpu.instances[0]?.toneMapping).toBe(AgXToneMapping);
+  expect(gpu.instances[0]?.toneMappingExposure).toBe(1);
+  expect(gpu.render).toHaveBeenCalledTimes(renders);
+  renderer.dispose();
+});
+
+it("releases generation resources and the backend if environment generation fails", async () => {
+  const targetDispose = vi.spyOn(RenderTarget.prototype, "dispose");
+  const roomDispose = vi.spyOn(RoomEnvironment.prototype, "dispose");
+  gpu.fromScene.mockImplementationOnce(() => {
+    throw new Error("Environment generation failed");
+  });
+  const renderer = createApartmentRenderer(canvas, vi.fn());
+  renderer.setModel(modelFixture());
+  await expect(renderer.initialize()).rejects.toThrow("Environment generation failed");
+  expect(gpu.generatorDispose).toHaveBeenCalledTimes(1);
+  expect(roomDispose).toHaveBeenCalledTimes(1);
+  expect(gpu.dispose).toHaveBeenCalledTimes(1);
+  expect(targetDispose).toHaveBeenCalledTimes(1);
+  expect(gpu.render).not.toHaveBeenCalled();
+  renderer.dispose();
+  expect(gpu.dispose).toHaveBeenCalledTimes(1);
+  roomDispose.mockRestore();
+  targetDispose.mockRestore();
 });

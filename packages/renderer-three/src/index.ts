@@ -10,3 +10,9 @@ export {
 export type { FullFrameFocalLength } from "./cameras.js";
 
 export type { RuntimeFinishOptions } from "./runtime-materials.js";
+export {
+  DEFAULT_PRESENTATION_SETTINGS,
+  PRESENTATION_TONE_MAPPINGS,
+  isPresentationToneMapping,
+} from "./presentation.js";
+export type { RendererPresentationSettings, PresentationToneMapping } from "./presentation.js";
