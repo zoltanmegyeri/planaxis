@@ -2,17 +2,17 @@
 
 ## Task Metadata
 
-- **Status:** In Progress
+- **Status:** Completed
 - **Created:** 2026-09-13
 - **Issued:** 2026-09-13
-- **Completed:** —
+- **Completed:** 2026-09-13
 - **Agent:** Codex
 - **Repository:** PlanAxis
 - **Description:** `TASK-027-description.md`
 - **Related tasks:** TASK-018, TASK-025, TASK-026
 - **Related ADRs:** ADR-001, ADR-002, ADR-003
 - **Related specifications:** Apartment SVG 2.2
-- **Implementation commits:** —
+- **Implementation commits:** 6fe3d168a30deb8bb9c3e2ec1fe87122ca8c54bc
 
 ## Purpose
 
@@ -26,35 +26,39 @@ The authoritative task description is stored in:
 
 `TASK-027-description.md`
 
-The task was formally issued on 2026-09-13.
+The task was formally issued on 2026-09-13 and completed on 2026-09-13.
 
 ## Execution Record
 
 ### Result
 
-Pending.
+Codex successfully completed the Phase 1 presentation foundation.
+
+The implementation added built-in neutral room IBL, removed the hemisphere ambient contribution, retained the deterministic directional key/shadow light, and added transient AgX / ACES Filmic / Neutral tone mapping, EV-based exposure, environment intensity, and environment yaw controls in the renderer and browser.
 
 ### Verification
 
-Pending.
+The implementation was reported as completed successfully.
+
+Command-by-command agent verification results were not separately provided during task-record finalization.
 
 ### Deviations from Description
 
-None.
+None reported.
 
 ### Agent-Reported Follow-up Items
 
-None.
+None reported.
 
 ## Human Review
 
 ### Review Status
 
-Pending
+Accepted
 
 ### Review Notes
 
-None.
+The TASK-027 implementation was accepted as successfully completed.
 
 ### Human Changes After Agent Execution
 
@@ -64,11 +68,20 @@ None.
 
 ### Implementation Commits
 
-—
+```text
+6fe3d168a30deb8bb9c3e2ec1fe87122ca8c54bc
+```
 
 ### Commit Messages
 
-—
+```text
+feat(renderer): add environment lighting and presentation controls
+
+Add built-in room IBL and transient tone mapping, EV exposure,
+environment intensity, and yaw controls with lifecycle coverage.
+
+Task: TASK-027
+```
 
 ### Supersession
 
