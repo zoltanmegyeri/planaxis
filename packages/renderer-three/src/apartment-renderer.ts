@@ -42,7 +42,7 @@ export function createApartmentRenderer(
   canvas: HTMLCanvasElement,
   onError: (error: unknown) => void,
 ): ApartmentRenderer {
-  const renderer = new WebGPURenderer({ canvas, antialias: true });
+  const renderer = new WebGPURenderer({ canvas, antialias: true, logarithmicDepthBuffer: true });
   renderer.shadowMap.enabled = true;
   const scene = new Scene();
   scene.background = new Color(0xe8ecec);
