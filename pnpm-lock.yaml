@@ -99,6 +99,16 @@ importers:
         specifier: 'catalog:'
         version: 5.0.0(@types/node@24.13.3)(happy-dom@20.14.0)(vite@8.2.2(@types/node@24.13.3))
 
+  packages/design:
+    dependencies:
+      '@planaxis/model-3d':
+        specifier: workspace:*
+        version: link:../model-3d
+    devDependencies:
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.0(@types/node@24.13.3)(happy-dom@20.14.0)(vite@8.2.2(@types/node@24.13.3))
+
   packages/geometry:
     dependencies:
       decimal.js:

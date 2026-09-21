@@ -249,7 +249,7 @@ Material resolution is deferred to the future material format. A structurally co
 
 The design descriptor is a separate durable source of design intent. It does not duplicate or override Apartment SVG architectural truth, and it must not contain Three.js objects, GPU resources, runtime texture symbols, or other renderer implementation state.
 
-The specification is accepted, but the shared `@planaxis/design` package, server design APIs, browser scenario selection, and design read/write workflow are not yet implemented.
+The shared `@planaxis/design` package implements pure Design 1.0 validation and architecture/finish-target resolution. Server design APIs, browser scenario selection, and the design read/write workflow are not yet implemented.
 
 ---
 
@@ -730,6 +730,7 @@ packages/
     parser/
     validator/
     model-3d/
+    design/
     renderer-three/
 ```
 
@@ -794,6 +795,16 @@ Expected responsibilities:
 - a separate renderer-independent runtime PBR vocabulary, without visual state in the architectural model.
 
 It must not depend on Three.js.
+
+### `design`
+
+Implements the pure shared PlanAxis Design Format 1.0 boundary. `parseDesignDescriptor(text, descriptorPath)` parses decoded JSON text, and `validateDesignDescriptor(value, descriptorPath)` validates parsed untrusted data and external path identity. Success produces a nominal, immutable `ValidatedDesignDescriptor` with `path` and `document`; only `document` represents the serialized format. Optional sections remain absent when omitted, and presentation numbers use ordinary JavaScript numeric semantics.
+
+Expected failures return `DesignValidationResult` with a JSON/format stage, stable `DESIGN_*` code, field location, and message. Validation checks recursively closed objects, path and target syntax, assignment uniqueness, and presentation values without resolving resources.
+
+`resolveDesignArchitecture(design, { path, finishTargets })` is a separate pure stage. The caller must supply the exact bound architecture identity and targets derived after full Apartment SVG validation, such as `deriveArchitecturalSurfaces(model).finishTargets`. Binding mismatches and unresolved targets return distinct structured resolution errors; missing targets are reported in assignment order without repair or fallback. Successful resolution returns the unchanged descriptor and does not establish filesystem accessibility or material validity.
+
+The package uses renderer-independent `model-3d` types only. Filesystem access, SVG loading/validation, material resolution, renderer application, and browser/server lifecycle remain outside this boundary.
 
 ### `renderer-three`
 
@@ -1052,9 +1063,9 @@ The executable repository bootstrap, authoritative numeric and geometric foundat
 
 Apartment SVG 2.2 is the normative apartment format, and the parser, validator, CLI, and trusted 2D domain pipeline are fully aligned with it. Schema and reference stages preserve the mandatory exact-decimal footprint while leaving geometry checks to the geometry stage. Successful geometric validation guarantees footprint topology, positive area, exact orthogonality, root viewBox containment, and complete stationary placement containment within the closed footprint. Hinged-door open-leaf geometry is exempt from footprint containment but remains inside the viewBox. Camera collisions compare level-local Z ranges consistently. `ValidatedApartment2D` retains the canonical footprint and unchanged level-local architectural Z values, with the level offset stored separately. Exact, renderer-independent 3D geometry foundations are implemented in `@planaxis/geometry`: `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`. Point comparisons reuse the centralized geometric tolerance, and range height is derived with exact decimal subtraction. These primitives carry no architectural or transformation semantics. `@planaxis/model-3d` implements deterministic `ArchitecturalModel3D` construction from trusted 2D input using these primitives, preserving architectural semantics and resolved relationships without renderer objects or unsupported physical assumptions. The Three.js adapter and browser 2D/3D workflow are implemented as described above.
 
-The Project Format 1.0 loading and read-only project-filesystem foundation is implemented in `apps/server/src/project/`, as described in section 8.3. Server startup selects and loads one required project root before listening on loopback, and controlled project metadata and active-architecture HTTP APIs are implemented. The browser loads project metadata and active architecture through these APIs, completing the server-backed Phase 0 workflow. Project-format validity and Apartment SVG validity remain independent. PlanAxis Design Format 1.0 is now specified, while `@planaxis/design`, server/browser design loading and persistence, persistent material management, and redesign remain future implementation work.
+The Project Format 1.0 loading and read-only project-filesystem foundation is implemented in `apps/server/src/project/`, as described in section 8.3. Server startup selects and loads one required project root before listening on loopback, and controlled project metadata and active-architecture HTTP APIs are implemented. The browser loads project metadata and active architecture through these APIs, completing the server-backed Phase 0 workflow. Project-format validity and Apartment SVG validity remain independent. PlanAxis Design Format 1.0 validation and pure architecture/finish-target resolution are implemented in `@planaxis/design`. Server/browser design loading and persistence, persistent material management, and redesign remain future implementation work.
 
-Phase 1 includes exact designable surfaces with shared physical mapping frames, renderer UV generation, transient texture-capable metallic/roughness PBR finish assignments with non-overlapping coverage, and zero-thickness transmissive glass (sections 5.8–5.9). Built-in environment lighting and transient intensity, yaw, tone-mapping, and EV exposure controls complete the Phase 1 presentation foundation. Design Format 1.0 now defines the Phase 2 persistence contract, but its implementation remains subsequent work together with later material/environment assets, lighting design, and post-processing.
+Phase 1 includes exact designable surfaces with shared physical mapping frames, renderer UV generation, transient texture-capable metallic/roughness PBR finish assignments with non-overlapping coverage, and zero-thickness transmissive glass (sections 5.8–5.9). Built-in environment lighting and transient intensity, yaw, tone-mapping, and EV exposure controls complete the Phase 1 presentation foundation. The shared Design Format 1.0 package establishes the Phase 2 format and resolution foundation; application integration and persistence remain subsequent work together with later material/environment assets, lighting design, and post-processing.
 
 The intended implementation order is now broadly:
 

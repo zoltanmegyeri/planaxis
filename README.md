@@ -8,7 +8,7 @@ The project is built around the versioned, normative [Apartment SVG 2.2 specific
 
 PlanAxis has also adopted the versioned [PlanAxis Project Format 1.0 specification](docs/specifications/planaxis-project/1.0.md) as the top-level container for filesystem-backed renovation projects. The project manifest organizes architecture and project resources without replacing Apartment SVG as the source of architectural truth.
 
-The versioned [PlanAxis Design Format 1.0 specification](docs/specifications/planaxis-design/1.0.md) defines durable renderer-independent design scenarios bound to one Apartment SVG architecture. It currently specifies persistent finish-target-to-material-resource references plus optional tone-mapping and exposure overrides; Phase 2 implementation of design discovery, loading, resolution, editing, and persistence remains pending.
+The versioned [PlanAxis Design Format 1.0 specification](docs/specifications/planaxis-design/1.0.md) defines durable renderer-independent design scenarios bound to one Apartment SVG architecture. The shared `@planaxis/design` package implements JSON and descriptor-path validation, exact architecture binding, and finish-target resolution. Server/browser discovery, loading, editing, and persistence remain pending Phase 2 integration.
 
 > [!NOTE]
 > The React browser application is the first official user-facing entry point. It automatically loads the server-selected project’s active SVG for validation and read-only 2D/3D viewing. The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG 2.2 parser and complete validation pipeline, developer validation CLI, and normalized `ValidatedApartment2D` domain model are in place. Validation enforces canonical footprint geometry, complete stationary placement containment, and level-local camera collisions. The trusted model retains the exact-decimal footprint and level-local architectural Z values. Exact, renderer-independent `ArchitecturalModel3D` construction is implemented in `@planaxis/model-3d`. Interactive 3D viewing is implemented in `@planaxis/renderer-three`; see the browser workflow below. The Project Format 1.0 loader and read-only project-filesystem foundation are implemented in the server. The server now requires one project at startup, binds to loopback, and exposes controlled metadata and active-architecture HTTP APIs. The browser validates the API metadata and feeds the fetched SVG into the existing browser-side pipeline, completing Phase 0.
@@ -134,6 +134,7 @@ PlanAxis is a pnpm workspace monorepo organized around the following areas:
 │   ├── parser/
 │   ├── validator/
 │   ├── model-3d/
+│   ├── design/
 │   └── renderer-three/
 │
 ├── examples/
@@ -378,7 +379,7 @@ The parser, validator, CLI, and `ValidatedApartment2D` pipeline are aligned with
 
 PlanAxis Project Format 1.0 and ADR-004 define the implemented Phase 0 application foundation: a portable project directory, server-owned project filesystem boundary, one active project per server process, and controlled browser access to project resources. The loader, read-only filesystem boundary, project-root startup selection, loopback binding, and controlled project APIs are implemented. The browser automatically loads validated project metadata and the active SVG through those APIs while retaining browser-side Apartment SVG validation and the 2D/3D workflow.
 
-PlanAxis Design Format 1.0 is the accepted normative persistence contract for Phase 2 design scenarios. Its implementation is not yet present; `@planaxis/design`, design APIs, browser scenario selection, persistence, and architecture-resolution behavior remain Phase 2 work.
+PlanAxis Design Format 1.0 is the accepted normative persistence contract for Phase 2 design scenarios. `@planaxis/design` provides `parseDesignDescriptor(text, descriptorPath)` and `validateDesignDescriptor(value, descriptorPath)`, returning an immutable, format-conformant descriptor with external `path` identity and a separate `document` containing only serialized fields. JSON syntax and format failures have structured codes and field locations. `resolveDesignArchitecture(design, { path, finishTargets })` checks exact binding and reports all unresolved targets against caller-supplied targets derived from a fully validated architecture. The package performs no filesystem access, SVG loading, material interpretation, or rendering. Design APIs, browser scenario selection, and persistence remain Phase 2 integration work.
 
 Each implementation phase should have explicit acceptance criteria and automated tests.
 
