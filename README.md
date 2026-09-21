@@ -8,6 +8,8 @@ The project is built around the versioned, normative [Apartment SVG 2.2 specific
 
 PlanAxis has also adopted the versioned [PlanAxis Project Format 1.0 specification](docs/specifications/planaxis-project/1.0.md) as the top-level container for filesystem-backed renovation projects. The project manifest organizes architecture and project resources without replacing Apartment SVG as the source of architectural truth.
 
+The versioned [PlanAxis Design Format 1.0 specification](docs/specifications/planaxis-design/1.0.md) defines durable renderer-independent design scenarios bound to one Apartment SVG architecture. It currently specifies persistent finish-target-to-material-resource references plus optional tone-mapping and exposure overrides; Phase 2 implementation of design discovery, loading, resolution, editing, and persistence remains pending.
+
 > [!NOTE]
 > The React browser application is the first official user-facing entry point. It automatically loads the server-selected project’s active SVG for validation and read-only 2D/3D viewing. The executable TypeScript monorepo foundation, exact-decimal geometry primitives, Apartment SVG 2.2 parser and complete validation pipeline, developer validation CLI, and normalized `ValidatedApartment2D` domain model are in place. Validation enforces canonical footprint geometry, complete stationary placement containment, and level-local camera collisions. The trusted model retains the exact-decimal footprint and level-local architectural Z values. Exact, renderer-independent `ArchitecturalModel3D` construction is implemented in `@planaxis/model-3d`. Interactive 3D viewing is implemented in `@planaxis/renderer-three`; see the browser workflow below. The Project Format 1.0 loader and read-only project-filesystem foundation are implemented in the server. The server now requires one project at startup, binds to loopback, and exposes controlled metadata and active-architecture HTTP APIs. The browser validates the API metadata and feeds the fetched SVG into the existing browser-side pipeline, completing Phase 0.
 
@@ -143,7 +145,8 @@ PlanAxis is a pnpm workspace monorepo organized around the following areas:
 ├── docs/
 │   ├── specifications/
 │   │   ├── apartment-svg/
-│   │   └── planaxis-project/
+│   │   ├── planaxis-project/
+│   │   └── planaxis-design/
 │   ├── architecture/
 │   ├── development/
 │   ├── decisions/
@@ -237,7 +240,7 @@ Window planes use physically based transmission with zero thickness and qualitat
 
 The 3D toolbar offers **Tone mapping** (AgX by default, ACES Filmic, or Neutral), **Exposure** (−4 to +4 EV in 0.1-stop increments), **Environment intensity** (0–4 in 0.1 increments), and **Environment rotation** (0–360° in 1° increments). Defaults are 0 EV, intensity 1, and rotation 0°. Exposure converts to the renderer multiplier as `2 ** EV`; positive environment yaw turns architectural +X toward +Y. Controls update the next frame immediately and remain disabled until initialization completes. Camera, Walk, lens, resize, and Focus view changes preserve presentation selections for the viewport lifetime. Focus view hides the toolbar.
 
-Presentation settings are transient React/renderer state. They never enter Apartment SVG, `ArchitecturalModel3D`, local storage, or project files. Persistent material/environment assets, presentation and design-scenario persistence, lighting design, and post-processing remain future work.
+Presentation settings are currently transient React/renderer state. PlanAxis Design Format 1.0 now defines durable scenario-level tone-mapping and exposure overrides, but that persistence path is not implemented yet. Persistent material/environment assets, material interpretation, lighting design, and post-processing remain future work.
 
 The dedicated `@planaxis/renderer-three` adapter provides WebGPU-first Three.js rendering with its supported WebGL2 fallback. It converts exact centimeters to meters only at the renderer boundary, mapping PlanAxis `(X, Y, Z)` to Three.js `(X, Z, Y)`. Valid documents support 2D/3D switching, orbit inspection, embedded-camera viewing, and free-walk navigation; invalid documents retain the 2D diagnostic workflow. Persistent material assets, advanced lighting, and AI-assisted features remain future stages.
 
@@ -278,7 +281,7 @@ The implemented endpoints are:
 
 Apartment SVG contents are served unchanged even when invalid; parsing and validation remain downstream. The server does not expose the complete project root, other resources, or `.planaxis/`, and does not serve the React application or add CORS integration.
 
-The browser uses the two project APIs through the development-only Vite proxy described above. Fastify does not serve the React build; the two-process development flow is the supported browser startup workflow. Persistent assets, material management, design scenarios, and redesign remain unimplemented.
+The browser uses the two project APIs through the development-only Vite proxy described above. Fastify does not serve the React build; the two-process development flow is the supported browser startup workflow. PlanAxis Design Format 1.0 is specified, but design discovery/loading/editing/persistence, persistent assets, material management, and redesign remain unimplemented.
 
 ## Validate an Apartment SVG
 
@@ -307,6 +310,8 @@ Project documentation lives under [`docs/`](docs/).
 The [Apartment SVG 2.2 specification](docs/specifications/apartment-svg/2.2.md) defines the external apartment format, validation rules, geometric invariants, reference semantics, footprint and containment semantics, architectural Z semantics, and canonical interpretation rules.
 
 The [PlanAxis Project Format 1.0 specification](docs/specifications/planaxis-project/1.0.md) defines the portable filesystem-backed project container, root manifest, reserved directory roles, project-relative path semantics, and project-root filesystem boundary. It does not redefine Apartment SVG geometry.
+
+The [PlanAxis Design Format 1.0 specification](docs/specifications/planaxis-design/1.0.md) defines durable design-scenario descriptors under `designs/`, strict binding to one Apartment SVG architecture, persistent finish assignments through project-local material-resource references, and optional presentation overrides. Material-resource semantics remain outside Design Format 1.0.
 
 ### Architecture
 
@@ -372,6 +377,8 @@ The executable pipeline through `ValidatedApartment2D` is implemented: Apartment
 The parser, validator, CLI, and `ValidatedApartment2D` pipeline are aligned with Apartment SVG 2.2. Successful validation guarantees a simple, positive-area orthogonal footprint within the root `viewBox`, complete stationary geometry containment within its closed region, and level-local camera collision checks. Hinged-door open-leaf points may extend beyond the footprint but must remain within the `viewBox`. The trusted domain model exposes the canonical footprint separately from root bounds and includes the same footprint instance in its semantic ID index. Architectural Z values remain level-local, with `metadata.level.baseZ` retained separately for 3D construction. The geometry package now exposes `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`, with exact and tolerance-aware point equality and exact range-height derivation. `@planaxis/model-3d` now exports `buildArchitecturalModel3D(ValidatedApartment2D)`: it constructs floor and default ceiling surfaces, wall envelopes, window/door opening prisms, fixed-element volumes, utility positions, and exact camera definitions. It preserves architectural semantics and resolved relationships through constructed 3D instances and a source-semantic ID index. Model-space Z applies the level offset exactly once; X/Y remain unchanged. No slab thickness, physical door-leaf geometry, renderer tessellation, or renderer objects are inferred. The renderer adapter, browser inspection workflow, and free-walk navigation are implemented. Persistent material assets, advanced lighting, and AI-assisted features remain future stages.
 
 PlanAxis Project Format 1.0 and ADR-004 define the implemented Phase 0 application foundation: a portable project directory, server-owned project filesystem boundary, one active project per server process, and controlled browser access to project resources. The loader, read-only filesystem boundary, project-root startup selection, loopback binding, and controlled project APIs are implemented. The browser automatically loads validated project metadata and the active SVG through those APIs while retaining browser-side Apartment SVG validation and the 2D/3D workflow.
+
+PlanAxis Design Format 1.0 is the accepted normative persistence contract for Phase 2 design scenarios. Its implementation is not yet present; `@planaxis/design`, design APIs, browser scenario selection, persistence, and architecture-resolution behavior remain Phase 2 work.
 
 Each implementation phase should have explicit acceptance criteria and automated tests.
 

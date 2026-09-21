@@ -18,6 +18,7 @@ Normative format behavior is defined by:
 ```text
 docs/specifications/apartment-svg/2.2.md
 docs/specifications/planaxis-project/1.0.md
+docs/specifications/planaxis-design/1.0.md
 ```
 
 Tests must verify implementation against the applicable specification. They must not accidentally redefine it.
@@ -30,9 +31,11 @@ The PlanAxis test suite should provide confidence that:
 
 - Apartment SVG documents are interpreted deterministically;
 - PlanAxis projects and project-relative paths are interpreted according to Project Format 1.0;
+- PlanAxis design descriptors are interpreted according to Design Format 1.0;
 - valid inputs are accepted;
 - invalid inputs are rejected for the correct reason;
 - project-format validity remains separate from Apartment SVG validity;
+- design-format conformance remains separate from project resolution, architecture resolution, and future material resolution;
 - project filesystem access cannot escape the canonical project root;
 - exact decimal arithmetic is preserved in authoritative geometry;
 - parser, validator, domain, project-filesystem, 3D model, and renderer responsibilities remain separated;
@@ -57,6 +60,7 @@ Good targets include:
 
 - accepted or rejected Apartment SVG documents;
 - accepted or rejected project manifests and project-relative paths;
+- accepted or rejected Design 1.0 descriptors and architecture-resolution outcomes;
 - structured validation errors;
 - exact derived geometry;
 - project-root containment behavior;
@@ -73,6 +77,8 @@ Tests should permit safe refactoring without losing behavioral coverage.
 For Apartment SVG behavior, expected results must come from the Apartment SVG specification.
 
 For project-container, manifest, path, and project-filesystem behavior, expected results must come from the PlanAxis Project Format specification and accepted architecture/ADR constraints.
+
+For design-descriptor structure, strict architecture binding, finish-assignment semantics, persisted presentation overrides, and resolution boundaries, expected results must come from the PlanAxis Design Format specification.
 
 Do not encode an implementation bug into a test merely because the current implementation behaves that way.
 

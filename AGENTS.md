@@ -97,9 +97,40 @@ Do not:
 - bypass project-root containment;
 - traverse project-resource symbolic links contrary to the specification;
 - place irreplaceable or authoritative project information only under `.planaxis/`;
-- invent future material, model-asset, or design schemas as a side effect of project-container work.
+- invent future material or model-asset schemas, or design semantics outside the accepted PlanAxis Design Format, as a side effect of project-container work.
 
 A Project Format change must be deliberate and versioned. Do not silently widen or reinterpret the accepted format for implementation convenience.
+
+### PlanAxis Design Format specification
+
+The normative design-scenario specification is:
+
+```text
+docs/specifications/planaxis-design/1.0.md
+```
+
+It defines durable renderer-independent design descriptors under `designs/`, including:
+
+- identity by descriptor project-relative path;
+- the required human-readable `name`;
+- strict binding to exactly one Apartment SVG architecture;
+- persistent finish assignments addressed by stable finish-target IDs;
+- project-relative material references under `assets/materials/` without material-resource existence or content semantics in Design 1.0;
+- optional tone-mapping and exposure presentation overrides;
+- recursively closed JSON structures;
+- the distinction between design-format conformance, project resolution, architecture resolution, and future material resolution.
+
+Treat it as normative for design-descriptor semantics.
+
+Do not:
+
+- duplicate architectural geometry in a design descriptor;
+- implicitly apply a design to an architecture other than its declared binding;
+- invent material semantics while implementing Design 1.0;
+- silently repair stale or unresolved finish targets;
+- add undocumented design properties or extension fields.
+
+A Design Format change must be deliberate and versioned. Do not silently widen or reinterpret the accepted format for implementation convenience.
 
 ### Architecture
 
@@ -364,13 +395,14 @@ In particular, the agent may and, when relevant, must read authoritative documen
 AGENTS.md
 docs/specifications/apartment-svg/2.2.md
 docs/specifications/planaxis-project/1.0.md
+docs/specifications/planaxis-design/1.0.md
 docs/architecture/overview.md
 docs/development/coding-guidelines.md
 docs/development/testing.md
 docs/decisions/
 ```
 
-The Apartment SVG specification, PlanAxis Project Format specification, and other non-task specifications remain valid sources of truth and are not affected by the `docs/tasks/` access restriction.
+The Apartment SVG specification, PlanAxis Project Format specification, PlanAxis Design Format specification, and other non-task specifications remain valid sources of truth and are not affected by the `docs/tasks/` access restriction.
 
 If the assigned task description references a relevant repository document outside `docs/tasks/`, read it as required.
 
@@ -413,8 +445,9 @@ For a formal delegated task after the applicable safety check succeeds:
 2. Read the non-task repository documents explicitly required by that description.
 3. Read the normative Apartment SVG sections relevant to the task when applicable.
 4. Read the PlanAxis Project Format specification when the task concerns project containers, project files, project paths, persistence, project-serving APIs, or project filesystem access.
-5. Read relevant architecture, coding, testing, and ADR documents.
-6. Inspect the existing implementation, tests, and, during review continuation, the current task working set before introducing further changes.
+5. Read the PlanAxis Design Format specification when the task concerns design descriptors, design persistence, architecture binding, finish assignments, persisted presentation overrides, or design-resolution behavior.
+6. Read relevant architecture, coding, testing, and ADR documents.
+7. Inspect the existing implementation, tests, and, during review continuation, the current task working set before introducing further changes.
 
 For other coding-agent work, after the initial-execution preflight succeeds:
 
@@ -478,9 +511,11 @@ For Apartment SVG parser and validator work, cover both:
 
 For PlanAxis Project Format work, cover valid and invalid manifests and paths, root containment, symbolic-link behavior where the host supports it, and the normative separation between project-format validity and Apartment SVG validity.
 
+For PlanAxis Design Format work, cover valid and invalid descriptors, recursive closed-schema rules, project-relative architecture/material paths, duplicate finish-target rejection, strict architecture binding, finish-target resolution, and the normative separation between structural conformance and project/architecture/material resolution.
+
 Prefer small, focused fixtures or isolated temporary project trees that isolate one rule.
 
-When implementing a normative Apartment SVG or PlanAxis Project Format rule, derive expected behavior from the corresponding specification, not from the current implementation.
+When implementing a normative Apartment SVG, PlanAxis Project Format, or PlanAxis Design Format rule, derive expected behavior from the corresponding specification, not from the current implementation.
 
 Regression fixes should include a test that fails without the fix whenever practical.
 
@@ -890,7 +925,7 @@ Prefer, in this order:
 1. this repository-level `AGENTS.md` and any more specific applicable `AGENTS.md`;
 2. for a formal delegated task, the exact assigned task description;
 3. for other coding-agent work, the explicit user/task requirements;
-4. the applicable normative specification for format semantics, including Apartment SVG and PlanAxis Project Format;
+4. the applicable normative specification for format semantics, including Apartment SVG, PlanAxis Project Format, and PlanAxis Design Format;
 5. accepted ADRs for established architectural decisions;
 6. current architecture documentation;
 7. coding and testing guidelines;

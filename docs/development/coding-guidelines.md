@@ -18,9 +18,10 @@ Normative external formats are defined by:
 ```text
 docs/specifications/apartment-svg/2.2.md
 docs/specifications/planaxis-project/1.0.md
+docs/specifications/planaxis-design/1.0.md
 ```
 
-These guidelines describe how PlanAxis code should be written. They do not redefine Apartment SVG semantics, PlanAxis Project Format semantics, or architecture.
+These guidelines describe how PlanAxis code should be written. They do not redefine Apartment SVG semantics, PlanAxis Project Format semantics, PlanAxis Design Format semantics, or architecture.
 
 When a rule in this document conflicts with an applicable normative specification, the specification governs that format behavior. When a rule conflicts with an accepted Architectural Decision Record, the ADR governs the architectural decision.
 
@@ -131,6 +132,7 @@ Examples include:
 
 - parsed metadata JSON before schema validation;
 - parsed `planaxis.project.json` before Project Format validation;
+- parsed design-descriptor JSON before Design Format validation;
 - external API payloads;
 - configuration loaded from unknown sources.
 
@@ -149,7 +151,7 @@ const raw: unknown = JSON.parse(text);
 const metadata = validateApartmentMetadata(raw);
 ```
 
-The same principle applies to project manifests and future project-local descriptors.
+The same principle applies to project manifests, Design 1.0 descriptors, and future project-local descriptors.
 
 ### 4.5. Prefer explicit return types on public APIs
 
@@ -475,6 +477,8 @@ The processing stages defined by the architecture should remain observable and t
 
 The same distinction applies to `planaxis.project.json`: JSON parsing is not Project Format validation, and Project Format validation is not Apartment SVG validation.
 
+Likewise, parsing a design JSON object is not Design Format validation; Design Format conformance is distinct from project/architecture resolution, and material resolution remains outside Design Format 1.0.
+
 ### 9.2. Do not guess
 
 Parser and validator code must not infer missing required information.
@@ -519,6 +523,8 @@ Apartment SVG validation errors should support the information required by the A
 
 Project Format errors should remain distinguishable from Apartment SVG errors and should identify the relevant manifest or path rule without unnecessarily exposing private machine-local filesystem details to an untrusted client.
 
+Design Format errors should remain distinguishable from project-filesystem failures, Apartment SVG validation failures, stale/unresolved finish targets, and future material-resolution failures.
+
 ### 10.2. Validation failures are expected domain outcomes
 
 Invalid user input is not an exceptional programming failure.
@@ -529,7 +535,7 @@ Exceptions are appropriate for unexpected internal failures, violated programmer
 
 ### 10.3. Preserve useful error context
 
-Do not replace precise failures with generic messages such as `Invalid apartment.` or `Invalid project.` when actionable structured context is available.
+Do not replace precise failures with generic messages such as `Invalid apartment.`, `Invalid project.`, or `Invalid design.` when actionable structured context is available.
 
 ### 10.4. Validation functions should be deterministic
 

@@ -71,6 +71,12 @@ For PlanAxis project-container, manifest, path, or filesystem-boundary behavior,
 docs/specifications/planaxis-project/1.0.md
 ```
 
+For durable design-scenario descriptors, architecture binding, finish assignments, and persisted presentation overrides, the normative specification is:
+
+```text
+docs/specifications/planaxis-design/1.0.md
+```
+
 For established architectural decisions, review:
 
 ```text
@@ -79,7 +85,7 @@ docs/decisions/
 
 For filesystem-backed project operation specifically, see `docs/decisions/ADR-004-filesystem-backed-projects.md`.
 
-The Apartment SVG specification is normative for apartment-format semantics. The PlanAxis Project Format specification is normative for filesystem-backed project semantics. Implementation convenience is not a reason to reinterpret, weaken, or silently extend either format.
+The Apartment SVG specification is normative for apartment-format semantics. The PlanAxis Project Format specification is normative for filesystem-backed project semantics. The PlanAxis Design Format specification is normative for durable design-scenario semantics. Implementation convenience is not a reason to reinterpret, weaken, or silently extend these formats.
 
 ---
 
@@ -228,13 +234,14 @@ A feature proposal should explain:
 - the expected user or developer benefit;
 - whether the feature affects Apartment SVG semantics;
 - whether it affects PlanAxis Project Format semantics;
+- whether it affects PlanAxis Design Format semantics;
 - whether it affects architecture or only implementation;
 - likely compatibility impact;
 - any relevant alternatives.
 
-Do not implement undocumented extensions to Apartment SVG or PlanAxis Project Format as ordinary feature work.
+Do not implement undocumented extensions to Apartment SVG, PlanAxis Project Format, or PlanAxis Design Format as ordinary feature work.
 
-If a proposal requires changing either format, treat it as a specification change.
+If a proposal requires changing any of these formats, treat it as a specification change.
 
 ---
 
@@ -280,7 +287,21 @@ docs/specifications/planaxis-project/
 
 must be deliberate specification work. A format change should include compatibility and migration analysis where relevant, plus updates to architecture, ADRs, implementation, and tests.
 
-Future material, model-asset, and design descriptor formats should receive their own contracts when concrete requirements justify them rather than being silently added to Project Format 1.0.
+Future material and model-asset formats should receive their own contracts when concrete requirements justify them rather than being silently added to Project Format 1.0.
+
+### PlanAxis Design Format changes
+
+PlanAxis Design Format is normative and independently versioned.
+
+Changes to:
+
+```text
+docs/specifications/planaxis-design/
+```
+
+must be deliberate specification work. A format change should include compatibility and migration analysis where relevant, plus updates to architecture, implementation, tests, and related format documentation.
+
+Do not expand PlanAxis Design Format merely to avoid defining a future material or model-asset contract.
 
 ---
 
@@ -802,6 +823,7 @@ A contribution is normally ready for review when:
 - code follows the coding guidelines;
 - Apartment SVG behavior matches the normative specification when applicable;
 - PlanAxis Project Format behavior matches its normative specification when applicable;
+- PlanAxis Design Format behavior matches its normative specification when applicable;
 - architecture boundaries remain intact;
 - tests cover the changed behavior;
 - regression coverage exists for bug fixes where practical;
