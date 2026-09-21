@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@planaxis/design": "workspace:*",
     "fastify": "5.12.1"
   },
   "devDependencies": {

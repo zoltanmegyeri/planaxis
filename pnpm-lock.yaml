@@ -48,6 +48,9 @@ importers:
 
   apps/server:
     dependencies:
+      '@planaxis/design':
+        specifier: workspace:*
+        version: link:../../packages/design
       fastify:
         specifier: 5.12.1
         version: 5.12.1
