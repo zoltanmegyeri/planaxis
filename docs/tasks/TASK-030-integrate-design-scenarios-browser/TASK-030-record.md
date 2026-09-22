@@ -2,11 +2,11 @@
 
 ## Task Metadata
 
-- **Status:** Ready
+- **Status:** In Progress
 - **Created:** 2026-09-22
-- **Issued:** —
+- **Issued:** 2026-09-22
 - **Completed:** —
-- **Agent:** —
+- **Agent:** Codex
 - **Repository:** PlanAxis
 - **Description:** `TASK-030-description.md`
 - **Related tasks:** TASK-028, TASK-029
