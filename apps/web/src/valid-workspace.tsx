@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ReactElement } from "react";
 import type { ArchitecturalModel3D } from "@planaxis/model-3d";
+import type { ScenarioPresentation } from "./design-presentation.js";
 import { SvgViewport } from "./svg-viewport.js";
 import { ThreeViewport } from "./three-viewport.js";
 
@@ -10,12 +11,14 @@ export function ValidWorkspace({
   model,
   onFailure,
   isFocusView,
+  scenarioPresentation,
 }: {
   source: string;
   name: string;
   model: ArchitecturalModel3D;
   onFailure: (error: unknown) => void;
   isFocusView: boolean;
+  scenarioPresentation?: ScenarioPresentation | undefined;
 }): ReactElement {
   const [view, setView] = useState<"2D" | "3D">("2D");
   return (
@@ -35,7 +38,12 @@ export function ValidWorkspace({
       {view === "2D" ? (
         <SvgViewport source={source} name={name} isFocusView={isFocusView} />
       ) : (
-        <ThreeViewport model={model} onFailure={onFailure} isFocusView={isFocusView} />
+        <ThreeViewport
+          scenarioPresentation={scenarioPresentation}
+          model={model}
+          onFailure={onFailure}
+          isFocusView={isFocusView}
+        />
       )}
     </div>
   );

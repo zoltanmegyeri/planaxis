@@ -447,3 +447,48 @@ dd {
   min-height: 0;
   height: auto;
 }
+
+.design-panel {
+  flex-shrink: 0;
+  max-height: 40dvh;
+  overflow: auto;
+  padding: 10px 24px;
+  border-bottom: 1px solid #dbe1dc;
+  background: #fff;
+  font-size: 13px;
+}
+.design-panel label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 16px 8px 0;
+}
+.design-panel input,
+.design-panel select {
+  min-width: 0;
+  max-width: 100%;
+  padding: 7px;
+  border: 1px solid #ccd4ce;
+  border-radius: 5px;
+  font: inherit;
+  color: inherit;
+  background: #fff;
+}
+.design-panel p {
+  margin-bottom: 8px;
+}
+.design-panel details {
+  margin-top: 8px;
+}
+.design-panel summary {
+  cursor: pointer;
+}
+.design-panel fieldset {
+  margin: 12px 0;
+  border: 1px solid #dbe1dc;
+  border-radius: 7px;
+}
+.design-panel [role="alert"] {
+  color: #853d21;
+  overflow-wrap: anywhere;
+}

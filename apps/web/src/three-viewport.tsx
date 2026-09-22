@@ -21,6 +21,8 @@ import {
 } from "./render-aspect-ratio.js";
 import type { RenderAspectRatio } from "./render-aspect-ratio.js";
 
+import type { ScenarioPresentation } from "./design-presentation.js";
+
 // Not a valid Apartment SVG ID, so an embedded camera cannot shadow this choice.
 const WALK_VIEW = "@walk";
 
@@ -28,10 +30,12 @@ export function ThreeViewport({
   model,
   onFailure,
   isFocusView = false,
+  scenarioPresentation,
 }: {
   model: ArchitecturalModel3D;
   onFailure: (error: unknown) => void;
   isFocusView?: boolean;
+  scenarioPresentation?: ScenarioPresentation | undefined;
 }): ReactElement {
   const renderArea = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -43,7 +47,10 @@ export function ThreeViewport({
   const aspectRatioRef = useRef<RenderAspectRatio>(aspectRatio);
   aspectRatioRef.current = aspectRatio;
   const [ready, setReady] = useState(false);
-  const [presentation, setPresentation] = useState(DEFAULT_PRESENTATION_SETTINGS);
+  const [presentation, setPresentation] = useState(() => ({
+    ...DEFAULT_PRESENTATION_SETTINGS,
+    ...scenarioPresentation,
+  }));
   const presentationRef = useRef(presentation);
   presentationRef.current = presentation;
   const updatePresentation = (update: Partial<RendererPresentationSettings>): void => {
@@ -56,6 +63,17 @@ export function ThreeViewport({
       onFailure(error);
     }
   };
+  useEffect(() => {
+    if (scenarioPresentation === undefined) return;
+    const next = { ...presentationRef.current, ...scenarioPresentation };
+    try {
+      renderer.current?.setPresentationSettings(next);
+      presentationRef.current = next;
+      setPresentation(next);
+    } catch (error) {
+      onFailure(error);
+    }
+  }, [scenarioPresentation, onFailure]);
   useEffect(() => {
     const element = canvas.current;
     const area = renderArea.current;
@@ -193,7 +211,7 @@ export function ThreeViewport({
           <select
             aria-label="3D tone mapping"
             value={presentation.toneMapping}
-            disabled={!ready}
+            disabled={!ready || scenarioPresentation !== undefined}
             onChange={(event) => {
               const toneMapping = event.target.value;
               if (isPresentationToneMapping(toneMapping)) updatePresentation({ toneMapping });
@@ -211,14 +229,17 @@ export function ThreeViewport({
           <input
             type="range"
             aria-label="3D exposure (EV)"
-            min={-4}
-            max={4}
+            min={Math.min(-4, presentation.exposureEv)}
+            max={Math.max(4, presentation.exposureEv)}
             step={0.1}
             value={presentation.exposureEv}
-            disabled={!ready}
+            disabled={!ready || scenarioPresentation !== undefined}
             onChange={(event) => updatePresentation({ exposureEv: Number(event.target.value) })}
           />
         </label>
+        {scenarioPresentation !== undefined && (
+          <span>Edit tone mapping and exposure in the design editor.</span>
+        )}
         <label className="presentation-slider">
           Environment intensity: {presentation.environmentIntensity}
           <input

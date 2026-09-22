@@ -42,6 +42,7 @@ const metadata = {
 const fetchMock = vi.fn<typeof fetch>();
 function serveProject(source = validSource): void {
   fetchMock.mockImplementation(async (url) => {
+    if (url === "/api/project/designs") return Response.json({ designs: [] });
     if (url === "/api/project") return Response.json(metadata);
     if (url === "/api/project/architecture") return new Response(source);
     throw new Error(`Unexpected URL: ${String(url)}`);
@@ -117,6 +118,7 @@ it("loads metadata then active architecture through fixed relative URLs", async 
   expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
     "/api/project",
     "/api/project/architecture",
+    "/api/project/designs",
   ]);
   expect(host.querySelector('[role="status"]')?.textContent).toBe("Valid");
   expect(host.textContent).toContain("trusted 2D apartment model is ready");
@@ -136,7 +138,7 @@ it("does not load dropped files or create drop overlays", async () => {
     await act(async () => host.firstElementChild?.dispatchEvent(event));
   }
   expect(read).not.toHaveBeenCalled();
-  expect(fetchMock).toHaveBeenCalledTimes(2);
+  expect(fetchMock).toHaveBeenCalledTimes(3);
   expect(host.querySelector("img")).toBe(image);
   expect(host.querySelector(".drop-overlay")).toBeNull();
 });
@@ -254,7 +256,7 @@ it.each(["metadata", "architecture", "body"])(
       body.resolve(validSource);
     });
     expect(process).not.toHaveBeenCalled();
-    expect(fetchMock).toHaveBeenCalledTimes(stage === "metadata" ? 1 : 2);
+    expect(fetchMock).toHaveBeenCalledTimes(stage === "metadata" ? 1 : 3);
     expect(host.textContent).toBe("");
   },
 );
@@ -279,7 +281,7 @@ it.each(["success", "failure"])(
     expect(host.textContent).toContain(metadata.name);
     expect(host.textContent).not.toContain("Stale project");
     expect(host.querySelector('[role="status"]')?.textContent).toBe("Valid");
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   },
 );
 
@@ -422,7 +424,7 @@ it("exits Focus view with Escape while preserving the active 3D view and camera"
   await mountProject(fixture("valid/minimal-semantic-schema.svg"));
   await clickView("3D");
   const canvas = host.querySelector("canvas");
-  const select = host.querySelector<HTMLSelectElement>("select");
+  const select = host.querySelector<HTMLSelectElement>('[aria-label="3D camera"]');
   if (!canvas || !select) throw new Error("Missing 3D viewport");
   await act(async () => {
     select.value = "camera-1";
@@ -552,7 +554,7 @@ it("switches valid views without processing again, selects embedded cameras and 
   expect(rendererMocks.setModel).toHaveBeenCalledWith(
     expect.objectContaining({ walls: expect.any(Array) }),
   );
-  const select = host.querySelector("select");
+  const select = host.querySelector<HTMLSelectElement>('[aria-label="3D camera"]');
   if (!select) throw new Error("Missing camera selector");
   expect([...select.options].map((option) => option.text)).toEqual([
     "Inspection / orbit",
@@ -574,7 +576,7 @@ it("switches valid views without processing again, selects embedded cameras and 
   expect(host.querySelector("img")).not.toBeNull();
   await clickView("3D");
   expect(process).toHaveBeenCalledTimes(1);
-  expect(fetchMock).toHaveBeenCalledTimes(2);
+  expect(fetchMock).toHaveBeenCalledTimes(3);
   await remountProject(svg);
   expect(rendererMocks.dispose).toHaveBeenCalledTimes(2);
   expect(host.querySelector("canvas")).toBeNull();
@@ -801,7 +803,7 @@ it("labels presentation controls, waits for readiness, and applies each transien
   expect(rendererMocks.setPresentationSettings).toHaveBeenCalledTimes(calls);
   expect(rendererMocks.setModel).toHaveBeenCalledTimes(1);
   expect(rendererMocks.dispose).not.toHaveBeenCalled();
-  expect(fetchMock).toHaveBeenCalledTimes(2);
+  expect(fetchMock).toHaveBeenCalledTimes(3);
 });
 
 it("reports a presentation API failure through the existing renderer failure workflow", async () => {

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
+import { DesignPanel } from "./design-panel.js";
+import { useDesign } from "./use-design.js";
 import { ValidWorkspace } from "./valid-workspace.js";
 import { SvgViewport } from "./svg-viewport.js";
 import { useDocument } from "./use-document.js";
@@ -15,8 +17,19 @@ const STATUS_LABELS = {
 };
 
 export function App(): ReactElement {
-  const { document, rendererFailure } = useDocument();
-  const project = "project" in document ? document.project : undefined;
+  const active = useDocument();
+  const design = useDesign(active.document);
+  const project = "project" in active.document ? active.document.project : undefined;
+  const document =
+    design.document ??
+    (project === undefined
+      ? active.document
+      : {
+          status: "processing" as const,
+          project,
+        });
+  const rendererFailure = design.selectedPath ? design.rendererFailure : active.rendererFailure;
+  const architecturePath = design.architecturePath ?? "No architecture loaded";
   const [showDetails, setShowDetails] = useState(true);
   const [isFocusView, setIsFocusView] = useState(false);
   const source = "source" in document ? document.source : undefined;
@@ -49,10 +62,13 @@ export function App(): ReactElement {
           <span className={`status ${document.status}`} role="status">
             {document.status === "failure" && document.kind === "renderer"
               ? "Renderer failure"
-              : STATUS_LABELS[document.status]}
+              : design.selectedPath && !design.loading && !design.document
+                ? "Design unavailable"
+                : STATUS_LABELS[document.status]}
           </span>
         </div>
       </header>
+      {project && <DesignPanel workflow={design} hidden={isFocusView} />}
       {document.status === "loading" || document.status === "project-failure" ? (
         <section className="empty-state">
           <div className="empty-card">
@@ -69,8 +85,8 @@ export function App(): ReactElement {
       ) : (
         <>
           <div className="workspace-bar focus-view-hidden" hidden={isFocusView}>
-            <span className="architecture-path" title={document.project.architecture.active}>
-              {document.project.architecture.active} · Apartment SVG 2.2
+            <span className="architecture-path" title={architecturePath}>
+              {architecturePath} · Apartment SVG 2.2
             </span>
             <div className="workspace-actions">
               <button
@@ -91,21 +107,29 @@ export function App(): ReactElement {
             <div className="preview-area">
               {document.status === "valid" ? (
                 <ValidWorkspace
+                  key={design.selectedPath}
                   source={document.source}
-                  name={document.project.architecture.active}
+                  name={architecturePath}
                   model={document.architecturalModel}
                   onFailure={rendererFailure}
                   isFocusView={isFocusView}
+                  scenarioPresentation={design.presentation}
                 />
               ) : source !== undefined ? (
                 <SvgViewport
                   key={source}
                   source={source}
-                  name={document.project.architecture.active}
+                  name={architecturePath}
                   isFocusView={isFocusView}
                 />
               ) : (
-                <p className="preview-message">Loading and processing active architecture…</p>
+                <p className="preview-message">
+                  {design.loading
+                    ? "Loading design architecture…"
+                    : design.selectedPath
+                      ? "No architecture available for this selection."
+                      : "Loading and processing active architecture…"}
+                </p>
               )}
               {isFocusView && (
                 <button
@@ -126,7 +150,11 @@ export function App(): ReactElement {
                 hidden={isFocusView}
               >
                 <p className="eyebrow">Validation details</p>
-                <ValidationDetails document={document} />
+                {design.selectedPath && !design.document ? (
+                  <p>See design diagnostics above.</p>
+                ) : (
+                  <ValidationDetails document={document} />
+                )}
               </aside>
             )}
           </div>

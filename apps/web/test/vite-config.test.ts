@@ -7,12 +7,16 @@ describe("development project API proxy", () => {
     return Object.entries(proxy).find(([pattern]) => new RegExp(pattern).test(path))?.[1];
   }
 
-  it.each(["/api/project", "/api/project/architecture", "/api/project?unexpected=1"])(
-    "forwards %s to the loopback server without rewriting the request",
-    (path) => {
-      expect(targetFor(path)).toBe("http://127.0.0.1:3000");
-    },
-  );
+  it.each([
+    "/api/project",
+    "/api/project/architecture",
+    "/api/project?unexpected=1",
+    "/api/project/designs",
+    "/api/project/design?path=designs%2Fa.json",
+    "/api/project/architecture-resource?path=architecture%2Fa.svg",
+  ])("forwards %s to the loopback server without rewriting the request", (path) => {
+    expect(targetFor(path)).toBe("http://127.0.0.1:3000");
+  });
 
   it.each([
     "/api/projects",

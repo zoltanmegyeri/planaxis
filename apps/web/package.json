@@ -21,6 +21,7 @@
     "vitest": "catalog:"
   },
   "dependencies": {
+    "@planaxis/design": "workspace:*",
     "@planaxis/model": "workspace:*",
     "@planaxis/parser": "workspace:*",
     "@planaxis/validator": "workspace:*",
