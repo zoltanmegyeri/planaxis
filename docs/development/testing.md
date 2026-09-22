@@ -19,6 +19,7 @@ Normative format behavior is defined by:
 docs/specifications/apartment-svg/2.2.md
 docs/specifications/planaxis-project/1.0.md
 docs/specifications/planaxis-design/1.0.md
+docs/specifications/planaxis-material/1.0.md
 ```
 
 Tests must verify implementation against the applicable specification. They must not accidentally redefine it.
@@ -35,7 +36,8 @@ The PlanAxis test suite should provide confidence that:
 - valid inputs are accepted;
 - invalid inputs are rejected for the correct reason;
 - project-format validity remains separate from Apartment SVG validity;
-- design-format conformance remains separate from project resolution, architecture resolution, and future material resolution;
+- design-format conformance remains separate from project resolution, architecture resolution, and Material Format resolution;
+- Material Format conformance remains separate from project-resource resolution, texture decoding, and renderer adaptation;
 - project filesystem access cannot escape the canonical project root;
 - exact decimal arithmetic is preserved in authoritative geometry;
 - parser, validator, domain, project-filesystem, 3D model, and renderer responsibilities remain separated;
@@ -47,6 +49,8 @@ The PlanAxis test suite should provide confidence that:
 Tests are part of the executable specification of PlanAxis.
 
 A passing suite is necessary but not sufficient: the tests themselves must reflect normative rules correctly.
+
+For Material Format behavior, expected results must come from the PlanAxis Material Format specification. Material tests should keep descriptor validation, project-resource resolution, image decoding, and renderer adaptation observable as distinct stages rather than collapsing them into one generic success/failure path.
 
 ---
 

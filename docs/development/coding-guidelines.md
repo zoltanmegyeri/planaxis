@@ -19,9 +19,10 @@ Normative external formats are defined by:
 docs/specifications/apartment-svg/2.2.md
 docs/specifications/planaxis-project/1.0.md
 docs/specifications/planaxis-design/1.0.md
+docs/specifications/planaxis-material/1.0.md
 ```
 
-These guidelines describe how PlanAxis code should be written. They do not redefine Apartment SVG semantics, PlanAxis Project Format semantics, PlanAxis Design Format semantics, or architecture.
+These guidelines describe how PlanAxis code should be written. They do not redefine Apartment SVG semantics, PlanAxis Project Format semantics, PlanAxis Design Format semantics, PlanAxis Material Format semantics, or architecture.
 
 When a rule in this document conflicts with an applicable normative specification, the specification governs that format behavior. When a rule conflicts with an accepted Architectural Decision Record, the ADR governs the architectural decision.
 
@@ -477,7 +478,7 @@ The processing stages defined by the architecture should remain observable and t
 
 The same distinction applies to `planaxis.project.json`: JSON parsing is not Project Format validation, and Project Format validation is not Apartment SVG validation.
 
-Likewise, parsing a design JSON object is not Design Format validation; Design Format conformance is distinct from project/architecture resolution, and material resolution remains outside Design Format 1.0.
+Likewise, parsing a design JSON object is not Design Format validation; Design Format conformance is distinct from project/architecture resolution, and material resolution remains outside Design Format 1.0. Parsing a material JSON object is likewise distinct from Material Format validation, project-resource resolution, texture decoding, and renderer adaptation.
 
 ### 9.2. Do not guess
 
@@ -523,7 +524,9 @@ Apartment SVG validation errors should support the information required by the A
 
 Project Format errors should remain distinguishable from Apartment SVG errors and should identify the relevant manifest or path rule without unnecessarily exposing private machine-local filesystem details to an untrusted client.
 
-Design Format errors should remain distinguishable from project-filesystem failures, Apartment SVG validation failures, stale/unresolved finish targets, and future material-resolution failures.
+Design Format errors should remain distinguishable from project-filesystem failures, Apartment SVG validation failures, stale/unresolved finish targets, and Material Format/resource-resolution failures.
+
+Material Format errors should remain distinguishable from project-filesystem failures, missing texture resources, texture decoding failures, and renderer adaptation failures.
 
 ### 10.2. Validation failures are expected domain outcomes
 
@@ -944,7 +947,7 @@ This includes:
 - Apartment SVG documents;
 - `planaxis.project.json`;
 - project-relative resource paths;
-- future material/design/model descriptors;
+- material/design/future model descriptors;
 - external API payloads.
 
 Do not assume syntactically valid XML or JSON is schema-conformant or safe.

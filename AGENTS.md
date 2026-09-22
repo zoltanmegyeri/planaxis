@@ -97,7 +97,7 @@ Do not:
 - bypass project-root containment;
 - traverse project-resource symbolic links contrary to the specification;
 - place irreplaceable or authoritative project information only under `.planaxis/`;
-- invent future material or model-asset schemas, or design semantics outside the accepted PlanAxis Design Format, as a side effect of project-container work.
+- invent model-asset schemas, reinterpret the accepted PlanAxis Material Format, or add design semantics outside the accepted PlanAxis Design Format as a side effect of project-container work.
 
 A Project Format change must be deliberate and versioned. Do not silently widen or reinterpret the accepted format for implementation convenience.
 
@@ -118,7 +118,7 @@ It defines durable renderer-independent design descriptors under `designs/`, inc
 - project-relative material references under `assets/materials/` without material-resource existence or content semantics in Design 1.0;
 - optional tone-mapping and exposure presentation overrides;
 - recursively closed JSON structures;
-- the distinction between design-format conformance, project resolution, architecture resolution, and future material resolution.
+- the distinction between design-format conformance, project resolution, architecture resolution, and independent material resolution.
 
 Treat it as normative for design-descriptor semantics.
 

@@ -14,6 +14,7 @@ The normative definitions of PlanAxis external formats are:
 docs/specifications/apartment-svg/2.2.md
 docs/specifications/planaxis-project/1.0.md
 docs/specifications/planaxis-design/1.0.md
+docs/specifications/planaxis-material/1.0.md
 ```
 
 The Apartment SVG specification takes precedence for apartment geometry and semantic interpretation. The PlanAxis Project Format specification takes precedence for filesystem-backed project-container, manifest, path, and project-root semantics. The PlanAxis Design Format specification takes precedence for durable design-scenario descriptors, architecture binding, finish assignments, and persisted presentation overrides.
@@ -138,7 +139,7 @@ outputs/
 .planaxis/
 ```
 
-The project format is independently versioned from Apartment SVG, PlanAxis Design Format, and future material and model-asset formats.
+The project format is independently versioned from Apartment SVG, PlanAxis Design Format, PlanAxis Material Format, and future model-asset formats.
 
 ### 4.2. Apartment SVG
 
@@ -245,11 +246,11 @@ JSON parse
     -> finish-target resolution
 ```
 
-Material resolution is deferred to the future material format. A structurally conforming design may therefore contain an unresolved material resource, while a syntactically valid but missing/stale finish target prevents architecture resolution.
+Material resolution is separate from Design Format conformance. PlanAxis Material Format 1.0 now defines the accepted descriptor and texture-resource semantics, while a structurally conforming design may still contain an unresolved material resource. A syntactically valid but missing/stale finish target continues to prevent architecture resolution independently.
 
 The design descriptor is a separate durable source of design intent. It does not duplicate or override Apartment SVG architectural truth, and it must not contain Three.js objects, GPU resources, runtime texture symbols, or other renderer implementation state.
 
-The shared `@planaxis/design` package implements pure Design 1.0 validation and architecture/finish-target resolution. The server uses structural validation for explicit design creates/updates and exposes controlled discovery and raw reads. The browser implements scenario selection, exact bound-architecture loading, resolution, and explicit creation/editing; persistent material semantics and rendering remain Phase 3 work.
+The shared `@planaxis/design` package implements pure Design 1.0 validation and architecture/finish-target resolution. The server uses structural validation for explicit design creates/updates and exposes controlled discovery and raw reads. The browser implements scenario selection, exact bound-architecture loading, resolution, and explicit creation/editing. PlanAxis Material Format 1.0 now defines the persistent material contract; the shared material package, material-resource APIs, browser material resolution, and persistent rendering remain Phase 3 implementation work.
 
 ---
 
@@ -477,7 +478,7 @@ After backend initialization, the renderer generates one 256-pixel-face PMREM us
 
 React owns the transient presentation selections and passes full updates to the renderer. Toolbar controls use intensity 0–4 / step 0.1, yaw 0–360° / step 1°, and exposure −4–4 EV / step 0.1. They are disabled until readiness and hidden with the toolbar in Focus view. Settings survive orbit, embedded-camera selection, Walk, focal-length changes, resize, and model replacement in the same renderer instance. Updates neither rebuild architectural models nor start a persistent render loop.
 
-The Phase 1 renderer APIs remain runtime-only. The Phase 2 browser maps resolved Design 1.0 tone-mapping/exposure overrides to this API; persisted finish references never become runtime material assignments in this phase. Persistent material/environment assets, material interpretation, lighting design, and post-processing remain future work; no material/environment resource API or material-selection UI is introduced by Phase 1.
+The Phase 1 renderer APIs remain runtime-only. The Phase 2 browser maps resolved Design 1.0 tone-mapping/exposure overrides to this API; persisted finish references never become runtime material assignments in this phase. Material Format 1.0 now defines persistent material semantics, but material resource loading and conversion to runtime assignments remain Phase 3 implementation work. Environment assets, lighting design, and post-processing remain future work; no material/environment resource API or material-selection UI is introduced by Phase 1.
 
 Responsibilities may include:
 
@@ -1003,9 +1004,9 @@ is distinct from:
 Apartment SVG architecture
 ```
 
-The Project Format, Apartment SVG, and PlanAxis Design Format remain independently versioned.
+The Project Format, Apartment SVG, PlanAxis Design Format, and PlanAxis Material Format remain independently versioned.
 
-Project Format 1.0 intentionally does not define subordinate resource/descriptor schemas itself. PlanAxis Design Format 1.0 now independently defines durable design-scenario descriptors under `designs/`; future material and model-asset formats should likewise be introduced only when concrete implementation requirements establish their correct boundaries.
+Project Format 1.0 intentionally does not define subordinate resource/descriptor schemas itself. PlanAxis Design Format 1.0 independently defines durable design-scenario descriptors under `designs/`, and PlanAxis Material Format 1.0 independently defines reusable material descriptors and supported texture resources under `assets/materials/`. Future model-asset formats should likewise be introduced only when concrete implementation requirements establish their correct boundaries.
 
 ---
 
@@ -1077,9 +1078,9 @@ The executable repository bootstrap, authoritative numeric and geometric foundat
 
 Apartment SVG 2.2 is the normative apartment format, and the parser, validator, CLI, and trusted 2D domain pipeline are fully aligned with it. Schema and reference stages preserve the mandatory exact-decimal footprint while leaving geometry checks to the geometry stage. Successful geometric validation guarantees footprint topology, positive area, exact orthogonality, root viewBox containment, and complete stationary placement containment within the closed footprint. Hinged-door open-leaf geometry is exempt from footprint containment but remains inside the viewBox. Camera collisions compare level-local Z ranges consistently. `ValidatedApartment2D` retains the canonical footprint and unchanged level-local architectural Z values, with the level offset stored separately. Exact, renderer-independent 3D geometry foundations are implemented in `@planaxis/geometry`: `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`. Point comparisons reuse the centralized geometric tolerance, and range height is derived with exact decimal subtraction. These primitives carry no architectural or transformation semantics. `@planaxis/model-3d` implements deterministic `ArchitecturalModel3D` construction from trusted 2D input using these primitives, preserving architectural semantics and resolved relationships without renderer objects or unsupported physical assumptions. The Three.js adapter and browser 2D/3D workflow are implemented as described above.
 
-The Project Format 1.0 loading and project-filesystem foundation is implemented in `apps/server/src/project/`, as described in section 8.3. Server startup selects and loads one required project root before listening on loopback, and controlled project metadata and active-architecture HTTP APIs are implemented. The browser loads project metadata and active architecture through these APIs, completing the server-backed Phase 0 workflow. Project-format validity and Apartment SVG validity remain independent. PlanAxis Design Format 1.0 validation and pure architecture/finish-target resolution are implemented in `@planaxis/design`. Server design discovery, raw reads, validated persistence, and selected architecture reads are implemented. Browser design loading, validation/resolution, creation, and editing are implemented. Persistent material management/rendering remain Phase 3 work; richer redesign is deferred.
+The Project Format 1.0 loading and project-filesystem foundation is implemented in `apps/server/src/project/`, as described in section 8.3. Server startup selects and loads one required project root before listening on loopback, and controlled project metadata and active-architecture HTTP APIs are implemented. The browser loads project metadata and active architecture through these APIs, completing the server-backed Phase 0 workflow. Project-format validity and Apartment SVG validity remain independent. PlanAxis Design Format 1.0 validation and pure architecture/finish-target resolution are implemented in `@planaxis/design`. Server design discovery, raw reads, validated persistence, and selected architecture reads are implemented. Browser design loading, validation/resolution, creation, and editing are implemented. PlanAxis Material Format 1.0 is accepted but its package, resource APIs, browser resolution, and rendering integration remain Phase 3 work; richer redesign is deferred.
 
-Phase 1 includes exact designable surfaces with shared physical mapping frames, renderer UV generation, transient texture-capable metallic/roughness PBR finish assignments with non-overlapping coverage, and zero-thickness transmissive glass (sections 5.8–5.9). Built-in environment lighting and transient intensity, yaw, tone-mapping, and EV exposure controls complete the Phase 1 presentation foundation. Phase 2 is complete: Design Format 1.0, shared validation/resolution, server persistence, and browser scenario discovery/selection/creation/editing are implemented. Phase 3 will introduce persistent material semantics and rendering; environment assets, lighting design, and post-processing remain later work.
+Phase 1 includes exact designable surfaces with shared physical mapping frames, renderer UV generation, transient texture-capable metallic/roughness PBR finish assignments with non-overlapping coverage, and zero-thickness transmissive glass (sections 5.8–5.9). Built-in environment lighting and transient intensity, yaw, tone-mapping, and EV exposure controls complete the Phase 1 presentation foundation. Phase 2 is complete: Design Format 1.0, shared validation/resolution, server persistence, and browser scenario discovery/selection/creation/editing are implemented. Material Format 1.0 now fixes the accepted Phase 3 persistence semantics; Phase 3 implementation will add validation/resolution, controlled texture access, and persistent material rendering. Environment assets, lighting design, and post-processing remain later work.
 
 The intended implementation order is now broadly:
 
