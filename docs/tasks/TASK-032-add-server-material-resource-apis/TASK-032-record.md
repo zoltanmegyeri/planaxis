@@ -2,17 +2,17 @@
 
 ## Task Metadata
 
-- **Status:** In Progress
+- **Status:** Completed
 - **Created:** 2026-09-23
 - **Issued:** 2026-09-23
-- **Completed:** —
+- **Completed:** 2026-09-23
 - **Agent:** Codex
 - **Repository:** PlanAxis
 - **Description:** `TASK-032-description.md`
 - **Related tasks:** TASK-031
 - **Related ADRs:** ADR-004
 - **Related specifications:** PlanAxis Material Format 1.0, PlanAxis Project Format 1.0, PlanAxis Design Format 1.0
-- **Implementation commits:** —
+- **Implementation commits:** 0351a8d8e992218054d08b6b174e69d596c840bc
 
 ## Purpose
 
@@ -26,49 +26,72 @@ The authoritative task description is stored in:
 
 `TASK-032-description.md`
 
-The task was formally issued on 2026-09-23. The description is now immutable.
+The task was formally issued on 2026-09-23 and remained immutable throughout execution.
 
 ## Execution Record
 
 ### Result
 
-Pending.
+Codex implemented the TASK-032 server material-resource boundary.
+
+The implementation includes:
+
+- controlled `GET /api/project/material?path=...` reads for lowercase `.json` files below `assets/materials/`;
+- controlled `GET /api/project/material-texture?path=...` reads for lowercase `.png`, `.jpg`, `.jpeg`, and `.webp` files below `assets/materials/`;
+- resource-selector validation that keeps material access separate from generic project-file serving;
+- raw unchanged byte responses with octet-stream and `nosniff` headers;
+- continued enforcement of project-root containment, regular-file checks, symbolic-link protections, and safe project-error responses through the existing filesystem boundary;
+- focused server tests covering valid reads, invalid paths/extensions, missing/non-regular resources, symbolic links, repeated boundary checks, query validation, error handling, and absence of material write/discovery APIs;
+- README and architecture documentation updates reflecting the implemented server boundary.
+
+Material JSON parsing, texture decoding, browser material resolution, runtime PBR adaptation, and renderer integration remain outside this task.
 
 ### Verification
 
-Pending.
+The implementation was reported as successful and accepted by the human maintainer.
+
+Exact command-by-command verification results were not provided in this conversation and are therefore not recorded as PASS here.
 
 ### Deviations from Description
 
-Pending.
+None.
 
 ### Agent-Reported Follow-up Items
 
-Pending.
+None.
 
 ## Human Review
 
 ### Review Status
 
-Pending
+Accepted
 
 ### Review Notes
 
-Pending.
+The TASK-032 implementation was accepted as successful. The committed changes match the intended read-only server material-resource scope and preserve the existing project-filesystem security boundary.
 
 ### Human Changes After Agent Execution
 
-Pending.
+None.
 
 ## Finalization
 
 ### Implementation Commits
 
-—
+```text
+0351a8d8e992218054d08b6b174e69d596c840bc
+```
 
 ### Commit Messages
 
-—
+```text
+feat(server): add controlled material resource APIs
+
+Serve raw material descriptors and supported textures through the
+project filesystem boundary. Add validation, tests, and API docs.
+
+Task: TASK-032
+```
 
 ### Supersession
 
@@ -76,6 +99,6 @@ Pending.
 
 ## Notes
 
-TASK-032 is the second implementation task of Phase 3.
+TASK-032 completed the second implementation step of Phase 3.
 
-It intentionally provides only controlled raw material-resource reads. Browser material resolution, texture decoding, runtime PBR adaptation, and persistent rendering remain for TASK-033.
+The server now provides controlled raw access to Material 1.0 descriptors and supported texture resources. Browser material resolution, texture decoding, runtime PBR adaptation, and persistent rendering remain for TASK-033.
