@@ -114,6 +114,8 @@ export function App(): ReactElement {
                   onFailure={rendererFailure}
                   isFocusView={isFocusView}
                   scenarioPresentation={design.presentation}
+                  materials={design.loaded.materialProblem ? undefined : design.loaded.materials}
+                  onMaterialFailure={design.materialFailure}
                 />
               ) : source !== undefined ? (
                 <SvgViewport

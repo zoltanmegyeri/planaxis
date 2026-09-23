@@ -22,6 +22,7 @@ import {
 import type { RenderAspectRatio } from "./render-aspect-ratio.js";
 
 import type { ScenarioPresentation } from "./design-presentation.js";
+import type { LoadedMaterials } from "./load-materials.js";
 
 // Not a valid Apartment SVG ID, so an embedded camera cannot shadow this choice.
 const WALK_VIEW = "@walk";
@@ -31,11 +32,15 @@ export function ThreeViewport({
   onFailure,
   isFocusView = false,
   scenarioPresentation,
+  materials,
+  onMaterialFailure,
 }: {
   model: ArchitecturalModel3D;
   onFailure: (error: unknown) => void;
   isFocusView?: boolean;
   scenarioPresentation?: ScenarioPresentation | undefined;
+  materials?: LoadedMaterials | undefined;
+  onMaterialFailure?: (() => void) | undefined;
 }): ReactElement {
   const renderArea = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -81,9 +86,23 @@ export function ThreeViewport({
     let active = true;
     let instance: ApartmentRenderer | undefined;
     let observer: ResizeObserver | undefined;
+    let persistentFinishes = false;
     setReady(false);
     const fail = (error: unknown): void => {
-      if (active) onFailure(error);
+      if (!active) return;
+      if (persistentFinishes && instance && materials) {
+        persistentFinishes = false;
+        try {
+          instance.setModel(model);
+          materials.dispose();
+          onMaterialFailure?.();
+          return;
+        } catch (fallbackError) {
+          onFailure(fallbackError);
+          return;
+        }
+      }
+      onFailure(error);
     };
     try {
       instance = createApartmentRenderer(element, fail);
@@ -104,7 +123,14 @@ export function ThreeViewport({
       };
       resizeRenderer.current = resize;
       resize();
-      instance.setModel(model);
+      if (materials) {
+        persistentFinishes = true;
+        try {
+          instance.setModel(model, materials.finishes);
+        } catch (error) {
+          fail(error);
+        }
+      } else instance.setModel(model);
       observer = new ResizeObserver(resize);
       observer.observe(area);
       void instance
@@ -112,7 +138,10 @@ export function ThreeViewport({
         .then(() => {
           if (active) setReady(true);
         })
-        .catch(fail);
+        .catch((error: unknown) => {
+          // Backend/environment initialization cannot recover by replacing finishes.
+          if (active) onFailure(error);
+        });
     } catch (error) {
       fail(error);
     }
@@ -123,7 +152,7 @@ export function ThreeViewport({
       renderer.current = null;
       resizeRenderer.current = () => undefined;
     };
-  }, [model, onFailure]);
+  }, [model, onFailure, materials, onMaterialFailure]);
   useEffect(() => {
     resizeRenderer.current();
   }, [aspectRatio, isFocusView]);

@@ -6,12 +6,16 @@ import { processDocument } from "./process-document.js";
 import { ProjectLoadError } from "./project-api.js";
 import type { ProjectMetadata } from "./project-api.js";
 import type { DocumentState } from "./use-document.js";
+import { loadMaterials, MaterialLoadError } from "./load-materials.js";
+import type { LoadedMaterials } from "./load-materials.js";
 
 export interface LoadedDesign {
   readonly descriptor?: ValidatedDesignDescriptor;
   readonly document?: DocumentState;
   readonly resolution?: DesignResolutionResult;
   readonly problem?: string;
+  readonly materials?: LoadedMaterials;
+  readonly materialProblem?: string;
 }
 
 export function resolveLoadedDesign(
@@ -41,7 +45,21 @@ export async function loadDesign(
     signal.throwIfAborted();
     source = await fetchBoundArchitecture(descriptor.document.architecture, signal);
     signal.throwIfAborted();
-    return resolveLoadedDesign(descriptor, { ...processDocument(source), source, project });
+    const loaded = resolveLoadedDesign(descriptor, { ...processDocument(source), source, project });
+    if (!loaded.resolution?.ok) return loaded;
+    try {
+      const materials = await loadMaterials(loaded.resolution.value, signal);
+      return { ...loaded, ...(materials ? { materials } : {}) };
+    } catch (error) {
+      signal.throwIfAborted();
+      return {
+        ...loaded,
+        materialProblem:
+          error instanceof MaterialLoadError
+            ? error.message
+            : "Renderer material adaptation failed.",
+      };
+    }
   } catch (error) {
     if (signal.aborted) throw error;
     return {

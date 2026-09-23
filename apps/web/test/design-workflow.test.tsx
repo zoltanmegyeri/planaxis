@@ -8,8 +8,10 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { App } from "../src/app.js";
 import type { DesignDocument } from "@planaxis/design";
 import * as designApi from "@planaxis/design";
+import type { RuntimeFinishOptions } from "@planaxis/renderer-three";
 
 const renderer = vi.hoisted(() => ({
+  onError: vi.fn<(error: unknown) => void>(),
   initialize: vi.fn<() => Promise<void>>(),
   setModel: vi.fn(),
   resize: vi.fn(),
@@ -21,7 +23,10 @@ const renderer = vi.hoisted(() => ({
 }));
 vi.mock("@planaxis/renderer-three", async (original) => ({
   ...(await original<typeof import("@planaxis/renderer-three")>()),
-  createApartmentRenderer: () => renderer,
+  createApartmentRenderer: (_canvas: HTMLCanvasElement, onError: (error: unknown) => void) => {
+    renderer.onError.mockImplementation(onError);
+    return renderer;
+  },
 }));
 const fixture = (path: string): string =>
   readFileSync(resolve(fileURLToPath(import.meta.url), "../../../../fixtures", path), "utf8");
@@ -40,6 +45,11 @@ const baseline: DesignDocument = {
 };
 let descriptors: Map<string, unknown>;
 let sources: Map<string, string>;
+let materials: Map<string, unknown>;
+const materialPath = "assets/materials/paint.json";
+const texturePath = "assets/materials/paint.png";
+const pngBytes = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+const imageClose = vi.fn();
 let saved: { path: string; method: string; document: DesignDocument }[];
 const fetchMock = vi.fn<typeof fetch>();
 let host: HTMLDivElement;
@@ -54,6 +64,11 @@ async function server(url: string | URL | Request, init?: RequestInit): Promise<
       architecture: { active: activePath },
     });
   if (address.pathname === "/api/project/architecture") return new Response(activeSource);
+  if (address.pathname === "/api/project/material")
+    return materials.has(resource)
+      ? Response.json(materials.get(resource))
+      : new Response("/private/missing", { status: 404 });
+  if (address.pathname === "/api/project/material-texture") return new Response(pngBytes);
   if (address.pathname === "/api/project/designs")
     return Response.json({ designs: [...descriptors.keys()] });
   if (address.pathname === "/api/project/architecture-resource") {
@@ -83,6 +98,22 @@ beforeEach(() => {
     [alternativePath, alternativeSource],
   ]);
   saved = [];
+  materials = new Map([
+    [
+      materialPath,
+      {
+        schema: "planaxis-material/1.0",
+        name: "Paint",
+        baseColor: [0.8, 0.6, 0.4],
+        roughness: 0.7,
+      },
+    ],
+  ]);
+  imageClose.mockReset();
+  vi.stubGlobal(
+    "createImageBitmap",
+    vi.fn().mockResolvedValue({ width: 2, height: 2, close: imageClose }),
+  );
   fetchMock.mockReset().mockImplementation(server);
   for (const mock of Object.values(renderer)) mock.mockReset();
   renderer.initialize.mockResolvedValue();
@@ -549,4 +580,162 @@ it("does not let delayed startup discovery hide a design created during discover
   await act(async () => pending.resolve(Response.json({ designs: [] })));
   expect(control("Design scenario").value).toBe("designs/new.json");
   expect(host.textContent).toContain("Design resolved: New");
+});
+
+function useMaterial(textured = false): void {
+  descriptors.set(path, { ...baseline, finishes: [{ target: "floor", material: materialPath }] });
+  if (textured)
+    materials.set(materialPath, {
+      schema: "planaxis-material/1.0",
+      name: "Mapped",
+      mapping: { widthCm: 30, heightCm: 60 },
+      maps: { baseColor: texturePath, normal: texturePath },
+    });
+}
+it("supplies resolved scalar assignments to setModel and preserves them while editing", async () => {
+  useMaterial();
+  await mount();
+  await select();
+  await click("3D");
+  const finishes = renderer.setModel.mock.calls[0]?.[1] as RuntimeFinishOptions;
+  expect(finishes.assignments?.get("floor")).toEqual({
+    baseColor: [0.8, 0.6, 0.4],
+    roughness: 0.7,
+    metalness: 0,
+    alpha: { mode: "opaque" },
+  });
+  expect(finishes.assignments?.has("ceiling")).toBe(false);
+  await change("3D camera", "@walk");
+  await change("Design name", "Renamed");
+  await submit("Design name");
+  expect(renderer.setModel).toHaveBeenCalledTimes(1);
+  expect(saved[0]?.document.finishes).toEqual([{ target: "floor", material: materialPath }]);
+});
+it("keeps all finishes neutral after any material fails and still applies presentation", async () => {
+  useMaterial();
+  descriptors.set(path, {
+    ...baseline,
+    finishes: [
+      { target: "floor", material: materialPath },
+      { target: "ceiling", material: "assets/materials/missing.json" },
+    ],
+  });
+  await mount();
+  await select();
+  expect(status()).toBe("Valid");
+  expect(host.textContent).toContain("Material descriptor project / API resource failure");
+  expect(host.textContent).toContain("Design resolved: Warm");
+  expect(host.textContent).not.toContain("/private");
+  await click("3D");
+  expect(renderer.setModel.mock.calls[0]).toHaveLength(1);
+  expect(renderer.setPresentationSettings).toHaveBeenLastCalledWith(
+    expect.objectContaining({ toneMapping: "Neutral", exposureEv: 6 }),
+  );
+});
+it.each(["adaptation", "rendering"])(
+  "falls back to neutral finishes after renderer %s failure",
+  async (stage) => {
+    useMaterial(true);
+    await mount();
+    await select();
+    if (stage === "adaptation")
+      renderer.setModel.mockImplementationOnce(() => {
+        throw new Error("/private/adaptation");
+      });
+    await click("3D");
+    if (stage === "rendering")
+      await act(async () => renderer.onError(new Error("/private/rendering")));
+    expect(status()).toBe("Valid");
+    expect(host.textContent).toContain("Renderer material adaptation/rendering failed");
+    expect(host.textContent).not.toContain("/private");
+    expect(renderer.setModel.mock.lastCall).toHaveLength(1);
+    expect(imageClose).toHaveBeenCalledTimes(1);
+    expect(renderer.setPresentationSettings).toHaveBeenLastCalledWith(
+      expect.objectContaining({ toneMapping: "Neutral", exposureEv: 6 }),
+    );
+  },
+);
+it.each(["replace", "clear", "unmount"])(
+  "releases prepared source images on %s",
+  async (action) => {
+    useMaterial(true);
+    await mount();
+    await select();
+    await click("3D");
+    expect(imageClose).not.toHaveBeenCalled();
+    if (action === "unmount") {
+      await act(async () => root.unmount());
+      root = createRoot(host);
+    } else await select(action === "clear" ? "" : otherPath);
+    expect(imageClose).toHaveBeenCalledTimes(1);
+    expect(renderer.dispose).toHaveBeenCalled();
+  },
+);
+it.each(["material", "material-texture", "decode"])(
+  "ignores late %s completion and cleans obsolete images",
+  async (stage) => {
+    useMaterial(true);
+    const pending = deferred<Response>();
+    const pendingImage = deferred<unknown>();
+    let signal: AbortSignal | null | undefined;
+    fetchMock.mockImplementation((url, init) => {
+      const address = new URL(String(url), "http://localhost");
+      if (
+        address.pathname === `/api/project/${stage}` &&
+        [materialPath, texturePath].includes(address.searchParams.get("path") ?? "")
+      ) {
+        signal = init?.signal;
+        return pending.promise;
+      }
+      return server(url, init);
+    });
+    if (stage === "decode") vi.stubGlobal("createImageBitmap", () => pendingImage.promise);
+    await mount();
+    await select();
+    await select(otherPath);
+    if (stage !== "decode") expect(signal?.aborted).toBe(true);
+    await act(async () => {
+      pending.resolve(
+        stage === "material" ? Response.json(materials.get(materialPath)) : new Response(pngBytes),
+      );
+      pendingImage.resolve({ width: 1, height: 1, close: imageClose });
+    });
+    expect(host.textContent).toContain("Design resolved: Other");
+    expect(host.querySelector(".architecture-path")?.textContent).toContain(activePath);
+    expect(imageClose).toHaveBeenCalledTimes(stage === "decode" ? 1 : 0);
+    await click("3D");
+    expect(renderer.setModel.mock.lastCall).toHaveLength(1);
+  },
+);
+it.each(["no-finishes", "stale", "invalid-svg"])(
+  "does not request material resources for %s",
+  async (kind) => {
+    if (kind === "no-finishes") descriptors.set(path, { ...baseline, finishes: undefined });
+    if (kind === "stale")
+      descriptors.set(path, {
+        ...baseline,
+        finishes: [{ target: "wall:removed:side-positive", material: materialPath }],
+      });
+    if (kind === "invalid-svg")
+      sources.set(alternativePath, fixture("invalid/missing-cameras-group.svg"));
+    await mount();
+    await select();
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/material"))).toBe(false);
+  },
+);
+
+it("retains prepared textures across 2D/3D switches without new fetches or decodes", async () => {
+  useMaterial(true);
+  await mount();
+  await select();
+  await click("3D");
+  const fetchCount = fetchMock.mock.calls.length;
+  const firstFinishes = renderer.setModel.mock.lastCall?.[1];
+  await click("2D");
+  expect(renderer.dispose).toHaveBeenCalledTimes(1);
+  expect(imageClose).not.toHaveBeenCalled();
+  await click("3D");
+  expect(renderer.setModel.mock.lastCall?.[1]).toBe(firstFinishes);
+  expect(fetchMock).toHaveBeenCalledTimes(fetchCount);
+  expect(createImageBitmap).toHaveBeenCalledTimes(1);
 });

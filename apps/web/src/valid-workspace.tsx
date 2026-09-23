@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { ReactElement } from "react";
 import type { ArchitecturalModel3D } from "@planaxis/model-3d";
 import type { ScenarioPresentation } from "./design-presentation.js";
+import type { LoadedMaterials } from "./load-materials.js";
 import { SvgViewport } from "./svg-viewport.js";
 import { ThreeViewport } from "./three-viewport.js";
 
@@ -12,6 +13,8 @@ export function ValidWorkspace({
   onFailure,
   isFocusView,
   scenarioPresentation,
+  materials,
+  onMaterialFailure,
 }: {
   source: string;
   name: string;
@@ -19,6 +22,8 @@ export function ValidWorkspace({
   onFailure: (error: unknown) => void;
   isFocusView: boolean;
   scenarioPresentation?: ScenarioPresentation | undefined;
+  materials?: LoadedMaterials | undefined;
+  onMaterialFailure?: (() => void) | undefined;
 }): ReactElement {
   const [view, setView] = useState<"2D" | "3D">("2D");
   return (
@@ -40,6 +45,8 @@ export function ValidWorkspace({
       ) : (
         <ThreeViewport
           scenarioPresentation={scenarioPresentation}
+          materials={materials}
+          onMaterialFailure={onMaterialFailure}
           model={model}
           onFailure={onFailure}
           isFocusView={isFocusView}

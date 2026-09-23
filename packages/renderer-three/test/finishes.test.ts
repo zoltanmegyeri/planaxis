@@ -6,6 +6,7 @@ import {
   Mesh,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
+  MeshStandardNodeMaterial,
   NoColorSpace,
   Raycaster,
   RepeatWrapping,
@@ -398,11 +399,16 @@ it.each(["opaque", "mask", "blend"] as const)("adapts ordinary %s alpha behavior
     assignments: new Map([["floor", { ...base, alpha }]]),
   });
   const material = mesh(scene.group.getObjectByName("floor")).material;
-  if (!(material instanceof MeshStandardMaterial)) throw new Error("Missing material.");
+  if (
+    !(material instanceof MeshStandardMaterial) &&
+    !(material instanceof MeshStandardNodeMaterial)
+  )
+    throw new Error("Missing material.");
   expect(material.opacity).toBe(mode === "opaque" ? 1 : 0.7);
   expect(material.transparent).toBe(mode === "blend");
   expect(material.depthWrite).toBe(mode !== "blend");
-  expect(material.alphaTest).toBe(mode === "mask" ? 0.4 : 0);
+  expect(material.alphaTest).toBe(0);
+  if (material instanceof MeshStandardNodeMaterial) expect(material.maskNode).not.toBeNull();
   scene.dispose();
 });
 
@@ -467,3 +473,22 @@ it.each([undefined, "clear", "frosted", "tinted", "other"] as const)(
     expect(disposal).toHaveBeenCalledTimes(1);
   },
 );
+
+it.each([0, 0.4, 1])("retains mask equality at cutoff %s in the shader comparison", (cutoff) => {
+  const scene = buildApartmentScene(modelFixture(), {
+    assignments: new Map([
+      ["floor", { ...base, alpha: { mode: "mask", opacity: cutoff, cutoff } }],
+    ]),
+  });
+  const material = mesh(scene.group.getObjectByName("floor")).material;
+  if (!(material instanceof MeshStandardNodeMaterial))
+    throw new Error("Expected masked PBR node material");
+  // The generated node graph must retain equality; the backend's built-in alphaTest
+  // uses <= and would discard these fragments (including fully opaque alpha at 1).
+  const graph = material.maskNode?.toJSON();
+  expect(graph?.nodes).toEqual(expect.arrayContaining([expect.objectContaining({ op: ">=" })]));
+  expect(graph?.nodes).not.toEqual(expect.arrayContaining([expect.objectContaining({ op: "<=" })]));
+  expect(material.alphaTest).toBe(0);
+  expect(material.opacity).toBe(cutoff);
+  scene.dispose();
+});

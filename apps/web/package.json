@@ -22,6 +22,8 @@
   },
   "dependencies": {
     "@planaxis/design": "workspace:*",
+    "@planaxis/geometry": "workspace:*",
+    "@planaxis/material": "workspace:*",
     "@planaxis/model": "workspace:*",
     "@planaxis/parser": "workspace:*",
     "@planaxis/validator": "workspace:*",

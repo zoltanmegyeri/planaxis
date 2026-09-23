@@ -10,6 +10,8 @@ export {
 export type { FullFrameFocalLength } from "./cameras.js";
 
 export type { RuntimeFinishOptions } from "./runtime-materials.js";
+export { prepareRuntimeTextures, TexturePreparationError } from "./prepare-textures.js";
+export type { PreparedTextures, TextureResource } from "./prepare-textures.js";
 export {
   DEFAULT_PRESENTATION_SETTINGS,
   PRESENTATION_TONE_MAPPINGS,

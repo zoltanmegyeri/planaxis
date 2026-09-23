@@ -65,9 +65,14 @@ export function useDesign(activeDocument: DocumentState) {
     const controller = new AbortController();
     const current = generation.current;
     selectionRequest.current = controller;
+    let resources: LoadedDesign["materials"];
     void loadDesign(selectedPath, project, controller.signal)
       .then((result) => {
-        if (controller.signal.aborted || current !== generation.current) return;
+        if (controller.signal.aborted || current !== generation.current) {
+          result.materials?.dispose();
+          return;
+        }
+        resources = result.materials;
         setLoaded(result);
         setLoading(false);
       })
@@ -76,7 +81,12 @@ export function useDesign(activeDocument: DocumentState) {
         setLoaded({ problem: "Design application failure: unable to load this scenario." });
         setLoading(false);
       });
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      // React also cleans up the child viewport in this commit. Release borrowed
+      // images after its scene/clones have been disposed, regardless of effect order.
+      if (resources) queueMicrotask(resources.dispose);
+    };
   }, [selectedPath, project]);
   useEffect(
     () => () => {
@@ -179,6 +189,13 @@ export function useDesign(activeDocument: DocumentState) {
     setRendererFailed(true);
   }, []);
 
+  const materialFailure = useCallback((): void => {
+    setLoaded((previous) => ({
+      ...previous,
+      materialProblem: "Renderer material adaptation/rendering failed.",
+    }));
+  }, []);
+
   return {
     paths,
     discoveryError,
@@ -193,6 +210,7 @@ export function useDesign(activeDocument: DocumentState) {
     architecturePath,
     presentation,
     rendererFailure,
+    materialFailure,
     create,
     canCreate: displayedDocument !== undefined && "source" in displayedDocument,
     save: (descriptor: ValidatedDesignDescriptor) => write(descriptor, "PUT"),

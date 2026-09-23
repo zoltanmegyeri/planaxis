@@ -10,12 +10,16 @@ import {
   FrontSide,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
+  MeshStandardNodeMaterial,
   NoColorSpace,
   RepeatWrapping,
   SRGBColorSpace,
   TangentSpaceNormalMap,
 } from "three/webgpu";
 import type { Material, Texture } from "three/webgpu";
+import { float, texture as textureNode } from "three/tsl";
+
+type RuntimeMaterial = MeshStandardMaterial | MeshStandardNodeMaterial;
 
 export interface RuntimeFinishOptions {
   readonly assignments?: RuntimeFinishAssignments;
@@ -30,7 +34,7 @@ export interface RuntimeFinishOptions {
 export class RuntimeMaterials {
   private readonly materials = new Set<Material>();
   private readonly textures = new Set<Texture>();
-  private readonly adapted = new Map<RuntimePbrMaterial, MeshStandardMaterial>();
+  private readonly adapted = new Map<RuntimePbrMaterial, RuntimeMaterial>();
 
   constructor(private readonly resolveTexture: RuntimeFinishOptions["resolveTexture"]) {}
 
@@ -39,20 +43,21 @@ export class RuntimeMaterials {
     return material;
   }
 
-  adapt(input: RuntimePbrMaterial): MeshStandardMaterial {
+  adapt(input: RuntimePbrMaterial): RuntimeMaterial {
     const cached = this.adapted.get(input);
     if (cached) return cached;
     validateRuntimePbrMaterial(input);
     const alpha = input.alpha;
+    const MaterialClass = alpha?.mode === "mask" ? MeshStandardNodeMaterial : MeshStandardMaterial;
     const material = this.own(
-      new MeshStandardMaterial({
+      new MaterialClass({
         color: new Color().setRGB(...input.baseColor, SRGBColorSpace),
         roughness: input.roughness,
         metalness: input.metalness,
         opacity: alpha && alpha.mode !== "opaque" ? alpha.opacity : 1,
         transparent: alpha?.mode === "blend",
         depthWrite: alpha?.mode !== "blend",
-        alphaTest: alpha?.mode === "mask" ? alpha.cutoff : 0,
+        alphaTest: 0,
         shadowSide: FrontSide,
         normalMapType: TangentSpaceNormalMap,
       }),
@@ -84,6 +89,12 @@ export class RuntimeMaterials {
         texture.needsUpdate = true;
         material[slot] = texture;
       }
+    }
+    if (alpha?.mode === "mask" && material instanceof MeshStandardNodeMaterial) {
+      // Three's default node alpha test discards equality as well. Material 1.0
+      // keeps alpha == cutoff, including cutoff 0 and 1. The mask also governs shadows.
+      const sourceAlpha = material.map ? textureNode(material.map).a : float(1);
+      material.maskNode = sourceAlpha.mul(alpha.opacity).greaterThanEqual(alpha.cutoff);
     }
     this.adapted.set(input, material);
     return material;

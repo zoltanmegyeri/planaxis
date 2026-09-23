@@ -14,6 +14,8 @@ describe("development project API proxy", () => {
     "/api/project/designs",
     "/api/project/design?path=designs%2Fa.json",
     "/api/project/architecture-resource?path=architecture%2Fa.svg",
+    "/api/project/material?path=assets%2Fmaterials%2Fa.json",
+    "/api/project/material-texture?path=assets%2Fmaterials%2Fa.png",
   ])("forwards %s to the loopback server without rewriting the request", (path) => {
     expect(targetFor(path)).toBe("http://127.0.0.1:3000");
   });
@@ -21,6 +23,9 @@ describe("development project API proxy", () => {
   it.each([
     "/api/projects",
     "/api/project/assets",
+    "/api/project/materials",
+    "/api/project/material/anything",
+    "/api/project/material-texture/anything",
     "/api/other",
     "/architecture/a.svg",
     "/.planaxis/cache",

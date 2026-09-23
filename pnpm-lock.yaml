@@ -64,6 +64,12 @@ importers:
       '@planaxis/design':
         specifier: workspace:*
         version: link:../../packages/design
+      '@planaxis/geometry':
+        specifier: workspace:*
+        version: link:../../packages/geometry
+      '@planaxis/material':
+        specifier: workspace:*
+        version: link:../../packages/material
       '@planaxis/model':
         specifier: workspace:*
         version: link:../../packages/model

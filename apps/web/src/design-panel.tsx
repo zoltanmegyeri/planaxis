@@ -71,10 +71,7 @@ function DesignEditor({
           />
         </label>
         <p>Leave exposure empty to remove its override. Presentation changes apply after saving.</p>
-        <p>
-          {descriptor.document.finishes?.length ?? 0} finish assignment(s) preserved; materials are
-          not rendered yet.
-        </p>
+        <p>{descriptor.document.finishes?.length ?? 0} finish assignment(s) preserved.</p>
         <button type="submit">Save design</button>
       </fieldset>
       {error && <p role="alert">{error}</p>}
@@ -118,6 +115,11 @@ export function DesignPanel({
       )}
       {workflow.loading && <p>Loading design scenario…</p>}
       {loaded.problem && <p role="alert">{loaded.problem}</p>}
+      {loaded.materialProblem && (
+        <p role="alert">
+          {loaded.materialProblem} Persistent finishes are unavailable; default appearance is shown.
+        </p>
+      )}
       {loaded.resolution?.ok && <p>Design resolved: {loaded.descriptor?.document.name}</p>}
       {loaded.resolution && !loaded.resolution.ok && (
         <div role="alert">
