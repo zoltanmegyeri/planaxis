@@ -19,7 +19,10 @@ function sendProjectError(reply: FastifyReply, error: ProjectError): FastifyRepl
   return reply.code(status).send({ error });
 }
 
-export function registerDesignRoutes(application: FastifyInstance, project: ProjectContext): void {
+export function registerProjectResourceRoutes(
+  application: FastifyInstance,
+  project: ProjectContext,
+): void {
   // Encapsulation keeps the active-architecture endpoint's existing error contract unchanged.
   void application.register(async (routes) => {
     // Preserve all JSON keys so the shared closed-schema validator rejects them explicitly.
@@ -65,6 +68,8 @@ export function registerDesignRoutes(application: FastifyInstance, project: Proj
     for (const [url, kind, methods] of [
       ["/api/project/design", "design", ["GET", "POST", "PUT"]],
       ["/api/project/architecture-resource", "architecture", ["GET"]],
+      ["/api/project/material", "material", ["GET"]],
+      ["/api/project/material-texture", "material-texture", ["GET"]],
     ] as const) {
       routes.route<{ Querystring: Record<string, unknown>; Body: unknown }>({
         method: [...methods],
