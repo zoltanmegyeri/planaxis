@@ -54,6 +54,9 @@ export class RuntimeMaterials {
         color: new Color().setRGB(...input.baseColor, SRGBColorSpace),
         roughness: input.roughness,
         metalness: input.metalness,
+        ...(input.ambientOcclusionStrength === undefined
+          ? {}
+          : { aoMapIntensity: input.ambientOcclusionStrength }),
         opacity: alpha && alpha.mode !== "opaque" ? alpha.opacity : 1,
         transparent: alpha?.mode === "blend",
         depthWrite: alpha?.mode !== "blend",
@@ -69,6 +72,7 @@ export class RuntimeMaterials {
         [maps.roughnessMap, "roughnessMap", NoColorSpace],
         [maps.metalnessMap, "metalnessMap", NoColorSpace],
         [maps.normalMap, "normalMap", NoColorSpace],
+        [maps.ambientOcclusionMap, "aoMap", NoColorSpace],
       ] as const) {
         if (reference === undefined) continue;
         if (!this.resolveTexture)

@@ -4,7 +4,7 @@ import type {
   ValidatedMaterialDescriptor,
 } from "./material.js";
 
-/** Applies Material 1.0 section 20 defaults without changing the durable document. */
+/** Applies Material 1.0 / 1.1 section 20 defaults without changing the durable document. */
 export function getEffectiveMaterial(descriptor: ValidatedMaterialDescriptor): EffectiveMaterial {
   const document = descriptor.document;
   const alpha = document.alpha;
@@ -25,6 +25,9 @@ export function getEffectiveMaterial(descriptor: ValidatedMaterialDescriptor): E
     roughness: document.roughness ?? 1,
     metalness: document.metalness ?? 0,
     alpha: effectiveAlpha,
+    ...(document.maps?.ambientOcclusion === undefined
+      ? {}
+      : { ambientOcclusionStrength: document.ambientOcclusionStrength ?? 1 }),
     ...(document.maps === undefined ? {} : { maps: document.maps, mapping: document.mapping }),
   });
 }

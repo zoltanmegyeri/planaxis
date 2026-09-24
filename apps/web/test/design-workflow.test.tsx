@@ -611,26 +611,58 @@ it("supplies resolved scalar assignments to setModel and preserves them while ed
   expect(renderer.setModel).toHaveBeenCalledTimes(1);
   expect(saved[0]?.document.finishes).toEqual([{ target: "floor", material: materialPath }]);
 });
-it("keeps all finishes neutral after any material fails and still applies presentation", async () => {
+it.each(["planaxis-material/1.0", "planaxis-material/1.1"])(
+  "keeps all finishes neutral after a %s material fails and still applies presentation",
+  async (schema) => {
+    useMaterial();
+    materials.set(materialPath, {
+      schema,
+      name: "AO compatibility",
+      mapping: { widthCm: 30, heightCm: 60 },
+      maps:
+        schema === "planaxis-material/1.1"
+          ? { ambientOcclusion: texturePath }
+          : { baseColor: texturePath },
+    });
+    descriptors.set(path, {
+      ...baseline,
+      finishes: [
+        { target: "floor", material: materialPath },
+        { target: "ceiling", material: "assets/materials/missing.json" },
+      ],
+    });
+    await mount();
+    await select();
+    expect(status()).toBe("Valid");
+    expect(host.textContent).toContain("Material descriptor project / API resource failure");
+    expect(host.textContent).toContain("Design resolved: Warm");
+    expect(host.textContent).not.toContain("/private");
+    await click("3D");
+    expect(renderer.setModel.mock.calls[0]).toHaveLength(1);
+    expect(renderer.setPresentationSettings).toHaveBeenLastCalledWith(
+      expect.objectContaining({ toneMapping: "Neutral", exposureEv: 6 }),
+    );
+  },
+);
+it("passes selected-design Material 1.1 AO assignments to the renderer", async () => {
   useMaterial();
-  descriptors.set(path, {
-    ...baseline,
-    finishes: [
-      { target: "floor", material: materialPath },
-      { target: "ceiling", material: "assets/materials/missing.json" },
-    ],
+  materials.set(materialPath, {
+    schema: "planaxis-material/1.1",
+    name: "AO finish",
+    ambientOcclusionStrength: 0.4,
+    mapping: { widthCm: 30, heightCm: 60 },
+    maps: { ambientOcclusion: texturePath },
   });
   await mount();
   await select();
-  expect(status()).toBe("Valid");
-  expect(host.textContent).toContain("Material descriptor project / API resource failure");
-  expect(host.textContent).toContain("Design resolved: Warm");
-  expect(host.textContent).not.toContain("/private");
   await click("3D");
-  expect(renderer.setModel.mock.calls[0]).toHaveLength(1);
-  expect(renderer.setPresentationSettings).toHaveBeenLastCalledWith(
-    expect.objectContaining({ toneMapping: "Neutral", exposureEv: 6 }),
-  );
+  const finishes = renderer.setModel.mock.calls[0]?.[1] as RuntimeFinishOptions;
+  expect(finishes.assignments?.get("floor")).toMatchObject({
+    ambientOcclusionStrength: 0.4,
+    textures: { ambientOcclusionMap: expect.any(Symbol) },
+  });
+  await select("");
+  expect(imageClose).toHaveBeenCalledTimes(1);
 });
 it.each(["adaptation", "rendering"])(
   "falls back to neutral finishes after renderer %s failure",

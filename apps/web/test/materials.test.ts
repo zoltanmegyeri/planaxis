@@ -18,6 +18,11 @@ const mapped = {
     normal: texturePath,
   },
 };
+const aoMapped = {
+  ...mapped,
+  schema: "planaxis-material/1.1",
+  maps: { ...mapped.maps, ambientOcclusion: texturePath },
+};
 const fetchMock = vi.fn<typeof fetch>();
 const decode = vi.fn();
 let resources: Map<string, string | Uint8Array>;
@@ -185,4 +190,65 @@ it("cleans up a decoded image when a later texture fails", async () => {
     "decode/loading",
   );
   expect(images[0]?.close).toHaveBeenCalledTimes(1);
+});
+
+it.each([undefined, 0, 0.4, 1])(
+  "translates AO strength %s and deduplicates packed ORM across materials",
+  async (strength) => {
+    resources.set(first, JSON.stringify({ ...aoMapped, ambientOcclusionStrength: strength }));
+    resources.set(second, JSON.stringify(aoMapped));
+    const loaded = await loadMaterials(selection(), new AbortController().signal);
+    const floor = loaded?.finishes.assignments?.get("floor");
+    const ceiling = loaded?.finishes.assignments?.get("ceiling");
+    expect(floor?.ambientOcclusionStrength).toBe(strength ?? 1);
+    expect(ceiling?.ambientOcclusionStrength).toBe(1);
+    const textures = floor?.textures;
+    const reference = textures?.ambientOcclusionMap;
+    expect(typeof reference).toBe("symbol");
+    expect(textures).toMatchObject({ roughnessMap: reference, metalnessMap: reference });
+    expect(ceiling?.textures?.ambientOcclusionMap).toBe(reference);
+    expect(textures?.widthCm.toString()).toBe("25.5");
+    expect(textures?.heightCm.toString()).toBe("40");
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(decode).toHaveBeenCalledTimes(1);
+    expect(decode.mock.calls[0]?.[1]).toEqual({
+      imageOrientation: "flipY",
+      premultiplyAlpha: "none",
+      colorSpaceConversion: "none",
+    });
+    loaded?.dispose();
+    loaded?.dispose();
+    expect(images[0]?.close).toHaveBeenCalledTimes(1);
+  },
+);
+
+it("cleans prepared textures when a later AO texture fails to decode", async () => {
+  const aoPath = "assets/materials/ao.png";
+  resources.set(second, JSON.stringify({ ...aoMapped, maps: { ambientOcclusion: aoPath } }));
+  resources.set(aoPath, png);
+  decode
+    .mockImplementationOnce(async () => {
+      const image = { width: 1, height: 1, close: vi.fn() };
+      images.push(image);
+      return image;
+    })
+    .mockRejectedValueOnce(new Error("AO decode failed"));
+  await expect(loadMaterials(selection(), new AbortController().signal)).rejects.toThrow(
+    "decode/loading",
+  );
+  expect(images[0]?.close).toHaveBeenCalledTimes(1);
+});
+
+it("closes a late AO decode after cancellation without returning assignments", async () => {
+  resources.set(first, JSON.stringify(aoMapped));
+  const controller = new AbortController();
+  const image = { width: 1, height: 1, close: vi.fn() };
+  decode.mockImplementationOnce(async () => {
+    controller.abort();
+    return image;
+  });
+  await expect(loadMaterials(selection(), controller.signal)).rejects.toMatchObject({
+    name: "AbortError",
+  });
+  expect(image.close).toHaveBeenCalledTimes(1);
 });

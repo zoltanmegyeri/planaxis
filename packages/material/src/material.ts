@@ -1,4 +1,5 @@
 export const MATERIAL_SCHEMA = "planaxis-material/1.0";
+export const MATERIAL_SCHEMA_1_1 = "planaxis-material/1.1";
 
 /** An sRGB factor, with each component in [0, 1]. */
 export type MaterialBaseColor = readonly [number, number, number];
@@ -19,6 +20,8 @@ export interface MaterialMaps {
   readonly metalness?: string;
   /** Non-color tangent normal: +X = +U, +Y = +V, +Z = outward normal. */
   readonly normal?: string;
+  /** Material 1.1 non-color data, sampled from red using the common physical mapping. */
+  readonly ambientOcclusion?: string;
 }
 
 export type MaterialAlpha =
@@ -38,19 +41,23 @@ export type MaterialTextures =
 
 /** Only durable fields, preserving omission rather than inserting defaults. */
 export type MaterialDocument = MaterialTextures & {
-  readonly schema: typeof MATERIAL_SCHEMA;
   readonly name: string;
   readonly baseColor?: MaterialBaseColor;
   readonly roughness?: number;
   readonly metalness?: number;
   readonly alpha?: MaterialAlpha;
-};
+} & (
+    | { readonly schema: typeof MATERIAL_SCHEMA; readonly ambientOcclusionStrength?: never }
+    | { readonly schema: typeof MATERIAL_SCHEMA_1_1; readonly ambientOcclusionStrength?: number }
+  );
 
-/** Derived Material 1.0 semantics, not a document to serialize or a renderer material. */
+/** Derived Material 1.0 / 1.1 semantics, not a document to serialize or a renderer material. */
 export type EffectiveMaterial = MaterialTextures & {
   readonly baseColor: MaterialBaseColor;
   readonly roughness: number;
   readonly metalness: number;
+  /** Present only with an AO map; effectiveAO = 1 - strength * (1 - red sample). */
+  readonly ambientOcclusionStrength?: number;
   readonly alpha: EffectiveMaterialAlpha;
 };
 

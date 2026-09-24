@@ -116,6 +116,9 @@ export async function loadMaterials(
         baseColor,
         roughness,
         metalness,
+        ...(material.ambientOcclusionStrength === undefined
+          ? {}
+          : { ambientOcclusionStrength: material.ambientOcclusionStrength }),
         alpha,
         ...(textures ? { textures } : {}),
       });

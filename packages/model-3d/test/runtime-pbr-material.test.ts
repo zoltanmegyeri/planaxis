@@ -13,6 +13,35 @@ import type {
 } from "../src/index.js";
 
 const material: RuntimePbrMaterial = { baseColor: [0.2, 0.5, 1], roughness: 0.8, metalness: 0 };
+const aoTextures = {
+  widthCm: decimal("25"),
+  heightCm: decimal("50"),
+  ambientOcclusionMap: Symbol(),
+};
+
+it.each([0, 0.4, 1])("accepts effective AO strength %s", (ambientOcclusionStrength) => {
+  expect(() =>
+    validateRuntimePbrMaterial({ ...material, textures: aoTextures, ambientOcclusionStrength }),
+  ).not.toThrow();
+});
+
+it.each([-0.01, 1.01, NaN, Infinity, -Infinity])(
+  "rejects invalid AO strength %s",
+  (ambientOcclusionStrength) => {
+    expect(() =>
+      validateRuntimePbrMaterial({ ...material, textures: aoTextures, ambientOcclusionStrength }),
+    ).toThrow(RangeError);
+  },
+);
+
+it("requires the AO map and effective strength together", () => {
+  expect(() => validateRuntimePbrMaterial({ ...material, ambientOcclusionStrength: 0 })).toThrow(
+    RangeError,
+  );
+  expect(() => validateRuntimePbrMaterial({ ...material, textures: aoTextures })).toThrow(
+    RangeError,
+  );
+});
 
 it("resolves explicit space assignment, then base assignment, then neutral absence", () => {
   const mapping = createSurfaceMapping("z", "positive", decimal("0"), decimal("0"));

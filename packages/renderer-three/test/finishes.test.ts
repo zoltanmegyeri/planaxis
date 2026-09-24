@@ -3,6 +3,7 @@ import { deriveArchitecturalSurfaces } from "@planaxis/model-3d";
 import type { ArchitecturalModel3D, FinishTargetId, RuntimePbrMaterial } from "@planaxis/model-3d";
 import {
   DataTexture,
+  Matrix3,
   Mesh,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
@@ -492,3 +493,90 @@ it.each([0, 0.4, 1])("retains mask equality at cutoff %s in the shader compariso
   expect(material.opacity).toBe(cutoff);
   scene.dispose();
 });
+
+it.each(["opaque", "mask", "blend"] as const)(
+  "adapts packed ORM on existing UVs with %s alpha",
+  (mode) => {
+    for (const strength of [0, 0.4, 1]) {
+      // Distinct R/G/B values remain untouched for Three's standard AO/roughness/metalness slots.
+      const source = new DataTexture(new Uint8Array([32, 128, 224, 255]), 1, 1);
+      source.channel = 2;
+      source.repeat.set(3, 4);
+      source.offset.set(0.2, 0.3);
+      source.center.set(0.5, 0.5);
+      source.rotation = 0.7;
+      source.matrixAutoUpdate = false;
+      const sourceDispose = vi.spyOn(source, "dispose");
+      const reference = Symbol();
+      const scene = buildApartmentScene(modelFixture(), {
+        assignments: new Map([
+          [
+            "floor",
+            {
+              ...base,
+              ambientOcclusionStrength: strength,
+              alpha:
+                mode === "mask"
+                  ? { mode, opacity: 0.7, cutoff: 0.4 }
+                  : mode === "blend"
+                    ? { mode, opacity: 0.7 }
+                    : { mode },
+              textures: {
+                widthCm: decimal("20"),
+                heightCm: decimal("40"),
+                baseColorMap: reference,
+                ambientOcclusionMap: reference,
+                roughnessMap: reference,
+                metalnessMap: reference,
+              },
+            },
+          ],
+        ]),
+        resolveTexture: () => source,
+      });
+      const floor = mesh(scene.group.getObjectByName("floor"));
+      const material = floor.material;
+      if (
+        !(material instanceof MeshStandardMaterial) &&
+        !(material instanceof MeshStandardNodeMaterial)
+      )
+        throw new Error("Expected PBR material.");
+      expect(material.aoMapIntensity).toBe(strength);
+      expect(material.map?.colorSpace).toBe(SRGBColorSpace);
+      expect(material.transparent).toBe(mode === "blend");
+      if (material instanceof MeshStandardNodeMaterial) expect(material.maskNode).not.toBeNull();
+      const maps = [material.aoMap, material.roughnessMap, material.metalnessMap];
+      const disposals = maps.map((map) => {
+        if (!map) throw new Error("Expected packed map.");
+        expect(map).not.toBe(source);
+        expect(map.image).toBe(source.image);
+        expect(map.colorSpace).toBe(NoColorSpace);
+        expect(map.channel).toBe(0);
+        expect(map.wrapS).toBe(RepeatWrapping);
+        expect(map.wrapT).toBe(RepeatWrapping);
+        expect(map.offset.toArray()).toEqual([0, 0]);
+        expect(map.repeat.toArray()).toEqual([1, 1]);
+        expect(map.center.toArray()).toEqual([0, 0]);
+        expect(map.rotation).toBe(0);
+        expect(map.matrix.equals(new Matrix3())).toBe(true);
+        return vi.spyOn(map, "dispose");
+      });
+      expect(Object.keys(floor.geometry.attributes).filter((key) => key.startsWith("uv"))).toEqual([
+        "uv",
+      ]);
+      const positions = floor.geometry.getAttribute("position"),
+        uv = floor.geometry.getAttribute("uv");
+      for (let i = 0; i < positions.count; i++) {
+        expect(uv.getX(i)).toBeCloseTo((positions.getX(i) * 100) / 20, 5);
+        expect(uv.getY(i)).toBeCloseTo((positions.getZ(i) * 100) / 40, 5);
+      }
+      expect(source.channel).toBe(2);
+      expect(source.repeat.toArray()).toEqual([3, 4]);
+      scene.dispose();
+      scene.dispose();
+      for (const dispose of disposals) expect(dispose).toHaveBeenCalledTimes(1);
+      expect(sourceDispose).not.toHaveBeenCalled();
+      source.dispose();
+    }
+  },
+);

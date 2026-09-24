@@ -1,4 +1,4 @@
-export { MATERIAL_SCHEMA } from "./material.js";
+export { MATERIAL_SCHEMA, MATERIAL_SCHEMA_1_1 } from "./material.js";
 export type {
   EffectiveMaterial,
   EffectiveMaterialAlpha,

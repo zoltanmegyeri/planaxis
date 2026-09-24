@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   MATERIAL_SCHEMA,
+  MATERIAL_SCHEMA_1_1,
   getEffectiveMaterial,
   parseMaterialDescriptor,
   validateMaterialDescriptor,
@@ -121,7 +122,7 @@ describe("closed objects and required fields", () => {
     expectInvalid(input, "MATERIAL_MISSING_PROPERTY", `$.${key}`);
   });
 
-  it.each([undefined, null, 1, "", "planaxis-material/1.1", "planaxis-material/1.0 "])(
+  it.each([undefined, null, 1, "", "planaxis-material/1.2", "planaxis-material/1.0 "])(
     "rejects unsupported schema %j",
     (schema) => expectInvalid({ ...minimal, schema }, "MATERIAL_UNSUPPORTED_SCHEMA", "$.schema"),
   );
@@ -149,6 +150,142 @@ describe("closed objects and required fields", () => {
     expectInvalid(Object.create(minimal), "MATERIAL_MISSING_PROPERTY", "$.schema");
     const input: unknown = Object.assign(Object.create({ roughness: 0.2 }), minimal);
     expect(valid(input).document).toEqual(minimal);
+  });
+});
+
+describe("Material 1.1 ambient occlusion and version compatibility", () => {
+  const scalar = { ...minimal, schema: MATERIAL_SCHEMA_1_1 };
+  const ao = { ...scalar, mapping, maps: { ambientOcclusion: texture } };
+
+  it("accepts scalar-only 1.1 without introducing AO state in either schema", () => {
+    for (const input of [minimal, scalar, textured, { ...textured, schema: MATERIAL_SCHEMA_1_1 }]) {
+      const parsed = parseMaterialDescriptor(JSON.stringify(input), path);
+      expect(parsed.ok).toBe(true);
+      if (!parsed.ok) throw new Error("Expected supported material.");
+      expect(parsed.value.document).toEqual(input);
+      expect(getEffectiveMaterial(parsed.value)).not.toHaveProperty("ambientOcclusionStrength");
+    }
+    expect(getEffectiveMaterial(valid(scalar))).toEqual(getEffectiveMaterial(valid(minimal)));
+  });
+
+  it("defaults AO strength only in effective semantics and preserves immutable packed ORM references", () => {
+    const input = {
+      ...ao,
+      metalness: 1,
+      maps: {
+        ambientOcclusion: texture,
+        roughness: texture,
+        metalness: texture,
+      },
+    };
+    const descriptor = valid(input);
+    const effective = getEffectiveMaterial(descriptor);
+    expect(descriptor.document).toEqual(input);
+    expect(descriptor.document).not.toHaveProperty("ambientOcclusionStrength");
+    expect(effective).toMatchObject({ ambientOcclusionStrength: 1, maps: input.maps, mapping });
+    expect(Object.isFrozen(effective)).toBe(true);
+    expect(Object.isFrozen(effective.maps)).toBe(true);
+    input.maps.ambientOcclusion = "changed";
+    expect(effective.maps?.ambientOcclusion).toBe(texture);
+  });
+
+  it.each([0, 0.4, 1])("preserves explicit AO strength %s", (ambientOcclusionStrength) => {
+    const input = { ...ao, ambientOcclusionStrength };
+    const result = parseMaterialDescriptor(JSON.stringify(input), path);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("Expected AO material.");
+    expect(result.value.document).toEqual(input);
+    expect(getEffectiveMaterial(result.value).ambientOcclusionStrength).toBe(
+      ambientOcclusionStrength,
+    );
+  });
+
+  it.each([undefined, null, "0.5", true, {}, [], NaN, Infinity, -Infinity, -0.01, 1.01])(
+    "rejects invalid AO strength %s",
+    (ambientOcclusionStrength) => {
+      expectInvalid(
+        { ...ao, ambientOcclusionStrength },
+        "MATERIAL_INVALID_FACTOR",
+        "$.ambientOcclusionStrength",
+      );
+    },
+  );
+
+  it.each([scalar, { ...textured, schema: MATERIAL_SCHEMA_1_1 }])(
+    "requires an AO map when strength exists: %j",
+    (input) => {
+      expectInvalid(
+        { ...input, ambientOcclusionStrength: 0 },
+        "MATERIAL_AMBIENT_OCCLUSION_COUPLING",
+        "$.ambientOcclusionStrength",
+      );
+    },
+  );
+
+  it("keeps AO properties prohibited in Material 1.0", () => {
+    expectInvalid(
+      { ...ao, schema: MATERIAL_SCHEMA },
+      "MATERIAL_UNKNOWN_PROPERTY",
+      "$.maps.ambientOcclusion",
+    );
+    expectInvalid(
+      { ...minimal, ambientOcclusionStrength: 1 },
+      "MATERIAL_UNKNOWN_PROPERTY",
+      "$.ambientOcclusionStrength",
+    );
+  });
+
+  it.each(["png", "jpg", "jpeg", "webp"])("accepts AO .%s paths", (extension) => {
+    const maps = { ambientOcclusion: `assets/materials/ao.${extension}` };
+    expect(valid({ ...ao, maps }).document.maps).toEqual(maps);
+  });
+
+  it.each([
+    undefined,
+    null,
+    1,
+    "ao.png",
+    "assets/materials/../ao.png",
+    "assets/materials//ao.png",
+    "/assets/materials/ao.png",
+    "assets/materials/ao.PNG",
+    "assets/materials/ao.avif",
+    "references/ao.png",
+  ])("rejects invalid AO path %j", (ambientOcclusion) => {
+    expectInvalid(
+      { ...ao, maps: { ambientOcclusion } },
+      "MATERIAL_INVALID_TEXTURE_PATH",
+      "$.maps.ambientOcclusion",
+    );
+  });
+
+  it.each([
+    [{ ...scalar, maps: ao.maps }, "MATERIAL_MAPPING_COUPLING", "$.mapping"],
+    [{ ...scalar, mapping }, "MATERIAL_MAPPING_COUPLING", "$.mapping"],
+    [{ ...ao, maps: {} }, "MATERIAL_EMPTY_MAPS", "$.maps"],
+    [
+      { ...ao, mapping: { ...mapping, widthCm: 0 } },
+      "MATERIAL_INVALID_DIMENSION",
+      "$.mapping.widthCm",
+    ],
+    [
+      { ...ao, mapping: { ...mapping, rotation: 90 } },
+      "MATERIAL_UNKNOWN_PROPERTY",
+      "$.mapping.rotation",
+    ],
+    [
+      { ...ao, maps: { ...ao.maps, height: texture } },
+      "MATERIAL_UNKNOWN_PROPERTY",
+      "$.maps.height",
+    ],
+    [{ ...ao, uvChannel: 1 }, "MATERIAL_UNKNOWN_PROPERTY", "$.uvChannel"],
+    [
+      { ...ao, alpha: { mode: "opaque", opacity: 1 } },
+      "MATERIAL_UNKNOWN_PROPERTY",
+      "$.alpha.opacity",
+    ],
+  ] as const)("retains mapping and closed-schema rules: %j", (input, code, location) => {
+    expectInvalid(input, code, location);
   });
 });
 

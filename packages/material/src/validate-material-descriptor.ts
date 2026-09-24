@@ -2,6 +2,7 @@ import { isMaterialFilePath } from "./material-path.js";
 import { materialFailure, type MaterialValidationResult } from "./material-result.js";
 import {
   MATERIAL_SCHEMA,
+  MATERIAL_SCHEMA_1_1,
   type MaterialAlpha,
   type MaterialBaseColor,
   type MaterialDocument,
@@ -96,8 +97,14 @@ function validateMapping(value: unknown): MaterialValidationResult<MaterialMappi
   return { ok: true, value: Object.freeze({ widthCm, heightCm }) };
 }
 
-function validateMaps(value: unknown): MaterialValidationResult<MaterialMaps> {
-  const roles = ["baseColor", "roughness", "metalness", "normal"] as const;
+function validateMaps(value: unknown, supportsAO: boolean): MaterialValidationResult<MaterialMaps> {
+  const roles: readonly (keyof MaterialMaps)[] = [
+    "baseColor",
+    "roughness",
+    "metalness",
+    "normal",
+    ...(supportsAO ? ["ambientOcclusion" as const] : []),
+  ];
   const checked = closedObject(value, "$.maps", roles);
   if (!checked.ok) return checked;
   if (Object.keys(checked.value).length === 0) {
@@ -173,16 +180,35 @@ export function validateMaterialDescriptor(
   const checked = closedObject(
     value,
     "$",
-    ["schema", "name", "baseColor", "roughness", "metalness", "mapping", "maps", "alpha"],
+    [
+      "schema",
+      "name",
+      "baseColor",
+      "roughness",
+      "metalness",
+      "mapping",
+      "maps",
+      "alpha",
+      "ambientOcclusionStrength",
+    ],
     ["schema", "name"],
   );
   if (!checked.ok) return checked;
   const document = checked.value;
-  if (document.schema !== MATERIAL_SCHEMA) {
+  if (document.schema !== MATERIAL_SCHEMA && document.schema !== MATERIAL_SCHEMA_1_1) {
     return materialFailure(
       "MATERIAL_UNSUPPORTED_SCHEMA",
       "$.schema",
-      `Only ${MATERIAL_SCHEMA} is supported.`,
+      `Only ${MATERIAL_SCHEMA} and ${MATERIAL_SCHEMA_1_1} are supported.`,
+    );
+  }
+  const supportsAO = document.schema === MATERIAL_SCHEMA_1_1;
+  const hasAOStrength = Object.hasOwn(document, "ambientOcclusionStrength");
+  if (!supportsAO && hasAOStrength) {
+    return materialFailure(
+      "MATERIAL_UNKNOWN_PROPERTY",
+      "$.ambientOcclusionStrength",
+      "Ambient-occlusion strength is not supported in Material 1.0.",
     );
   }
   if (typeof document.name !== "string" || !/[^\p{White_Space}\uFEFF]/u.test(document.name)) {
@@ -216,11 +242,24 @@ export function validateMaterialDescriptor(
   }
   let textures: MaterialTextures = {};
   if (hasMaps) {
-    const maps = validateMaps(document.maps);
+    const maps = validateMaps(document.maps, supportsAO);
     if (!maps.ok) return maps;
     const mapping = validateMapping(document.mapping);
     if (!mapping.ok) return mapping;
     textures = { maps: maps.value, mapping: mapping.value };
+  }
+  let ambientOcclusionStrength: number | undefined;
+  if (hasAOStrength) {
+    if (textures.maps?.ambientOcclusion === undefined) {
+      return materialFailure(
+        "MATERIAL_AMBIENT_OCCLUSION_COUPLING",
+        "$.ambientOcclusionStrength",
+        "Ambient-occlusion strength requires an ambient-occlusion map.",
+      );
+    }
+    const strength = factor(document.ambientOcclusionStrength, "$.ambientOcclusionStrength");
+    if (!strength.ok) return strength;
+    ambientOcclusionStrength = strength.value;
   }
   let alpha: MaterialAlpha | undefined;
   if (Object.hasOwn(document, "alpha")) {
@@ -229,7 +268,12 @@ export function validateMaterialDescriptor(
     alpha = checkedAlpha.value;
   }
   const trusted: MaterialDocument = Object.freeze({
-    schema: MATERIAL_SCHEMA,
+    ...(document.schema === MATERIAL_SCHEMA
+      ? { schema: MATERIAL_SCHEMA }
+      : {
+          schema: MATERIAL_SCHEMA_1_1,
+          ...(ambientOcclusionStrength === undefined ? {} : { ambientOcclusionStrength }),
+        }),
     name: document.name,
     ...(baseColor === undefined ? {} : { baseColor }),
     ...scalars,

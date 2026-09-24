@@ -14,6 +14,8 @@ export interface RuntimePbrTextures {
   readonly metalnessMap?: RuntimeTextureReference;
   /** Tangent-space RGB normal, with +Y along the mapping's +V. */
   readonly normalMap?: RuntimeTextureReference;
+  /** Non-color red channel, sharing the same physical period and orientation. */
+  readonly ambientOcclusionMap?: RuntimeTextureReference;
 }
 
 /** Runtime presentation input, never a member of ArchitecturalModel3D or a persisted format. */
@@ -22,6 +24,8 @@ export interface RuntimePbrMaterial {
   readonly baseColor: readonly [number, number, number];
   readonly roughness: number;
   readonly metalness: number;
+  /** Required exactly when an AO map exists; effectiveAO = 1 - strength * (1 - sample). */
+  readonly ambientOcclusionStrength?: number;
   readonly textures?: RuntimePbrTextures;
   readonly alpha?:
     | { readonly mode: "opaque" }
@@ -40,6 +44,13 @@ export function validateRuntimePbrMaterial(material: RuntimePbrMaterial): void {
   for (const component of material.baseColor) unit(component, "Base color component");
   unit(material.roughness, "Roughness");
   unit(material.metalness, "Metalness");
+  if (material.ambientOcclusionStrength !== undefined)
+    unit(material.ambientOcclusionStrength, "Ambient-occlusion strength");
+  if (
+    (material.textures?.ambientOcclusionMap !== undefined) !==
+    (material.ambientOcclusionStrength !== undefined)
+  )
+    throw new RangeError("Ambient-occlusion map and effective strength must be provided together.");
   if (material.alpha && material.alpha.mode !== "opaque") {
     unit(material.alpha.opacity, "Opacity");
     if (material.alpha.mode === "mask") unit(material.alpha.cutoff, "Alpha cutoff");
