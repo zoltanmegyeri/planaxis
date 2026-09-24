@@ -2,11 +2,11 @@
 
 ## Task Metadata
 
-- **Status:** Ready
+- **Status:** In Progress
 - **Created:** 2026-09-24
-- **Issued:** —
+- **Issued:** 2026-09-24
 - **Completed:** —
-- **Agent:** —
+- **Agent:** Codex
 - **Repository:** PlanAxis
 - **Description:** `TASK-034-description.md`
 - **Related tasks:** TASK-031, TASK-033
@@ -26,7 +26,7 @@ The authoritative task description is stored in:
 
 `TASK-034-description.md`
 
-The description is finalized for delegation. The task has not yet been issued.
+The task was formally issued on 2026-09-24. The description is now immutable for the remainder of the task lifecycle.
 
 ## Execution Record
 
