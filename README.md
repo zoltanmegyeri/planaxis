@@ -247,6 +247,18 @@ The 3D toolbar offers **Tone mapping** (AgX by default, ACES Filmic, or Neutral)
 
 With **No design** selected, presentation controls remain transient. A resolved design applies its saved tone mapping and exposure; edit these in the design editor rather than the 3D toolbar. Environment intensity and rotation always remain transient. Resolved designs also apply Material 1.0 and 1.1 persistent finishes, including packed ORM textures shared across ambient-occlusion, roughness, and metalness roles. Material-management UI, environment assets, lighting design, and post-processing remain deferred.
 
+The 3D toolbar also offers **Quality**, **Pixel ratio**, **Shadows**, **Environment lighting**, and **Fill light**. Quality changes apply immediately without rebuilding the apartment or resetting navigation. Walk redraws are coalesced to display frames, and unchanged architectural shadows are reused during navigation. All individual settings stay editable; changing a preset's settings selects **Custom**. Selecting a named preset reapplies every setting below:
+
+| Preset | Pixel ratio | Shadows | Environment lighting | Fill light |
+| --- | --- | --- | --- | --- |
+| Performance | 1 | Off | Off | Medium |
+| Balanced (default) | min(2, native DPR) | Medium | On | Off |
+| High | native DPR | High | On | Off |
+
+Pixel ratio choices include positive integers below the native display ratio, followed by the exact native ratio without duplication: native 2.5 offers 1, 2, and 2.5. Invalid native ratios fall back to 1. Buffer resolution changes independently of the CSS viewport size. Shadows use Off or Low/Medium/High PCF maps of 1024/2048/4096 pixels per side. Fill light uses neutral non-directional ambient illumination at Off/Low/Medium/High intensities of 0/0.5/1/2, preserving PBR materials and textures. Disabling environment lighting removes both IBL and environment reflections while preserving intensity/rotation and the neutral background.
+
+Only these quality preferences are saved in browser-local storage; they never write to project, design, material, or Apartment SVG data. On later loads, named presets adapt to the current display; Custom DPR rounds down to an available option (or the smallest option if needed). Missing, malformed, or unsupported preferences use Balanced. Storage failure leaves rendering and session controls available. Display-ratio changes detected on browser resize also adapt the controls. Camera, design selection, aspect ratio, Focus view, and transient presentation settings are not saved by this mechanism.
+
 ### Design scenarios
 
 The **Design scenario** selector discovers descriptor paths under `designs/` without automatically selecting one. Every page load starts with **No design** and the manifest's active architecture. Selecting a descriptor loads its exact bound architecture, which may be a different alternative. Clearing the selection restores the active architecture. Selection is session state only and never writes the manifest or a descriptor.

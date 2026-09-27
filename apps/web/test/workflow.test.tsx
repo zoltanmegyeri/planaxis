@@ -12,6 +12,7 @@ import { useDocument } from "../src/use-document.js";
 import type { DocumentState } from "../src/use-document.js";
 import * as model3D from "@planaxis/model-3d";
 import * as processing from "../src/process-document.js";
+import { QUALITY_STORAGE_KEY, qualityPreset } from "../src/render-quality.js";
 
 const rendererMocks = vi.hoisted(() => ({
   initialize: vi.fn<() => Promise<void>>(),
@@ -21,6 +22,7 @@ const rendererMocks = vi.hoisted(() => ({
   selectWalk: vi.fn(),
   setFocalLengthOverride: vi.fn(),
   setPresentationSettings: vi.fn(),
+  setQualitySettings: vi.fn(),
   render: vi.fn(),
   dispose: vi.fn(),
 }));
@@ -71,6 +73,7 @@ const createUrl = vi.fn((blob: Blob | MediaSource) => {
 const revokeUrl = vi.fn();
 
 beforeEach(() => {
+  window.localStorage.clear();
   rendererMocks.initialize.mockResolvedValue();
   fetchMock.mockReset();
   serveProject();
@@ -502,7 +505,7 @@ it("keeps camera, lens, and fitted image selections independent through Focus vi
   expect(canvas.style.height).toBe("800px");
   expect(canvas.style.left).toBe("200px");
   expect(canvas.style.top).toBe("0px");
-  expect(rendererMocks.resize).toHaveBeenLastCalledWith(800, 800, window.devicePixelRatio);
+  expect(rendererMocks.resize).toHaveBeenLastCalledWith(800, 800);
 
   await clickControl("Enter Focus view");
   expect(host.querySelector("canvas")).toBe(canvas);
@@ -820,4 +823,139 @@ it("reports a presentation API failure through the existing renderer failure wor
   });
   expect(host.textContent).toContain("Unexpected renderer failure: Presentation update failed");
   expect(rendererMocks.dispose).toHaveBeenCalledTimes(1);
+});
+
+function qualityControl(label: string): HTMLSelectElement {
+  const element = host.querySelector<HTMLSelectElement>(`[aria-label="${label}"]`);
+  if (!element) throw new Error(`Missing ${label}`);
+  return element;
+}
+async function selectQuality(label: string, value: string): Promise<void> {
+  await act(async () => {
+    const element = qualityControl(label);
+    element.value = value;
+    element.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+}
+
+it("applies presets and manual quality edits immediately without rebuilding or changing presentation", async () => {
+  vi.spyOn(window, "devicePixelRatio", "get").mockReturnValue(2.5);
+  const startup = deferred<void>();
+  rendererMocks.initialize.mockReturnValueOnce(startup.promise);
+  await mountProject(fixture("valid/minimal-semantic-schema.svg"));
+  await clickView("3D");
+  const labels = [
+    "3D quality preset",
+    "3D pixel ratio",
+    "3D shadow quality",
+    "3D environment lighting",
+    "3D fill light",
+  ];
+  for (const label of labels) expect(qualityControl(label).disabled).toBe(true);
+  expect([...qualityControl("3D pixel ratio").options].map((option) => option.value)).toEqual([
+    "1",
+    "2",
+    "2.5",
+  ]);
+  expect(rendererMocks.setQualitySettings).toHaveBeenLastCalledWith(
+    qualityPreset("Balanced", 2.5).settings,
+  );
+  await act(async () => startup.resolve());
+  for (const label of labels) expect(qualityControl(label).disabled).toBe(false);
+  const presentationCalls = rendererMocks.setPresentationSettings.mock.calls.length;
+  for (const preset of ["Performance", "High", "Balanced"] as const) {
+    await selectQuality("3D quality preset", preset);
+    expect(rendererMocks.setQualitySettings).toHaveBeenLastCalledWith(
+      qualityPreset(preset, 2.5).settings,
+    );
+    expect(qualityControl("3D quality preset").value).toBe(preset);
+    for (const label of labels) expect(qualityControl(label).disabled).toBe(false);
+  }
+  await selectQuality("3D pixel ratio", "1");
+  expect(qualityControl("3D quality preset").value).toBe("Custom");
+  await selectQuality("3D shadow quality", "Low");
+  await selectQuality("3D fill light", "High");
+  const environment = host.querySelector<HTMLInputElement>(
+    '[aria-label="3D environment lighting"]',
+  );
+  if (!environment) throw new Error("Missing environment control");
+  await act(async () => environment.click());
+  const custom = {
+    pixelRatio: 1,
+    shadowQuality: "Low",
+    environmentLightingEnabled: false,
+    fillLightLevel: "High",
+  };
+  expect(rendererMocks.setQualitySettings).toHaveBeenLastCalledWith(custom);
+  expect(JSON.parse(window.localStorage.getItem(QUALITY_STORAGE_KEY) ?? "null")).toEqual({
+    version: 1,
+    preset: "Custom",
+    settings: custom,
+  });
+  await selectQuality("3D camera", "@walk");
+  await selectQuality("3D focal length", "35");
+  await selectQuality("3D render aspect ratio", "1:1");
+  await clickControl("Enter Focus view");
+  expect(rendererMocks.setQualitySettings).toHaveBeenLastCalledWith(custom);
+  expect(rendererMocks.setPresentationSettings).toHaveBeenCalledTimes(presentationCalls);
+  expect(rendererMocks.setModel).toHaveBeenCalledTimes(1);
+  expect(rendererMocks.dispose).not.toHaveBeenCalled();
+  expect(fetchMock).toHaveBeenCalledTimes(3);
+});
+
+it("restores quality across page initialization while leaving camera and presentation transient", async () => {
+  vi.spyOn(window, "devicePixelRatio", "get").mockReturnValue(3);
+  await mountProject(fixture("valid/minimal-semantic-schema.svg"));
+  await clickView("3D");
+  await selectQuality("3D quality preset", "High");
+  await selectQuality("3D fill light", "Low");
+  await selectQuality("3D camera", "@walk");
+  await selectQuality("3D tone mapping", "Neutral");
+  vi.spyOn(window, "devicePixelRatio", "get").mockReturnValue(1.25);
+  await remountProject(fixture("valid/minimal-semantic-schema.svg"));
+  await clickView("3D");
+  expect(qualityControl("3D quality preset").value).toBe("Custom");
+  expect(qualityControl("3D pixel ratio").value).toBe("1.25");
+  expect(qualityControl("3D fill light").value).toBe("Low");
+  expect(rendererMocks.setQualitySettings).toHaveBeenLastCalledWith({
+    ...qualityPreset("High", 1.25).settings,
+    fillLightLevel: "Low",
+  });
+  expect(qualityControl("3D camera").value).toBe("");
+  expect(qualityControl("3D tone mapping").value).toBe("AgX");
+});
+
+it("adapts quality options to a live DPR change without recreating the renderer", async () => {
+  const dpr = vi.spyOn(window, "devicePixelRatio", "get").mockReturnValue(3);
+  await render();
+  await clickView("3D");
+  await selectQuality("3D quality preset", "High");
+  dpr.mockReturnValue(1.25);
+  await act(async () => {
+    window.dispatchEvent(new Event("resize"));
+  });
+  expect([...qualityControl("3D pixel ratio").options].map((option) => option.value)).toEqual([
+    "1",
+    "1.25",
+  ]);
+  expect(rendererMocks.setQualitySettings).toHaveBeenLastCalledWith(
+    qualityPreset("High", 1.25).settings,
+  );
+  expect(rendererMocks.setModel).toHaveBeenCalledTimes(1);
+  expect(rendererMocks.dispose).not.toHaveBeenCalled();
+});
+
+it("renders and accepts quality changes when storage fails", async () => {
+  vi.spyOn(window, "localStorage", "get").mockImplementation(() => {
+    throw new Error("Storage denied");
+  });
+  await render();
+  await clickView("3D");
+  expect(qualityControl("3D quality preset").value).toBe("Balanced");
+  await selectQuality("3D quality preset", "Performance");
+  expect(rendererMocks.setQualitySettings).toHaveBeenLastCalledWith(
+    qualityPreset("Performance", window.devicePixelRatio).settings,
+  );
+  expect(qualityControl("3D quality preset").value).toBe("Performance");
+  expect(rendererMocks.dispose).not.toHaveBeenCalled();
 });

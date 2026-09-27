@@ -121,8 +121,12 @@ Horizontal FOV becomes vertical FOV using `2 atan(tan(hFOV / 2) / aspect)` on se
 and resize. Returning to inspection reframes the model; navigation never edits source data.
 
 The public lifecycle is create, initialize, setModel, resize, selectCamera, render, dispose.
-Rendering is event-driven without a persistent application animation loop. Pixel ratio is
-capped at two. Model replacement disposes old mesh geometries, owned textures, and shared materials; final
+Rendering is event-driven without a persistent application animation loop. Runtime quality
+settings now own pixel ratio, shadow resolution, environment enablement, and neutral ambient
+fill. The browser's Balanced preset caps DPR at two; High permits native DPR. Quality updates
+preserve camera/navigation and PBR resources, with browser-local preferences independent of
+project/design persistence. See [the current quality contract](../architecture/overview.md#59-renderer-adapter).
+Model replacement disposes old mesh geometries, owned textures, and shared materials; final
 disposal also disconnects controls and releases shadow and renderer resources. The React
 component disconnects its ResizeObserver. In-flight initialization finishes releasing its
 backend after unmount and cannot render a stale scene.

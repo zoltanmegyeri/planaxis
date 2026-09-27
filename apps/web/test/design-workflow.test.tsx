@@ -19,6 +19,7 @@ const renderer = vi.hoisted(() => ({
   selectWalk: vi.fn(),
   setFocalLengthOverride: vi.fn(),
   setPresentationSettings: vi.fn(),
+  setQualitySettings: vi.fn(),
   dispose: vi.fn(),
 }));
 vi.mock("@planaxis/renderer-three", async (original) => ({

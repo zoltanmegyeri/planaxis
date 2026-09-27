@@ -11,6 +11,7 @@ import type {
   ApartmentRenderer,
   FullFrameFocalLength,
   RendererPresentationSettings,
+  RendererQualitySettings,
 } from "@planaxis/renderer-three";
 import { useEffect, useRef, useState } from "react";
 import type { ReactElement } from "react";
@@ -23,6 +24,16 @@ import type { RenderAspectRatio } from "./render-aspect-ratio.js";
 
 import type { ScenarioPresentation } from "./design-presentation.js";
 import type { LoadedMaterials } from "./load-materials.js";
+import { QualityControls } from "./quality-controls.js";
+import {
+  adaptQuality,
+  editQuality,
+  nativePixelRatio,
+  persistQuality,
+  qualityPreset,
+  restoreQuality,
+} from "./render-quality.js";
+import type { QualityPreference } from "./render-quality.js";
 
 // Not a valid Apartment SVG ID, so an embedded camera cannot shadow this choice.
 const WALK_VIEW = "@walk";
@@ -52,6 +63,42 @@ export function ThreeViewport({
   const aspectRatioRef = useRef<RenderAspectRatio>(aspectRatio);
   aspectRatioRef.current = aspectRatio;
   const [ready, setReady] = useState(false);
+  const [nativeDpr, setNativeDpr] = useState(() => nativePixelRatio(window.devicePixelRatio));
+  const [quality, setQuality] = useState(() => restoreQuality(nativeDpr));
+  const qualityRef = useRef(quality);
+  qualityRef.current = quality;
+  const updateQuality = (next: QualityPreference): void => {
+    try {
+      renderer.current?.setQualitySettings(next.settings);
+      qualityRef.current = next;
+      setQuality(next);
+    } catch (error) {
+      onFailure(error);
+    }
+  };
+  const editQualitySettings = (update: Partial<RendererQualitySettings>): void => {
+    updateQuality(editQuality(qualityRef.current, update));
+  };
+  useEffect(() => {
+    persistQuality(quality);
+  }, [quality]);
+  useEffect(() => {
+    const onResize = (): void => {
+      const nextNative = nativePixelRatio(window.devicePixelRatio);
+      if (nextNative === nativeDpr) return;
+      const next = adaptQuality(qualityRef.current, nextNative);
+      try {
+        renderer.current?.setQualitySettings(next.settings);
+        qualityRef.current = next;
+        setQuality(next);
+        setNativeDpr(nextNative);
+      } catch (error) {
+        onFailure(error);
+      }
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [nativeDpr, onFailure]);
   const [presentation, setPresentation] = useState(() => ({
     ...DEFAULT_PRESENTATION_SETTINGS,
     ...scenarioPresentation,
@@ -108,6 +155,7 @@ export function ThreeViewport({
       instance = createApartmentRenderer(element, fail);
       renderer.current = instance;
       instance.setPresentationSettings(presentationRef.current);
+      instance.setQualitySettings(qualityRef.current.settings);
       const resize = (): void => {
         try {
           const rect = area.getBoundingClientRect();
@@ -116,7 +164,7 @@ export function ThreeViewport({
           element.style.height = `${frame.height}px`;
           element.style.left = `${frame.left}px`;
           element.style.top = `${frame.top}px`;
-          instance?.resize(frame.width, frame.height, window.devicePixelRatio);
+          instance?.resize(frame.width, frame.height);
         } catch (error) {
           fail(error);
         }
@@ -159,6 +207,13 @@ export function ThreeViewport({
   return (
     <section className="three-viewport" aria-label="3D apartment view">
       <div className="three-toolbar focus-view-hidden" hidden={isFocusView}>
+        <QualityControls
+          preference={quality}
+          nativeDpr={nativeDpr}
+          ready={ready}
+          onPreset={(preset) => updateQuality(qualityPreset(preset, nativeDpr))}
+          onEdit={editQualitySettings}
+        />
         <label>
           Camera{" "}
           <select

@@ -14,6 +14,8 @@ import {
   ACESFilmicToneMapping,
   NeutralToneMapping,
   RenderTarget,
+  AmbientLight,
+  PCFShadowMap,
 } from "three/webgpu";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
@@ -67,9 +69,14 @@ vi.mock("three/addons/controls/OrbitControls.js", async () => {
     },
   };
 });
-import { createApartmentRenderer, DEFAULT_PRESENTATION_SETTINGS } from "../src/index.js";
+import {
+  createApartmentRenderer,
+  DEFAULT_PRESENTATION_SETTINGS,
+  DEFAULT_QUALITY_SETTINGS,
+} from "../src/index.js";
 import type { RendererPresentationSettings } from "../src/index.js";
 import { fullFrameHorizontalFov, verticalFov } from "../src/cameras.js";
+import type { RendererQualitySettings } from "../src/index.js";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -83,18 +90,19 @@ beforeEach(() => {
   );
 });
 const canvas = {} as HTMLCanvasElement;
-it("resizes embedded FOV, caps DPR, replaces models and releases owned resources", async () => {
+it("resizes embedded FOV, applies selected DPR, replaces models and releases owned resources", async () => {
   const renderer = createApartmentRenderer(canvas, vi.fn());
-  renderer.resize(800, 400, 4);
+  renderer.resize(800, 400);
+  renderer.setQualitySettings({ ...DEFAULT_QUALITY_SETTINGS, pixelRatio: 4 });
   renderer.setModel(modelFixture());
   await renderer.initialize();
   renderer.selectCamera("camera-1");
   const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
   const fov = camera.fov;
-  renderer.resize(400, 800, 1);
+  renderer.resize(400, 800);
   expect(camera.aspect).toBe(0.5);
   expect(camera.fov).toBeGreaterThan(fov);
-  expect(gpu.setPixelRatio).toHaveBeenCalledWith(2);
+  expect(gpu.setPixelRatio).toHaveBeenCalledWith(4);
   expect(gpu.setSize).toHaveBeenCalledWith(400, 800, false);
   const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
   const first = scene.children.find((object) => object.type === "Group");
@@ -514,4 +522,320 @@ it("releases generation resources and the backend if environment generation fail
   expect(gpu.dispose).toHaveBeenCalledTimes(1);
   roomDispose.mockRestore();
   targetDispose.mockRestore();
+});
+
+it("updates DPR buffers immediately without changing CSS sizing, pose, projection, or scene", async () => {
+  const surface = navigationSurface();
+  const renderer = createApartmentRenderer(surface.canvas, vi.fn());
+  renderer.resize(800, 400);
+  renderer.setModel(modelFixture());
+  await renderer.initialize();
+  for (const mode of [
+    () => renderer.selectCamera(null),
+    () => renderer.selectCamera("camera-1"),
+    () => renderer.selectWalk(),
+  ]) {
+    mode();
+    renderer.setFocalLengthOverride(35);
+    const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+    const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+    const position = camera.position.clone();
+    const orientation = camera.quaternion.clone();
+    const projection = camera.projectionMatrix.clone();
+    const floor = scene.getObjectByName("floor");
+    for (const pixelRatio of [1.25, 2.5, 3, 1]) {
+      const count = gpu.render.mock.calls.length;
+      renderer.setQualitySettings({ ...DEFAULT_QUALITY_SETTINGS, pixelRatio });
+      expect(gpu.setPixelRatio).toHaveBeenLastCalledWith(pixelRatio);
+      expect(gpu.setSize).toHaveBeenLastCalledWith(800, 400, false);
+      expect(gpu.render).toHaveBeenCalledTimes(count + 1);
+      expect(camera.position).toEqual(position);
+      expect(camera.quaternion.toArray()).toEqual(orientation.toArray());
+      expect(camera.projectionMatrix).toEqual(projection);
+      expect(scene.getObjectByName("floor")).toBe(floor);
+      expect(surface.frames.size).toBe(0);
+    }
+  }
+  renderer.dispose();
+});
+
+it("maps every shadow level and rescales bias without replacing lights or geometry", async () => {
+  const renderer = createApartmentRenderer(canvas, vi.fn());
+  renderer.setModel(modelFixture());
+  await renderer.initialize();
+  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  const light = scene.children.find((object) => object instanceof DirectionalLight);
+  if (!(light instanceof DirectionalLight)) throw new Error("Missing key light");
+  const mediumBias = light.shadow.normalBias;
+  const floor = scene.getObjectByName("floor");
+  for (const [shadowQuality, size] of [
+    ["Off", 0],
+    ["Low", 1024],
+    ["Medium", 2048],
+    ["High", 4096],
+    ["Off", 0],
+    ["High", 4096],
+  ] as const) {
+    renderer.setQualitySettings({ ...DEFAULT_QUALITY_SETTINGS, shadowQuality });
+    expect(gpu.instances[0]?.shadowMap.enabled).toBe(size !== 0);
+    expect(gpu.instances[0]?.shadowMap.type).toBe(PCFShadowMap);
+    expect(light.castShadow).toBe(size !== 0);
+    if (size) {
+      expect(light.shadow.mapSize.toArray()).toEqual([size, size]);
+      expect(light.shadow.normalBias).toBeCloseTo((mediumBias * 2048) / size);
+      expect(light.shadow.needsUpdate).toBe(true);
+    }
+    expect(scene.getObjectByName("floor")).toBe(floor);
+  }
+  renderer.setModel(modelFixture());
+  expect(light.shadow.mapSize.x).toBe(4096);
+  expect(light.shadow.normalBias).toBeCloseTo(mediumBias / 2);
+  renderer.dispose();
+});
+
+it("disables IBL before initialization and restores the same environment with current presentation", async () => {
+  const renderer = createApartmentRenderer(canvas, vi.fn());
+  renderer.setModel(modelFixture());
+  renderer.setQualitySettings({ ...DEFAULT_QUALITY_SETTINGS, environmentLightingEnabled: false });
+  await renderer.initialize();
+  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  expect(scene.environment).toBeNull();
+  renderer.setPresentationSettings({
+    ...DEFAULT_PRESENTATION_SETTINGS,
+    environmentIntensity: 2.5,
+    environmentRotationDegrees: 90,
+    toneMapping: "Neutral",
+    exposureEv: 1,
+  });
+  expect(scene.environment).toBeNull();
+  renderer.setQualitySettings(DEFAULT_QUALITY_SETTINGS);
+  const environment = scene.environment;
+  expect(environment).toBe(gpu.fromScene.mock.results[0]?.value.texture);
+  renderer.setQualitySettings({ ...DEFAULT_QUALITY_SETTINGS, environmentLightingEnabled: false });
+  expect(scene.environment).toBeNull();
+  expect(scene.background).toEqual(new Color(0xe8ecec));
+  renderer.setQualitySettings(DEFAULT_QUALITY_SETTINGS);
+  expect(scene.environment).toBe(environment);
+  expect(scene.environmentIntensity).toBe(2.5);
+  expect(scene.environmentRotation.y).toBeCloseTo(-Math.PI / 2);
+  expect(gpu.instances[0]?.toneMapping).toBe(NeutralToneMapping);
+  expect(gpu.instances[0]?.toneMappingExposure).toBe(2);
+  expect(gpu.fromScene).toHaveBeenCalledTimes(1);
+  renderer.dispose();
+  expect(gpu.environmentDispose).toHaveBeenCalledTimes(1);
+});
+
+it("provides neutral fill at all levels while retaining PBR materials and texture identity", async () => {
+  const renderer = createApartmentRenderer(canvas, vi.fn());
+  const source = new DataTexture(new Uint8Array([255, 128, 64, 255]), 1, 1);
+  renderer.setModel(modelFixture(), {
+    assignments: new Map([
+      [
+        "floor",
+        {
+          baseColor: [1, 1, 1],
+          roughness: 0.4,
+          metalness: 0,
+          textures: { widthCm: decimal("50"), heightCm: decimal("50"), baseColorMap: Symbol() },
+        },
+      ],
+    ]),
+    resolveTexture: () => source,
+  });
+  await renderer.initialize();
+  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  const floor = scene.getObjectByName("floor");
+  if (!(floor instanceof Mesh) || !(floor.material instanceof MeshStandardMaterial))
+    throw new Error("Missing PBR floor");
+  const material = floor.material;
+  const texture = material.map;
+  expect(texture).not.toBeNull();
+  const fill = scene.children.find((object) => object instanceof AmbientLight);
+  if (!(fill instanceof AmbientLight)) throw new Error("Missing fill light");
+  expect(fill.color).toEqual(new Color(0xffffff));
+  for (const [fillLightLevel, intensity] of [
+    ["Off", 0],
+    ["Low", 0.5],
+    ["Medium", 1],
+    ["High", 2],
+    ["Off", 0],
+  ] as const) {
+    renderer.setQualitySettings({
+      ...DEFAULT_QUALITY_SETTINGS,
+      environmentLightingEnabled: false,
+      fillLightLevel,
+    });
+    expect(fill.intensity).toBe(intensity);
+    expect(floor.material).toBe(material);
+    expect(material.map).toBe(texture);
+    expect(material.roughness).toBe(0.4);
+  }
+  renderer.dispose();
+  source.dispose();
+});
+
+it.each([
+  { pixelRatio: NaN },
+  { pixelRatio: Infinity },
+  { pixelRatio: 0 },
+  { pixelRatio: -1 },
+  { shadowQuality: "Ultra" },
+  { fillLightLevel: "toString" },
+  { environmentLightingEnabled: 1 },
+])("rejects invalid quality atomically: %j", async (invalid) => {
+  const renderer = createApartmentRenderer(canvas, vi.fn());
+  renderer.setModel(modelFixture());
+  await renderer.initialize();
+  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  const environment = scene.environment;
+  const calls = gpu.render.mock.calls.length;
+  expect(() =>
+    renderer.setQualitySettings({
+      ...DEFAULT_QUALITY_SETTINGS,
+      ...invalid,
+    } as RendererQualitySettings),
+  ).toThrow("Invalid renderer quality");
+  expect(scene.environment).toBe(environment);
+  expect(gpu.setPixelRatio).not.toHaveBeenCalled();
+  expect(gpu.instances[0]?.shadowMap.enabled).toBe(true);
+  expect(gpu.render).toHaveBeenCalledTimes(calls);
+  renderer.dispose();
+});
+
+it("bounds Walk rendering to one pending frame through repeated quality changes", async () => {
+  const surface = navigationSurface();
+  const renderer = createApartmentRenderer(surface.canvas, vi.fn());
+  renderer.setModel(modelFixture());
+  await renderer.initialize();
+  renderer.selectWalk();
+  const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+  for (let cycle = 0; cycle < 3; cycle++) {
+    for (const shadowQuality of ["Off", "Medium", "High"] as const) {
+      renderer.setQualitySettings({
+        ...DEFAULT_QUALITY_SETTINGS,
+        shadowQuality,
+        environmentLightingEnabled: shadowQuality !== "Off",
+      });
+      const draws = gpu.render.mock.calls.length;
+      const before = camera.quaternion.clone();
+      surface.pointer("pointerdown");
+      for (let move = 1; move <= 20; move++) surface.pointer("pointermove", move, move);
+      expect(camera.quaternion.toArray()).not.toEqual(before.toArray());
+      expect(gpu.render).toHaveBeenCalledTimes(draws);
+      expect(surface.frames.size).toBe(1);
+      surface.frame(16);
+      expect(gpu.render).toHaveBeenCalledTimes(draws + 1);
+      expect(surface.frames.size).toBe(0);
+      surface.pointer("pointerup");
+    }
+  }
+  surface.key("keydown", "KeyW");
+  surface.pointer("pointerdown");
+  surface.elapse(8);
+  surface.pointer("pointermove", 100, 100);
+  // Movement and look share a pending draw rather than rendering separately per event.
+  const draws = gpu.render.mock.calls.length;
+  renderer.setQualitySettings(DEFAULT_QUALITY_SETTINGS);
+  expect(gpu.render).toHaveBeenCalledTimes(draws + 1);
+  renderer.selectCamera(null);
+  expect(surface.frames.size).toBe(0);
+  renderer.selectWalk();
+  surface.pointer("pointerdown");
+  surface.pointer("pointermove", 20, 20);
+  expect(surface.frames.size).toBe(1);
+  renderer.dispose();
+  expect(surface.frames.size).toBe(0);
+});
+
+it("refreshes static shadows only for model replacement and shadow-quality changes", async () => {
+  const surface = navigationSurface();
+  const renderer = createApartmentRenderer(surface.canvas, vi.fn());
+  renderer.setModel(modelFixture());
+  await renderer.initialize();
+  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  const light = scene.children.find((object) => object instanceof DirectionalLight);
+  if (!(light instanceof DirectionalLight)) throw new Error("Missing key light");
+  expect(light.shadow.autoUpdate).toBe(false);
+  expect(light.shadow.needsUpdate).toBe(true);
+  light.shadow.needsUpdate = false; // Simulate a completed backend shadow pass.
+  renderer.selectWalk();
+  surface.pointer("pointerdown");
+  surface.pointer("pointermove", 20, 20);
+  surface.frame(16);
+  renderer.resize(800, 600);
+  renderer.setPresentationSettings({ ...DEFAULT_PRESENTATION_SETTINGS, exposureEv: 1 });
+  renderer.setQualitySettings({
+    ...DEFAULT_QUALITY_SETTINGS,
+    pixelRatio: 2,
+    fillLightLevel: "Low",
+  });
+  expect(light.shadow.needsUpdate).toBe(false);
+  for (const shadowQuality of ["High", "Medium", "Off", "Medium"] as const) {
+    renderer.setQualitySettings({ ...DEFAULT_QUALITY_SETTINGS, shadowQuality });
+    if (shadowQuality !== "Off") expect(light.shadow.needsUpdate).toBe(true);
+    light.shadow.needsUpdate = false;
+  }
+  renderer.setModel(modelFixture());
+  expect(light.shadow.needsUpdate).toBe(true);
+  renderer.dispose();
+});
+
+it("replaces allocated shadow resources on resolution changes without resetting Walk or PBR geometry", async () => {
+  const surface = navigationSurface();
+  const onError = vi.fn();
+  const renderer = createApartmentRenderer(surface.canvas, onError);
+  renderer.setModel(modelFixture());
+  await renderer.initialize();
+  renderer.selectWalk();
+  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+  const floor = scene.getObjectByName("floor");
+  const position = camera.position.clone();
+  const orientation = camera.quaternion.toArray();
+  const getLight = (): DirectionalLight => {
+    const result = scene.children.find((object) => object instanceof DirectionalLight);
+    if (!(result instanceof DirectionalLight)) throw new Error("Missing shadow light");
+    return result;
+  };
+  for (const shadowQuality of ["High", "Medium", "Low", "High", "Medium"] as const) {
+    const previous = getLight();
+    // A real backend allocates this target on its first shadow pass. Leaving it
+    // null in the GPU mock hid the unsafe in-place resizing regression.
+    const target = new RenderTarget(previous.shadow.mapSize.x, previous.shadow.mapSize.y);
+    previous.shadow.map = target;
+    const disposed = vi.fn();
+    target.addEventListener("dispose", disposed);
+    const lightDisposed = vi.fn();
+    previous.addEventListener("dispose", lightDisposed);
+    gpu.render.mockImplementationOnce(() => {
+      expect(getLight()).not.toBe(previous);
+      expect(getLight().shadow.map).toBeNull();
+      expect(lightDisposed).toHaveBeenCalledTimes(1);
+    });
+    renderer.setQualitySettings({ ...DEFAULT_QUALITY_SETTINGS, shadowQuality });
+    expect(onError).not.toHaveBeenCalled();
+    const replacement = getLight();
+    expect(replacement).not.toBe(previous);
+    expect(disposed).toHaveBeenCalledTimes(1);
+    expect(previous.parent).toBeNull();
+    expect(previous.target.parent).toBeNull();
+    expect(replacement.position).toEqual(previous.position);
+    expect(replacement.target.position).toEqual(previous.target.position);
+    expect(replacement.shadow.camera.projectionMatrix).toEqual(
+      previous.shadow.camera.projectionMatrix,
+    );
+    expect(replacement.shadow.autoUpdate).toBe(false);
+    expect(replacement.shadow.needsUpdate).toBe(true);
+    expect(scene.children.filter((object) => object instanceof DirectionalLight)).toHaveLength(1);
+    expect(scene.getObjectByName("floor")).toBe(floor);
+    expect(camera.position).toEqual(position);
+    expect(camera.quaternion.toArray()).toEqual(orientation);
+    renderer.setQualitySettings({
+      ...DEFAULT_QUALITY_SETTINGS,
+      shadowQuality,
+      fillLightLevel: "Low",
+    });
+    expect(getLight()).toBe(replacement);
+  }
+  renderer.dispose();
 });
