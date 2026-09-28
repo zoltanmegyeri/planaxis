@@ -3,15 +3,7 @@ import type { PointerEvent as ReactPointerEvent, ReactElement } from "react";
 import { fitDrawing, panDrawing, zoomDrawing } from "./view-transform.js";
 import type { ViewPoint, ViewSize, ViewTransform } from "./view-transform.js";
 
-export function SvgViewport({
-  source,
-  name,
-  isFocusView = false,
-}: {
-  source: string;
-  name: string;
-  isFocusView?: boolean;
-}): ReactElement {
+export function SvgViewport({ source, name }: { source: string; name: string }): ReactElement {
   const [preview, setPreview] = useState<{ url: string } | { error: string }>();
   useEffect(() => {
     let url: string;
@@ -26,20 +18,10 @@ export function SvgViewport({
   }, [source]);
   if (!preview) return <p>Preparing preview…</p>;
   if ("error" in preview) return <p role="status">{preview.error}</p>;
-  return (
-    <ImageViewport key={preview.url} url={preview.url} name={name} isFocusView={isFocusView} />
-  );
+  return <ImageViewport key={preview.url} url={preview.url} name={name} />;
 }
 
-function ImageViewport({
-  url,
-  name,
-  isFocusView,
-}: {
-  url: string;
-  name: string;
-  isFocusView: boolean;
-}): ReactElement {
+function ImageViewport({ url, name }: { url: string; name: string }): ReactElement {
   const container = useRef<HTMLDivElement>(null);
   const intrinsic = useRef<ViewSize | undefined>(undefined);
   const pointers = useRef(new Map<number, ViewPoint>());
@@ -130,7 +112,7 @@ function ImageViewport({
   }
   return (
     <section className="viewer" aria-label="2D floor plan">
-      <div className="viewer-toolbar focus-view-hidden" hidden={isFocusView}>
+      <div className="viewer-toolbar">
         <span>
           2D floor plan <small>Read only</small>
         </span>
@@ -157,7 +139,6 @@ function ImageViewport({
         tabIndex={0}
         role="region"
         aria-label="Drawing navigation"
-        aria-describedby="navigation-help"
         onKeyDown={(event) => {
           if (status !== "ready") return;
           const directions: Record<string, ViewPoint> = {
@@ -229,9 +210,6 @@ function ImageViewport({
           onError={() => setStatus("unavailable")}
         />
       </div>
-      <p id="navigation-help" className="navigation-help focus-view-hidden" hidden={isFocusView}>
-        Drag to pan · Scroll or pinch to zoom · Arrow keys to pan · + / − to zoom · 0 to fit
-      </p>
     </section>
   );
 }

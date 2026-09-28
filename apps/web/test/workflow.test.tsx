@@ -72,7 +72,36 @@ const createUrl = vi.fn((blob: Blob | MediaSource) => {
 });
 const revokeUrl = vi.fn();
 
+let fullscreenElement: Element | null = null;
+const originalRequestFullscreen = Object.getOwnPropertyDescriptor(
+  HTMLElement.prototype,
+  "requestFullscreen",
+);
+const requestFullscreen = vi.fn((): Promise<void> => {
+  fullscreenElement = host.querySelector(".three-render-area");
+  document.dispatchEvent(new Event("fullscreenchange"));
+  return Promise.resolve();
+});
+const exitFullscreen = vi.fn(async () => {
+  fullscreenElement = null;
+  document.dispatchEvent(new Event("fullscreenchange"));
+});
+async function browserExit(): Promise<void> {
+  await act(async () => exitFullscreen());
+}
+
 beforeEach(() => {
+  fullscreenElement = null;
+  Object.defineProperty(document, "fullscreenElement", {
+    configurable: true,
+    get: () => fullscreenElement,
+  });
+  Object.defineProperty(document, "fullscreenEnabled", { configurable: true, value: true });
+  Object.defineProperty(document, "exitFullscreen", { configurable: true, value: exitFullscreen });
+  Object.defineProperty(HTMLElement.prototype, "requestFullscreen", {
+    configurable: true,
+    value: requestFullscreen,
+  });
   window.localStorage.clear();
   rendererMocks.initialize.mockResolvedValue();
   fetchMock.mockReset();
@@ -88,6 +117,11 @@ beforeEach(() => {
 afterEach(async () => {
   await act(async () => root.unmount());
   host.remove();
+  for (const key of ["fullscreenElement", "fullscreenEnabled", "exitFullscreen"])
+    Reflect.deleteProperty(document, key);
+  if (originalRequestFullscreen)
+    Object.defineProperty(HTMLElement.prototype, "requestFullscreen", originalRequestFullscreen);
+  else Reflect.deleteProperty(HTMLElement.prototype, "requestFullscreen");
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   vi.clearAllMocks();
@@ -111,7 +145,7 @@ it("starts loading without local-file controls", async () => {
   await render();
   expect(host.querySelector('[role="status"]')?.textContent).toBe("Loading project");
   expect(host.querySelector('input[type="file"]')).toBeNull();
-  expect(host.querySelector('[aria-label="Enter Focus view"]')).toBeNull();
+  expect(host.querySelector('[aria-label="Full screen"]')).toBeNull();
   expect(host.querySelector("img")).toBeNull();
   expect(host.textContent).not.toMatch(/Open SVG|Replace SVG|Browse files|Drop your floor plan/);
 });
@@ -123,7 +157,7 @@ it("loads metadata then active architecture through fixed relative URLs", async 
     "/api/project/architecture",
     "/api/project/designs",
   ]);
-  expect(host.querySelector('[role="status"]')?.textContent).toBe("Valid");
+  expect(host.querySelector('[role="status"]')?.textContent).toBe("Ready");
   expect(host.textContent).toContain("trusted 2D apartment model is ready");
   expect(host.textContent).toContain(metadata.name);
   expect(host.textContent).toContain(metadata.architecture.active);
@@ -154,7 +188,7 @@ it("identifies architecture processing while its response is pending", async () 
   expect(host.textContent).toContain(metadata.name);
   expect(host.querySelector("img")).toBeNull();
   await act(async () => pending.resolve(new Response(validSource)));
-  expect(host.querySelector('[role="status"]')?.textContent).toBe("Valid");
+  expect(host.querySelector('[role="status"]')?.textContent).toBe("Ready");
 });
 
 it.each([
@@ -275,7 +309,7 @@ it.each(["success", "failure"])(
       </StrictMode>,
     );
     expect(fetchMock.mock.calls[0]?.[1]?.signal?.aborted).toBe(true);
-    expect(host.querySelector('[role="status"]')?.textContent).toBe("Valid");
+    expect(host.querySelector('[role="status"]')?.textContent).toBe("Ready");
     await act(async () => {
       if (outcome === "success")
         pending.resolve(Response.json({ ...metadata, name: "Stale project" }));
@@ -283,7 +317,7 @@ it.each(["success", "failure"])(
     });
     expect(host.textContent).toContain(metadata.name);
     expect(host.textContent).not.toContain("Stale project");
-    expect(host.querySelector('[role="status"]')?.textContent).toBe("Valid");
+    expect(host.querySelector('[role="status"]')?.textContent).toBe("Ready");
     expect(fetchMock).toHaveBeenCalledTimes(4);
   },
 );
@@ -359,11 +393,14 @@ it("shows preview failure independently of validation and lets details collapse"
     host.querySelector("img")?.dispatchEvent(new Event("error"));
   });
   expect(host.textContent).toContain("Preview unavailable");
-  expect(host.querySelector('[role="status"]')?.textContent).toBe("Valid");
-  const toggle = host.querySelector<HTMLButtonElement>('[aria-controls="validation-details"]');
-  await act(async () => toggle?.click());
+  expect(host.querySelector('[role="status"]')?.textContent).toBe("Ready");
+  await clickControl("Diagnostics status");
+  expect(host.querySelector<HTMLElement>("#diagnostics-panel")?.hidden).toBe(false);
+  await clickControl("Close Diagnostics");
   expect(host.querySelector("aside")).toBeNull();
-  expect(toggle?.getAttribute("aria-expanded")).toBe("false");
+  expect(
+    host.querySelector('[aria-label="Diagnostics status"]')?.getAttribute("aria-expanded"),
+  ).toBe("false");
 });
 
 it("keeps source available after unexpected processing failure", async () => {
@@ -388,71 +425,53 @@ async function clickControl(label: string): Promise<void> {
   await act(async () => button.click());
 }
 
-it("focuses the 2D viewport without remounting it or resetting workspace state", async () => {
+it("opens overlay details without remounting or resetting the 2D viewport", async () => {
   await render();
   const surface = host.querySelector<HTMLDivElement>(".drawing-surface");
   const image = host.querySelector<HTMLImageElement>("img");
-  const details = host.querySelector("aside");
-  if (!surface || !image || !details) throw new Error("Missing loaded 2D workspace");
+  if (!surface || !image) throw new Error("Missing loaded 2D workspace");
   vi.spyOn(surface, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 848, 648));
   Object.defineProperties(image, { naturalWidth: { value: 400 }, naturalHeight: { value: 200 } });
   await act(async () => image.dispatchEvent(new Event("load")));
   await clickControl("Zoom in");
   const transform = image.style.transform;
   const previewUrlCalls = createUrl.mock.calls.length;
-
-  await clickControl("Enter Focus view");
-
-  const application = host.querySelector(".application");
-  expect(application?.classList.contains("focus-view")).toBe(true);
-  for (const chrome of host.querySelectorAll<HTMLElement>(".focus-view-hidden"))
-    expect(chrome.hidden).toBe(true);
+  expect(host.querySelector<HTMLElement>("#diagnostics-panel")?.hidden).toBe(true);
+  expect(host.querySelector("aside")).toBeNull();
+  await clickControl("Diagnostics status");
+  expect(host.querySelector<HTMLElement>("#diagnostics-panel")?.hidden).toBe(false);
   expect(host.querySelector("img")).toBe(image);
+  await clickControl("Close Diagnostics");
+  expect(host.querySelector<HTMLElement>("#diagnostics-panel")?.hidden).toBe(true);
   expect(image.style.transform).toBe(transform);
   expect(createUrl).toHaveBeenCalledTimes(previewUrlCalls);
-  expect(host.querySelector('[aria-label="Exit Focus view"]')).not.toBeNull();
-
-  await clickControl("Exit Focus view");
-
-  expect(application?.classList.contains("focus-view")).toBe(false);
-  expect(host.querySelector("img")).toBe(image);
-  expect(image.style.transform).toBe(transform);
-  expect(host.querySelector("aside")).toBe(details);
-  expect(
-    host.querySelector('[aria-controls="validation-details"]')?.getAttribute("aria-expanded"),
-  ).toBe("true");
+  expect(host.querySelector('[aria-label="Full screen"]')).toBeNull();
 });
 
-it("exits Focus view with Escape while preserving the active 3D view and camera", async () => {
+it("tracks browser fullscreen entry and native Escape exit without resetting the renderer", async () => {
   await mountProject(fixture("valid/minimal-semantic-schema.svg"));
   await clickView("3D");
   const canvas = host.querySelector("canvas");
-  const select = host.querySelector<HTMLSelectElement>('[aria-label="3D camera"]');
-  if (!canvas || !select) throw new Error("Missing 3D viewport");
-  await act(async () => {
-    select.value = "camera-1";
-    select.dispatchEvent(new Event("change", { bubbles: true }));
-  });
-
-  await clickControl("Enter Focus view");
-  expect(host.querySelector<HTMLElement>(".three-toolbar")?.hidden).toBe(true);
+  await selectQuality("3D camera", "camera-1");
+  await clickControl("Full screen");
+  const area = host.querySelector(".three-render-area");
+  expect(document.fullscreenElement).toBe(area);
+  expect(requestFullscreen).toHaveBeenCalledTimes(1);
+  expect(requestFullscreen.mock.contexts[0]).toBe(area);
+  expect([...area!.children].map((element) => element.tagName)).toEqual(["CANVAS", "BUTTON"]);
+  expect(area?.querySelector("button")?.textContent).toBe("×");
   const escape = new KeyboardEvent("keydown", { key: "Escape", cancelable: true });
   await act(async () => window.dispatchEvent(escape));
-
-  expect(escape.defaultPrevented).toBe(true);
-  expect(host.querySelector(".application")?.classList.contains("focus-view")).toBe(false);
+  expect(escape.defaultPrevented).toBe(false);
+  await browserExit();
+  expect(host.querySelector('[aria-label="Exit full screen"]')).toBeNull();
   expect(host.querySelector("canvas")).toBe(canvas);
-  expect(select.value).toBe("camera-1");
-  expect(host.querySelector<HTMLButtonElement>('[aria-pressed="true"]')?.textContent).toBe("3D");
+  expect(qualityControl("3D camera").value).toBe("camera-1");
   expect(rendererMocks.setModel).toHaveBeenCalledTimes(1);
   expect(rendererMocks.dispose).not.toHaveBeenCalled();
-
-  const inactiveEscape = new KeyboardEvent("keydown", { key: "Escape", cancelable: true });
-  await act(async () => window.dispatchEvent(inactiveEscape));
-  expect(inactiveEscape.defaultPrevented).toBe(false);
 });
 
-it("keeps camera, lens, and fitted image selections independent through Focus view", async () => {
+it("keeps camera, lens, and fitted image selections independent through full screen", async () => {
   await mountProject(fixture("valid/minimal-semantic-schema.svg"));
   await clickView("3D");
   const application = host.querySelector<HTMLElement>(".application");
@@ -465,7 +484,7 @@ it("keeps camera, lens, and fitted image selections independent through Focus vi
     throw new Error("Missing 3D framing controls");
   }
   vi.spyOn(area, "getBoundingClientRect").mockImplementation(() =>
-    application.classList.contains("focus-view")
+    document.fullscreenElement === area
       ? new DOMRect(0, 0, 900, 1200)
       : new DOMRect(0, 0, 1200, 800),
   );
@@ -499,7 +518,7 @@ it("keeps camera, lens, and fitted image selections independent through Focus vi
   expect(rendererMocks.setFocalLengthOverride).toHaveBeenLastCalledWith(35);
   expect(rendererMocks.selectCamera).toHaveBeenLastCalledWith("camera-1");
   expect(camera.value).toBe("camera-1");
-  expect(lens.value).toBe("35");
+  expect(lens.value).toBe("");
   expect(image.value).toBe("1:1");
   expect(canvas.style.width).toBe("800px");
   expect(canvas.style.height).toBe("800px");
@@ -507,17 +526,17 @@ it("keeps camera, lens, and fitted image selections independent through Focus vi
   expect(canvas.style.top).toBe("0px");
   expect(rendererMocks.resize).toHaveBeenLastCalledWith(800, 800);
 
-  await clickControl("Enter Focus view");
+  await clickControl("Full screen");
   expect(host.querySelector("canvas")).toBe(canvas);
   expect(camera.value).toBe("camera-1");
-  expect(lens.value).toBe("35");
+  expect(lens.value).toBe("");
   expect(image.value).toBe("1:1");
   expect(canvas.style.width).toBe("900px");
   expect(canvas.style.height).toBe("900px");
   expect(canvas.style.left).toBe("0px");
   expect(canvas.style.top).toBe("150px");
 
-  await clickControl("Exit Focus view");
+  await clickControl("Exit full screen");
   await act(async () => {
     lens.value = "";
     lens.dispatchEvent(new Event("change", { bubbles: true }));
@@ -534,17 +553,16 @@ it("keeps camera, lens, and fitted image selections independent through Focus vi
   expect(canvas.style.top).toBe("0px");
 });
 
-it("offers Focus view for an invalid document with a 2D preview", async () => {
+it("keeps fullscreen unavailable for invalid documents with 2D previews", async () => {
   await mountProject(fixture("invalid/missing-cameras-group.svg"));
-  const image = host.querySelector("img");
-  expect(host.querySelector('[role="status"]')?.textContent).toBe("Invalid");
-  expect(image).not.toBeNull();
-
-  await clickControl("Enter Focus view");
-
-  expect(host.querySelector(".application")?.classList.contains("focus-view")).toBe(true);
-  expect(host.querySelector("img")).toBe(image);
-  expect(host.querySelector<HTMLElement>("aside")?.hidden).toBe(true);
+  expect(host.querySelector("img")).not.toBeNull();
+  expect(host.querySelector('[aria-label="Full screen"]')).toBeNull();
+  expect(host.querySelector<HTMLElement>("#diagnostics-panel")?.hidden).toBe(true);
+  await clickView("View details");
+  expect(host.querySelector<HTMLElement>("#diagnostics-panel")?.hidden).toBe(false);
+  expect(host.querySelector("#diagnostics-panel")?.textContent).toContain(
+    "Schema validation failed",
+  );
 });
 
 it("switches valid views without processing again, selects embedded cameras and cleans up", async () => {
@@ -560,7 +578,7 @@ it("switches valid views without processing again, selects embedded cameras and 
   const select = host.querySelector<HTMLSelectElement>('[aria-label="3D camera"]');
   if (!select) throw new Error("Missing camera selector");
   expect([...select.options].map((option) => option.text)).toEqual([
-    "Inspection / orbit",
+    "Inspection",
     "Walk",
     "camera-1",
   ]);
@@ -609,7 +627,7 @@ it("disposes immediately when leaving 3D during initialization and ignores late 
   expect(rendererMocks.dispose).toHaveBeenCalledTimes(1);
   await act(async () => finish());
   expect(host.querySelector("canvas")).toBeNull();
-  expect(host.querySelector('[role="status"]')?.textContent).toBe("Valid");
+  expect(host.querySelector('[role="status"]')?.textContent).toBe("Ready");
 });
 
 it("surfaces unexpected architectural construction errors before enabling 3D", async () => {
@@ -642,7 +660,7 @@ it("disables Walk without source cameras and explains the requirement", async ()
   expect(rendererMocks.selectWalk).not.toHaveBeenCalled();
 });
 
-it("selects Walk independently of embedded IDs, lens, aspect ratio, and Focus view", async () => {
+it("selects Walk independently of embedded IDs, lens, aspect ratio, and full screen", async () => {
   await mountProject(
     fixture("valid/minimal-semantic-schema.svg").replace('id="camera-1"', 'id="walk"'),
   );
@@ -672,10 +690,8 @@ it("selects Walk independently of embedded IDs, lens, aspect ratio, and Focus vi
   expect(host.textContent).toContain("Left-drag to look");
   expect(host.textContent).toContain("Option (Mac) / Space (Windows, Linux): slow");
   expect(canvas.style.width).toBe("800px");
-  await clickControl("Enter Focus view");
-  await act(async () =>
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", cancelable: true })),
-  );
+  await clickControl("Full screen");
+  await browserExit();
   expect(host.querySelector("canvas")).toBe(canvas);
   expect(camera.value).toBe(walk.value);
   expect(rendererMocks.selectWalk).toHaveBeenCalledTimes(1);
@@ -685,7 +701,7 @@ it("selects Walk independently of embedded IDs, lens, aspect ratio, and Focus vi
     await choose(camera, id);
     expect(rendererMocks.selectCamera).toHaveBeenLastCalledWith(id || null);
     await choose(camera, walk.value);
-    expect(lens.value).toBe("35");
+    expect(lens.value).toBe("");
     expect(aspect.value).toBe("1:1");
   }
   await choose(lens, "");
@@ -797,11 +813,9 @@ it("labels presentation controls, waits for readiness, and applies each transien
   await change(control("3D camera"), "@walk");
   await change(control("3D focal length"), "35");
   await change(control("3D render aspect ratio"), "1:1");
-  await clickControl("Enter Focus view");
-  expect(host.querySelector<HTMLElement>(".three-toolbar")?.hidden).toBe(true);
-  await act(async () =>
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", cancelable: true })),
-  );
+  await clickControl("Full screen");
+  expect(document.fullscreenElement).toBe(host.querySelector(".three-render-area"));
+  await browserExit();
   expect(controls.map((element) => element.value)).toEqual(["Neutral", "-1.5", "2.4", "135"]);
   expect(rendererMocks.setPresentationSettings).toHaveBeenCalledTimes(calls);
   expect(rendererMocks.setModel).toHaveBeenCalledTimes(1);
@@ -895,7 +909,7 @@ it("applies presets and manual quality edits immediately without rebuilding or c
   await selectQuality("3D camera", "@walk");
   await selectQuality("3D focal length", "35");
   await selectQuality("3D render aspect ratio", "1:1");
-  await clickControl("Enter Focus view");
+  await clickControl("Full screen");
   expect(rendererMocks.setQualitySettings).toHaveBeenLastCalledWith(custom);
   expect(rendererMocks.setPresentationSettings).toHaveBeenCalledTimes(presentationCalls);
   expect(rendererMocks.setModel).toHaveBeenCalledTimes(1);
@@ -958,4 +972,208 @@ it("renders and accepts quality changes when storage fails", async () => {
   );
   expect(qualityControl("3D quality preset").value).toBe("Performance");
   expect(rendererMocks.dispose).not.toHaveBeenCalled();
+});
+
+it("exposes primary actions in one toolbar and keeps secondary settings transient", async () => {
+  await mountProject(fixture("valid/minimal-semantic-schema.svg"));
+  const toolbar = host.querySelector('[aria-label="Workspace toolbar"]');
+  expect(toolbar?.querySelector('[aria-label="Design scenario"]')).not.toBeNull();
+  expect(toolbar?.querySelector('[aria-label="Apartment view"]')).not.toBeNull();
+  expect(host.querySelector<HTMLElement>("#design-panel")?.hidden).toBe(true);
+  await clickControl("Create or edit a design");
+  expect(host.querySelector<HTMLElement>("#design-panel")?.hidden).toBe(false);
+  await clickView("3D");
+  for (const label of [
+    "3D camera",
+    "Rendering",
+    "Full screen",
+    "Diagnostics status",
+    "Information and help",
+  ]) {
+    expect(toolbar?.querySelector(`[aria-label="${label}"]`)).not.toBeNull();
+  }
+  expect(host.querySelectorAll(".primary-toolbar")).toHaveLength(1);
+  expect(host.querySelector<HTMLElement>("#rendering-panel")?.hidden).toBe(true);
+  await clickControl("Rendering");
+  const rendering = host.querySelector<HTMLElement>("#rendering-panel");
+  expect(rendering?.hidden).toBe(false);
+  expect(rendering?.querySelectorAll("input, select")).toHaveLength(9);
+  await clickControl("Camera settings");
+  expect(rendering?.hidden).toBe(true);
+  expect(host.querySelector<HTMLElement>("#camera-panel")?.hidden).toBe(false);
+  expect(host.querySelector("#camera-panel")?.textContent).toContain(
+    "Inspection: 50 mm · Walk: 16 mm",
+  );
+});
+
+it("dismisses a problem toast while retaining warning status and structured overlay details", async () => {
+  await mountProject(fixture("invalid/multiple-broken-wall-references.svg"));
+  expect(host.querySelector(".problem-toast")?.textContent).toContain(
+    "Reference validation failed",
+  );
+  await clickControl("Dismiss notification");
+  expect(host.querySelector(".problem-toast")).toBeNull();
+  expect(host.querySelector('[aria-label="Diagnostics status"]')?.textContent).toBe("Invalid");
+  expect(host.querySelector(".overflow-toggle")?.classList.contains("has-problem")).toBe(true);
+  await clickControl("Diagnostics status");
+  const details = host.querySelector<HTMLElement>("#diagnostics-panel");
+  expect(details?.hidden).toBe(false);
+  expect(details?.querySelectorAll(".diagnostic").length).toBeGreaterThan(1);
+  expect(details?.querySelector("dl")).not.toBeNull();
+  await clickControl("Close Diagnostics");
+  expect(details?.hidden).toBe(true);
+});
+
+it("automatically expires a toast without clearing diagnostics", async () => {
+  vi.useFakeTimers();
+  try {
+    await mountProject(fixture("invalid/missing-cameras-group.svg"));
+    expect(host.querySelector(".problem-toast")).not.toBeNull();
+    await act(async () => vi.advanceTimersByTime(7000));
+    expect(host.querySelector(".problem-toast")).toBeNull();
+    expect(host.querySelector('[aria-label="Diagnostics status"]')?.textContent).toBe("Invalid");
+    await clickControl("Diagnostics status");
+    expect(host.querySelector("#diagnostics-panel")?.textContent).toContain("APSVG-");
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+async function key(
+  key: string,
+  options: KeyboardEventInit = {},
+  target: EventTarget = window,
+): Promise<KeyboardEvent> {
+  const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true, ...options });
+  await act(async () => target.dispatchEvent(event));
+  return event;
+}
+
+it("supports view and camera shortcuts while leaving active Walk W handling authoritative", async () => {
+  await mountProject(fixture("valid/minimal-semantic-schema.svg"));
+  await key("w");
+  await key("i");
+  expect(rendererMocks.selectWalk).not.toHaveBeenCalled();
+  expect(rendererMocks.selectCamera).not.toHaveBeenCalled();
+  await key("3");
+  expect(host.querySelector("canvas")).not.toBeNull();
+  await key("W");
+  expect(rendererMocks.selectWalk).toHaveBeenCalledTimes(1);
+  const movement = await key("w", {}, host.querySelector("canvas")!);
+  expect(movement.defaultPrevented).toBe(false);
+  expect(rendererMocks.selectWalk).toHaveBeenCalledTimes(1);
+  await selectQuality("3D focal length", "85");
+  await key("I");
+  expect(rendererMocks.selectCamera).toHaveBeenLastCalledWith(null);
+  expect(qualityControl("3D focal length").value).toBe("");
+  await key("2");
+  expect(host.querySelector("canvas")).toBeNull();
+  expect(host.querySelector("img")).not.toBeNull();
+});
+
+it.each(["input", "textarea", "select", "editable", "textbox", "combobox"])(
+  "suppresses shortcuts in %s controls",
+  async (kind) => {
+    await mountProject(fixture("valid/minimal-semantic-schema.svg"));
+    await clickView("3D");
+    const element = document.createElement(
+      ["input", "textarea", "select"].includes(kind) ? kind : "div",
+    );
+    if (kind === "editable") element.setAttribute("contenteditable", "true");
+    if (kind === "textbox" || kind === "combobox") element.setAttribute("role", kind);
+    host.append(element);
+    for (const value of ["2", "3", "w", "i"])
+      expect((await key(value, {}, element)).defaultPrevented).toBe(false);
+    expect(host.querySelector("canvas")).not.toBeNull();
+    expect(rendererMocks.selectWalk).not.toHaveBeenCalled();
+    expect(rendererMocks.selectCamera).not.toHaveBeenCalled();
+    element.remove();
+  },
+);
+
+it.each(["ctrlKey", "metaKey", "altKey", "isComposing", "repeat"])(
+  "suppresses ordinary shortcuts with %s",
+  async (modifier) => {
+    await mountProject(fixture("valid/minimal-semantic-schema.svg"));
+    await clickView("3D");
+    for (const value of ["2", "3", "w", "i"])
+      expect((await key(value, { [modifier]: true })).defaultPrevented).toBe(false);
+    expect(host.querySelector("canvas")).not.toBeNull();
+    expect(rendererMocks.selectWalk).not.toHaveBeenCalled();
+    expect(rendererMocks.selectCamera).not.toHaveBeenCalled();
+  },
+);
+
+it("offers contextual help and closes panels with Escape without changing navigation", async () => {
+  await mountProject(fixture("valid/minimal-semantic-schema.svg"));
+  await clickControl("Information and help");
+  expect(host.querySelector<HTMLElement>("#help-panel")?.hidden).toBe(false);
+  expect(host.querySelector("#help-panel")?.textContent).toContain("Drag to pan");
+  await key("Escape");
+  await clickView("3D");
+  const trigger = host.querySelector<HTMLButtonElement>('[aria-label="Information and help"]')!;
+  trigger.focus();
+  await clickControl("Information and help");
+  expect(host.querySelector("#help-panel")?.textContent).toContain("Drag to orbit");
+  expect((await key("Escape")).defaultPrevented).toBe(true);
+  expect(document.activeElement).toBe(trigger);
+  await key("w");
+  await clickControl("Information and help");
+  expect(host.querySelector("#help-panel")?.textContent).toContain("WASD / arrows");
+  expect(host.querySelector("#help-panel")?.textContent).toContain("Option (Mac) / Space");
+  expect(host.querySelector("#help-panel")?.textContent).toContain("I: Inspection");
+  await key("Escape");
+  expect(rendererMocks.selectWalk).toHaveBeenCalledTimes(1);
+  expect(rendererMocks.dispose).not.toHaveBeenCalled();
+  expect(qualityControl("3D camera").value).toBe("@walk");
+});
+
+it("keeps overflow actions keyboard accessible and closes them with Escape", async () => {
+  await render();
+  await clickControl("More workspace controls");
+  const overflow = host.querySelector("#workspace-overflow");
+  expect(overflow?.classList.contains("is-open")).toBe(true);
+  expect(overflow?.contains(document.activeElement)).toBe(true);
+  await key("Escape");
+  expect(overflow?.classList.contains("is-open")).toBe(false);
+  await clickControl("More workspace controls");
+  await clickControl("Diagnostics status");
+  expect(host.querySelector<HTMLElement>("#diagnostics-panel")?.hidden).toBe(false);
+  expect(overflow?.classList.contains("is-open")).toBe(false);
+});
+
+it.each(["unavailable", "rejected"])(
+  "handles %s fullscreen without stale state or renderer replacement",
+  async (failure) => {
+    await render();
+    await clickView("3D");
+    const canvas = host.querySelector("canvas");
+    if (failure === "unavailable")
+      Object.defineProperty(document, "fullscreenEnabled", { configurable: true, value: false });
+    else requestFullscreen.mockRejectedValueOnce(new Error("denied"));
+    await clickControl("Full screen");
+    expect(host.querySelector('[aria-label="Exit full screen"]')).toBeNull();
+    expect(document.fullscreenElement).toBeNull();
+    expect(host.textContent).toContain(
+      failure === "unavailable" ? "Full screen is unavailable" : "Unable to enter full screen",
+    );
+    expect(host.querySelector("canvas")).toBe(canvas);
+    expect(rendererMocks.dispose).not.toHaveBeenCalled();
+  },
+);
+
+it("uses fullscreenchange as the source of truth and exits through the close button", async () => {
+  await mountProject(fixture("valid/minimal-semantic-schema.svg"));
+  await clickView("3D");
+  requestFullscreen.mockResolvedValueOnce();
+  await clickControl("Full screen");
+  expect(host.querySelector('[aria-label="Exit full screen"]')).toBeNull();
+  fullscreenElement = host.querySelector(".three-render-area");
+  await act(async () => document.dispatchEvent(new Event("fullscreenchange")));
+  expect(host.querySelector('[aria-label="Exit full screen"]')).not.toBeNull();
+  expect((await key("2")).defaultPrevented).toBe(false);
+  expect(host.querySelector("canvas")).not.toBeNull();
+  await clickControl("Exit full screen");
+  expect(exitFullscreen).toHaveBeenCalledTimes(1);
+  expect(host.querySelector('[aria-label="Exit full screen"]')).toBeNull();
 });

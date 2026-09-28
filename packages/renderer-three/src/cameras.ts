@@ -49,7 +49,7 @@ export function frameInspection(camera: PerspectiveCamera, bounds: Box3, aspect:
   const center = bounds.getCenter(new Vector3());
   const radius = Math.max(bounds.getSize(new Vector3()).length() / 2, 0.01);
   camera.up.set(0, 1, 0);
-  camera.fov = 50;
+  camera.fov = verticalFov(fullFrameHorizontalFov(50), aspect);
   camera.aspect = aspect;
   const halfAngle = Math.min(
     MathUtils.degToRad(camera.fov / 2),

@@ -121,8 +121,8 @@ export function createApartmentRenderer(
     camera.aspect = aspect;
     if (focalLengthOverride !== null) {
       camera.fov = verticalFov(fullFrameHorizontalFov(focalLengthOverride), aspect);
-    } else if (!isWalking && cameraId === null) {
-      camera.fov = 50;
+    } else if (isWalking || cameraId === null) {
+      camera.fov = verticalFov(fullFrameHorizontalFov(isWalking ? 16 : 50), aspect);
     } else {
       const source = isWalking
         ? model?.cameras[0]
@@ -153,6 +153,7 @@ export function createApartmentRenderer(
   };
   const selectCamera = (id: string | null): void => {
     if (disposed || !model || !apartment) return;
+    focalLengthOverride = null;
     walk?.deactivate();
     isWalking = false;
     controls.enabled = false;
@@ -238,6 +239,7 @@ export function createApartmentRenderer(
     selectWalk() {
       if (disposed || !model || !apartment) return;
       walk ??= new WalkControls(model, camera, canvas, requestWalkRender);
+      focalLengthOverride = null;
       controls.enabled = false;
       isWalking = true;
       walk.activate();

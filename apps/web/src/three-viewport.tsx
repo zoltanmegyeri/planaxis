@@ -1,3 +1,7 @@
+import { createPortal } from "react-dom";
+import { isWorkspaceShortcut, NavigationHelp, TransientPanel } from "./transient-panel.js";
+import type { WorkspacePanel } from "./transient-panel.js";
+import { useFullscreen } from "./use-fullscreen.js";
 import type { ArchitecturalModel3D } from "@planaxis/model-3d";
 import {
   createApartmentRenderer,
@@ -41,19 +45,26 @@ const WALK_VIEW = "@walk";
 export function ThreeViewport({
   model,
   onFailure,
-  isFocusView = false,
+  toolbar,
+  panel,
+  onTogglePanel,
+  onClosePanel,
   scenarioPresentation,
   materials,
   onMaterialFailure,
 }: {
   model: ArchitecturalModel3D;
   onFailure: (error: unknown) => void;
-  isFocusView?: boolean;
+  toolbar: HTMLDivElement | null;
+  panel: WorkspacePanel;
+  onTogglePanel: (panel: WorkspacePanel) => void;
+  onClosePanel: () => void;
   scenarioPresentation?: ScenarioPresentation | undefined;
   materials?: LoadedMaterials | undefined;
   onMaterialFailure?: (() => void) | undefined;
 }): ReactElement {
   const renderArea = useRef<HTMLDivElement>(null);
+  const fullscreen = useFullscreen(renderArea);
   const canvas = useRef<HTMLCanvasElement>(null);
   const renderer = useRef<ApartmentRenderer | null>(null);
   const resizeRenderer = useRef<() => void>(() => undefined);
@@ -203,49 +214,100 @@ export function ThreeViewport({
   }, [model, onFailure, materials, onMaterialFailure]);
   useEffect(() => {
     resizeRenderer.current();
-  }, [aspectRatio, isFocusView]);
+  }, [aspectRatio, fullscreen.active]);
+  const selectCamera = (id: string): void => {
+    if (!ready) return;
+    try {
+      if (id === WALK_VIEW) {
+        if (model.cameras.length === 0) return;
+        renderer.current?.selectWalk();
+      } else renderer.current?.selectCamera(id || null);
+      setCameraId(id);
+      setFocalLength(null);
+    } catch (error) {
+      onFailure(error);
+    }
+  };
+  const selectCameraRef = useRef(selectCamera);
+  selectCameraRef.current = selectCamera;
+  useEffect(() => {
+    const shortcut = (event: KeyboardEvent): void => {
+      if (!isWorkspaceShortcut(event)) return;
+      const key = event.key.toLowerCase();
+      if (key === "w" && cameraId !== WALK_VIEW && model.cameras.length > 0) {
+        event.preventDefault();
+        selectCameraRef.current(WALK_VIEW);
+      } else if (key === "i") {
+        event.preventDefault();
+        selectCameraRef.current("");
+      }
+    };
+    window.addEventListener("keydown", shortcut);
+    return () => window.removeEventListener("keydown", shortcut);
+  }, [cameraId, model.cameras.length]);
   return (
     <section className="three-viewport" aria-label="3D apartment view">
-      <div className="three-toolbar focus-view-hidden" hidden={isFocusView}>
-        <QualityControls
-          preference={quality}
-          nativeDpr={nativeDpr}
-          ready={ready}
-          onPreset={(preset) => updateQuality(qualityPreset(preset, nativeDpr))}
-          onEdit={editQualitySettings}
-        />
-        <label>
-          Camera{" "}
-          <select
-            aria-label="3D camera"
-            value={cameraId}
-            disabled={!ready}
-            onChange={(event) => {
-              const id = event.target.value;
-              try {
-                if (id === WALK_VIEW) {
-                  if (model.cameras.length === 0) return;
-                  renderer.current?.selectWalk();
-                } else {
-                  renderer.current?.selectCamera(id || null);
-                }
-                setCameraId(id);
-              } catch (error) {
-                onFailure(error);
-              }
-            }}
-          >
-            <option value="">Inspection / orbit</option>
-            <option value={WALK_VIEW} disabled={model.cameras.length === 0}>
-              Walk
-            </option>
-            {model.cameras.map((camera) => (
-              <option key={camera.id} value={camera.id}>
-                {camera.id}
-              </option>
-            ))}
-          </select>
-        </label>
+      {toolbar &&
+        createPortal(
+          <>
+            <label>
+              <span className="control-label">Camera </span>
+              <select
+                aria-label="3D camera"
+                value={cameraId}
+                disabled={!ready}
+                onChange={(event) => selectCamera(event.target.value)}
+              >
+                <option value="">Inspection</option>
+                <option value={WALK_VIEW} disabled={model.cameras.length === 0}>
+                  Walk
+                </option>
+                {model.cameras.map((camera) => (
+                  <option key={camera.id} value={camera.id}>
+                    {camera.id}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              aria-label="Camera settings"
+              title="Camera settings"
+              aria-expanded={panel === "camera"}
+              aria-controls="camera-panel"
+              onClick={() => onTogglePanel("camera")}
+            >
+              ⌖
+            </button>
+            <button
+              aria-label="Rendering"
+              title="Rendering"
+              aria-expanded={panel === "rendering"}
+              aria-controls="rendering-panel"
+              onClick={() => onTogglePanel("rendering")}
+            >
+              <span aria-hidden="true">◐</span>
+              <span className="button-label"> Rendering</span>
+            </button>
+            <button
+              aria-label="Full screen"
+              title="Full screen"
+              onClick={() => {
+                onClosePanel();
+                void fullscreen.enter();
+              }}
+            >
+              <span aria-hidden="true">⛶</span>
+              <span className="button-label"> Full screen</span>
+            </button>
+          </>,
+          toolbar,
+        )}
+      <TransientPanel
+        id="camera-panel"
+        title="Camera settings"
+        open={panel === "camera"}
+        onClose={onClosePanel}
+      >
         <label>
           Focal length{" "}
           <select
@@ -290,6 +352,27 @@ export function ThreeViewport({
             ))}
           </select>
         </label>
+        <p>
+          Inspection: 50 mm · Walk: 16 mm · Embedded: camera-defined FOV. Selecting a camera
+          restores its default lens.
+        </p>
+        {model.cameras.length === 0 && (
+          <p>Free walk requires at least one camera in the Apartment SVG.</p>
+        )}
+      </TransientPanel>
+      <TransientPanel
+        id="rendering-panel"
+        title="Rendering"
+        open={panel === "rendering"}
+        onClose={onClosePanel}
+      >
+        <QualityControls
+          preference={quality}
+          nativeDpr={nativeDpr}
+          ready={ready}
+          onPreset={(preset) => updateQuality(qualityPreset(preset, nativeDpr))}
+          onEdit={editQualitySettings}
+        />
         <label>
           Tone mapping{" "}
           <select
@@ -354,21 +437,42 @@ export function ThreeViewport({
             }
           />
         </label>
-        <span>
-          {ready
-            ? cameraId === WALK_VIEW
-              ? "WASD / arrows to walk · Left-drag to look · Shift: fast · Option (Mac) / Space (Windows, Linux): slow · No collisions"
-              : cameraId
-                ? "Embedded camera"
-                : "Drag to orbit · Right-drag to pan · Scroll to zoom"
-            : "Starting 3D…"}
-        </span>
+      </TransientPanel>
+      <TransientPanel
+        id="help-panel"
+        title="Information and help"
+        open={panel === "help"}
+        onClose={onClosePanel}
+      >
+        <NavigationHelp
+          mode={cameraId === WALK_VIEW ? "walk" : cameraId ? "embedded" : "inspection"}
+        />
         {model.cameras.length === 0 && (
-          <span>Free walk requires at least one camera in the Apartment SVG.</span>
+          <p>Free walk requires at least one camera in the Apartment SVG.</p>
         )}
-      </div>
+      </TransientPanel>
+      {!ready && (
+        <p className="viewport-status" role="status">
+          Starting 3D…
+        </p>
+      )}
+      {fullscreen.error && (
+        <p className="problem-toast" role="status">
+          {fullscreen.error}
+        </p>
+      )}
       <div ref={renderArea} className="three-render-area">
         <canvas ref={canvas} tabIndex={0} aria-label="Apartment 3D rendering" />
+        {fullscreen.active && (
+          <button
+            className="fullscreen-close"
+            aria-label="Exit full screen"
+            title="Exit full screen"
+            onClick={() => void fullscreen.exit()}
+          >
+            ×
+          </button>
+        )}
       </div>
     </section>
   );

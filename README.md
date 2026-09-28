@@ -202,23 +202,39 @@ There is no file picker, drop-loading fallback, polling, or automatic file watch
 page to fetch the active SVG again; restart the server and reload the page to switch projects
 or update the manifest selection.
 
-The read-only 2D viewer displays the original SVG in a restricted image context, including
-renderable drawings that fail Apartment SVG validation. Drag to pan, scroll or pinch to
-zoom, and use **Fit / Reset** to frame the drawing. With the viewport focused, use the
-arrow keys, `+` / `-`, and `0`. Use **Focus view**
-to expand the active 2D or 3D viewport across the browser client area without resetting its
-navigation state; close it with the corner control or `Escape`. This layout mode does not use
-the browser Fullscreen API, so browser and operating-system chrome remain unchanged.
+The viewport-first workspace uses one compact, non-wrapping toolbar for **Design**, **2D / 3D**,
+**Camera**, **Rendering**, **Full screen**, diagnostics status, and information/help. Lower-priority
+status and information controls move into **More workspace controls** on narrower windows.
+Project/document metadata is available through **Project information**. The viewport fills the
+remaining space; secondary controls and diagnostics overlay it without changing its size.
 
-For a valid document, choose **3D** to inspect walls with door/window openings, fixed
-elements, and utility markers. Drag to orbit, right-drag to pan, and scroll to zoom;
-touch supports one-finger orbit and two-finger pan/zoom. Use the **Camera** selector for
-embedded SVG cameras, **Walk**, or **Inspection / orbit**. The independent **Focal length**
-selector keeps each camera's default projection or applies a 16–85 mm full-frame preset.
-The **Aspect ratio** selector either fills the viewport or centers the largest fitting
-16:9, 3:2, 1:1, 2:3, or 9:16 render surface. Framing choices survive camera changes,
-resizing, and Focus view transitions. Each page load starts in 2D; switching views does
-not refetch or reparse the SVG. A browser needs WebGPU or WebGL2 for 3D.
+The read-only 2D viewer displays the original SVG in a restricted image context, including
+renderable drawings that fail validation. Drag to pan, scroll or pinch to zoom, and use the
+compact **Fit / Reset** and zoom overlay. With the viewport focused, use arrows, `+` / `-`, and `0`.
+
+For valid documents, choose **3D** to inspect walls, openings, fixed elements, and utility markers.
+The **Camera** selector offers **Inspection**, **Walk**, and embedded SVG cameras. Inspection
+starts at a 50 mm full-frame focal length, Walk at 16 mm, and embedded cameras use their defined
+horizontal FOV. **Camera settings** exposes the supported 16/24/35/50/70/85 mm manual lenses and
+Fill, 16:9, 3:2, 1:1, 2:3, and 9:16 aspect ratios. Selecting a camera/navigation mode restores its
+default lens; manual lens changes and aspect changes preserve the current Walk pose.
+Each page load starts in 2D; view switching does not refetch or reparse the SVG.
+A browser needs WebGPU or WebGL2 for 3D.
+
+**Full screen** uses the browser Fullscreen API for the 3D render area. Only the rendering and
+one exit **×** remain visible. The button or native `Escape` exits, and browser-initiated changes
+are tracked without rebuilding the renderer or resetting camera, Walk pose, framing, presentation,
+or quality. Unavailable or rejected fullscreen requests leave the normal viewport usable.
+
+Successful validation shows a compact **Ready** status. Actionable SVG, design, material,
+resource/API, and renderer problems show a non-blocking notification with **View details** and
+retain a warning/error status after dismissal. Details open in a temporary overlay drawer,
+preserving structured error codes and their domains. Failures without usable source retain an
+empty-state presentation. **Information and help** provides contextual navigation instructions.
+
+Keyboard shortcuts are **2** (2D), **3** (3D), **W** (Walk in 3D), **I** (Inspection in 3D), and
+**Escape** (close a panel, or native fullscreen exit). They ignore text-entry controls and
+Ctrl/Meta/Alt combinations; active Walk retains its normal W movement handling.
 
 **Walk** requires at least one embedded camera. It starts at the first camera's horizontal
 position and heading, with a fixed eye height of 165 cm above the floor and a level gaze.
@@ -228,8 +244,7 @@ for twice the speed, or **Option** on macOS / **Space** on Windows and Linux for
 Fast and slow together use normal speed. Movement stays horizontal and has no collisions:
 you can pass through walls and move outside the apartment. Leaving the canvas or losing
 focus clears held controls. Returning to Walk from another 3D camera mode restores the
-Walk pose; reloading the page starts a new session. **Camera default** uses the first
-embedded camera's horizontal FOV in Walk; lens and aspect-ratio choices remain independent.
+Walk pose; reloading the page starts a new session. **Camera default** restores Walk's 16 mm lens; its pose survives camera-mode changes.
 
 See [ADR-003](docs/decisions/ADR-003-three-renderer-architecture.md).
 
@@ -243,11 +258,11 @@ Call `buildApartmentScene(model, finishes)` or `renderer.setModel(model, finishe
 
 Window planes use physically based transmission with zero thickness and qualitative clear/frosted/tinted defaults. A built-in neutral room environment supplies image-based lighting (IBL) and reflections without network downloads or project assets. It replaces hemisphere ambient illumination; the deterministic directional key/shadow light remains. The neutral background stays separate from the lighting environment.
 
-The 3D toolbar offers **Tone mapping** (AgX by default, ACES Filmic, or Neutral), **Exposure** (−4 to +4 EV in 0.1-stop increments), **Environment intensity** (0–4 in 0.1 increments), and **Environment rotation** (0–360° in 1° increments). Defaults are 0 EV, intensity 1, and rotation 0°. Exposure converts to the renderer multiplier as `2 ** EV`; positive environment yaw turns architectural +X toward +Y. Controls update the next frame immediately and remain disabled until initialization completes. Camera, Walk, lens, resize, and Focus view changes preserve presentation selections for the viewport lifetime. Focus view hides the toolbar.
+The **Rendering** panel offers **Tone mapping** (AgX by default, ACES Filmic, or Neutral), **Exposure** (−4 to +4 EV in 0.1-stop increments), **Environment intensity** (0–4 in 0.1 increments), and **Environment rotation** (0–360° in 1° increments). Defaults are 0 EV, intensity 1, and rotation 0°. Exposure converts to the renderer multiplier as `2 ** EV`; positive environment yaw turns architectural +X toward +Y. Controls update the next frame immediately and remain disabled until initialization completes. Camera, Walk, lens, resize, and fullscreen changes preserve presentation selections for the viewport lifetime. Fullscreen hides every control except its exit button.
 
-With **No design** selected, presentation controls remain transient. A resolved design applies its saved tone mapping and exposure; edit these in the design editor rather than the 3D toolbar. Environment intensity and rotation always remain transient. Resolved designs also apply Material 1.0 and 1.1 persistent finishes, including packed ORM textures shared across ambient-occlusion, roughness, and metalness roles. Material-management UI, environment assets, lighting design, and post-processing remain deferred.
+With **No design** selected, presentation controls remain transient. A resolved design applies its saved tone mapping and exposure; edit these in the design editor rather than the Rendering panel. Environment intensity and rotation always remain transient. Resolved designs also apply Material 1.0 and 1.1 persistent finishes, including packed ORM textures shared across ambient-occlusion, roughness, and metalness roles. Material-management UI, environment assets, lighting design, and post-processing remain deferred.
 
-The 3D toolbar also offers **Quality**, **Pixel ratio**, **Shadows**, **Environment lighting**, and **Fill light**. Quality changes apply immediately without rebuilding the apartment or resetting navigation. Walk redraws are coalesced to display frames, and unchanged architectural shadows are reused during navigation. All individual settings stay editable; changing a preset's settings selects **Custom**. Selecting a named preset reapplies every setting below:
+The same **Rendering** panel also offers **Quality**, **Pixel ratio**, **Shadows**, **Environment lighting**, and **Fill light**. Quality changes apply immediately without rebuilding the apartment or resetting navigation. Walk redraws are coalesced to display frames, and unchanged architectural shadows are reused during navigation. All individual settings stay editable; changing a preset's settings selects **Custom**. Selecting a named preset reapplies every setting below:
 
 | Preset | Pixel ratio | Shadows | Environment lighting | Fill light |
 | --- | --- | --- | --- | --- |
@@ -257,7 +272,7 @@ The 3D toolbar also offers **Quality**, **Pixel ratio**, **Shadows**, **Environm
 
 Pixel ratio choices include positive integers below the native display ratio, followed by the exact native ratio without duplication: native 2.5 offers 1, 2, and 2.5. Invalid native ratios fall back to 1. Buffer resolution changes independently of the CSS viewport size. Shadows use Off or Low/Medium/High PCF maps of 1024/2048/4096 pixels per side. Fill light uses neutral non-directional ambient illumination at Off/Low/Medium/High intensities of 0/0.5/1/2, preserving PBR materials and textures. Disabling environment lighting removes both IBL and environment reflections while preserving intensity/rotation and the neutral background.
 
-Only these quality preferences are saved in browser-local storage; they never write to project, design, material, or Apartment SVG data. On later loads, named presets adapt to the current display; Custom DPR rounds down to an available option (or the smallest option if needed). Missing, malformed, or unsupported preferences use Balanced. Storage failure leaves rendering and session controls available. Display-ratio changes detected on browser resize also adapt the controls. Camera, design selection, aspect ratio, Focus view, and transient presentation settings are not saved by this mechanism.
+Only these quality preferences are saved in browser-local storage; they never write to project, design, material, or Apartment SVG data. On later loads, named presets adapt to the current display; Custom DPR rounds down to an available option (or the smallest option if needed). Missing, malformed, or unsupported preferences use Balanced. Storage failure leaves rendering and session controls available. Display-ratio changes detected on browser resize also adapt the controls. Camera, design selection, aspect ratio, fullscreen, and transient presentation settings are not saved by this mechanism.
 
 ### Design scenarios
 

@@ -2,16 +2,18 @@ import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
 import { DesignPanel } from "./design-panel.js";
 import { useDesign } from "./use-design.js";
-import { ValidWorkspace } from "./valid-workspace.js";
 import { SvgViewport } from "./svg-viewport.js";
+import { ThreeViewport } from "./three-viewport.js";
 import { useDocument } from "./use-document.js";
-import { ValidationDetails } from "./validation-details.js";
+import { isWorkspaceShortcut, NavigationHelp, TransientPanel } from "./transient-panel.js";
+import type { WorkspacePanel } from "./transient-panel.js";
+import { ProblemToast, workspaceProblems, WorkspaceDiagnostics } from "./workspace-diagnostics.js";
 
 const STATUS_LABELS = {
   loading: "Loading project",
   "project-failure": "Project / API failure",
   processing: "Processing",
-  valid: "Valid",
+  valid: "Ready",
   invalid: "Invalid",
   failure: "Processing failure",
 };
@@ -20,148 +22,254 @@ export function App(): ReactElement {
   const active = useDocument();
   const design = useDesign(active.document);
   const project = "project" in active.document ? active.document.project : undefined;
-  const document =
+  const current =
     design.document ??
-    (project === undefined
-      ? active.document
-      : {
-          status: "processing" as const,
-          project,
-        });
+    (project === undefined ? active.document : { status: "processing" as const, project });
   const rendererFailure = design.selectedPath ? design.rendererFailure : active.rendererFailure;
   const architecturePath = design.architecturePath ?? "No architecture loaded";
-  const [showDetails, setShowDetails] = useState(true);
-  const [isFocusView, setIsFocusView] = useState(false);
-  const source = "source" in document ? document.source : undefined;
-
+  const [panel, setPanel] = useState<WorkspacePanel>(null);
+  const [view, setView] = useState<"2D" | "3D">("2D");
+  const [toolbar, setToolbar] = useState<HTMLDivElement | null>(null);
+  const source = "source" in current ? current.source : undefined;
+  const problems = workspaceProblems(current, design);
+  const signature = problems.length
+    ? JSON.stringify([design.selectedPath, problems, current.status === "invalid" ? current : null])
+    : "";
+  const is3D = current.status === "valid" && view === "3D";
+  const close = (): void => setPanel(null);
+  const toggle = (next: WorkspacePanel): void =>
+    setPanel((previous) => (previous === next ? null : next));
   useEffect(() => {
-    if (!isFocusView) return;
-    const exitOnEscape = (event: KeyboardEvent): void => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      setIsFocusView(false);
+    setView("2D");
+  }, [design.selectedPath]);
+  useEffect(() => {
+    const shortcut = (event: KeyboardEvent): void => {
+      if (!isWorkspaceShortcut(event) || current.status !== "valid") return;
+      if (event.key === "2" || event.key === "3") {
+        event.preventDefault();
+        setView(event.key === "2" ? "2D" : "3D");
+        setPanel(null);
+      }
     };
-    window.addEventListener("keydown", exitOnEscape);
-    return () => window.removeEventListener("keydown", exitOnEscape);
-  }, [isFocusView]);
-
+    window.addEventListener("keydown", shortcut);
+    return () => window.removeEventListener("keydown", shortcut);
+  }, [current.status]);
+  useEffect(() => {
+    if (panel !== "overflow") return;
+    const trigger = document.activeElement;
+    const overflow = document.getElementById("workspace-overflow");
+    overflow?.querySelector<HTMLButtonElement>("button")?.focus();
+    const dismiss = (event: KeyboardEvent): void => {
+      if (event.key !== "Escape" || document.fullscreenElement) return;
+      event.preventDefault();
+      setPanel(null);
+      if (trigger instanceof HTMLElement) trigger.focus();
+    };
+    const outside = (event: PointerEvent): void => {
+      if (event.target instanceof Element && !event.target.closest(".primary-toolbar"))
+        setPanel(null);
+    };
+    window.addEventListener("keydown", dismiss);
+    window.addEventListener("pointerdown", outside);
+    return () => {
+      window.removeEventListener("keydown", dismiss);
+      window.removeEventListener("pointerdown", outside);
+    };
+  }, [panel]);
+  const status =
+    current.status === "failure" && current.kind === "renderer"
+      ? "Renderer failure"
+      : problems.length && current.status === "valid"
+        ? "Warning"
+        : design.selectedPath && !design.loading && !design.document
+          ? "Design unavailable"
+          : STATUS_LABELS[current.status];
   return (
-    <div className={`application${isFocusView ? " focus-view" : ""}`}>
-      <header className="app-header focus-view-hidden" hidden={isFocusView}>
-        <div className="brand">
-          <span className="brand-mark" aria-hidden="true">
-            P
-          </span>
-          <div>
-            <h1>PlanAxis</h1>
-            <span>Apartment workspace</span>
+    <div className="application">
+      <header className="primary-toolbar" aria-label="Workspace toolbar">
+        <strong className="project-identity" title={project?.name}>
+          PlanAxis <span>{project?.name}</span>
+        </strong>
+        {project && (
+          <div className="design-controls">
+            <label>
+              <span className="control-label">Design </span>
+              <select
+                aria-label="Design scenario"
+                value={design.selectedPath}
+                onChange={(event) => design.select(event.target.value)}
+              >
+                <option value="">No design</option>
+                {design.paths.map((path) => (
+                  <option key={path} value={path}>
+                    {path}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              aria-label="Create or edit a design"
+              title="Create or edit a design"
+              aria-expanded={panel === "design"}
+              aria-controls="design-panel"
+              onClick={() => toggle("design")}
+            >
+              ✎
+            </button>
           </div>
-        </div>
-        <div className="document-heading">
-          <strong title={project?.name}>{project?.name ?? "Server-selected project"}</strong>
-          <span className={`status ${document.status}`} role="status">
-            {document.status === "failure" && document.kind === "renderer"
-              ? "Renderer failure"
-              : design.selectedPath && !design.loading && !design.document
-                ? "Design unavailable"
-                : STATUS_LABELS[document.status]}
-          </span>
+        )}
+        {current.status === "valid" && (
+          <div className="view-switch" role="group" aria-label="Apartment view">
+            {(["2D", "3D"] as const).map((mode) => (
+              <button
+                key={mode}
+                aria-pressed={view === mode}
+                onClick={() => {
+                  setView(mode);
+                  close();
+                }}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
+        )}
+        <div ref={setToolbar} className="three-toolbar-slot" />
+        <button
+          className={`overflow-toggle${problems.length ? " has-problem" : ""}`}
+          title={
+            problems.length
+              ? "More workspace controls — problems need attention"
+              : "More workspace controls"
+          }
+          aria-label="More workspace controls"
+          aria-expanded={panel === "overflow"}
+          aria-controls="workspace-overflow"
+          onClick={() => toggle("overflow")}
+        >
+          ⋯
+        </button>
+        <div
+          id="workspace-overflow"
+          className={`secondary-actions${panel === "overflow" ? " is-open" : ""}`}
+        >
+          <button
+            className={`status ${problems.length ? "warning" : current.status}`}
+            aria-label="Diagnostics status"
+            aria-expanded={panel === "diagnostics"}
+            aria-controls="diagnostics-panel"
+            onClick={() => toggle("diagnostics")}
+          >
+            <span role="status">{status}</span>
+          </button>
+          <button
+            aria-label="Information and help"
+            title="Information and help"
+            aria-expanded={panel === "help"}
+            aria-controls="help-panel"
+            onClick={() => toggle("help")}
+          >
+            ⓘ
+          </button>
+          <button
+            aria-label="Project information"
+            aria-expanded={panel === "information"}
+            aria-controls="information-panel"
+            onClick={() => toggle("information")}
+          >
+            Project
+          </button>
         </div>
       </header>
-      {project && <DesignPanel workflow={design} hidden={isFocusView} />}
-      {document.status === "loading" || document.status === "project-failure" ? (
-        <section className="empty-state">
+      <main className="workspace">
+        {current.status === "loading" || current.status === "project-failure" ? (
+          <section className="empty-state">
+            <div className="empty-card">
+              <h2>
+                {current.status === "loading" ? "Loading your project…" : "Project unavailable"}
+              </h2>
+              <p role={current.status === "project-failure" ? "alert" : undefined}>
+                {current.status === "project-failure"
+                  ? current.message
+                  : "Connecting to the project selected by the PlanAxis server."}
+              </p>
+            </div>
+          </section>
+        ) : is3D && current.status === "valid" ? (
+          <ThreeViewport
+            key={design.selectedPath}
+            model={current.architecturalModel}
+            onFailure={rendererFailure}
+            scenarioPresentation={design.presentation}
+            materials={design.loaded.materialProblem ? undefined : design.loaded.materials}
+            onMaterialFailure={design.materialFailure}
+            toolbar={toolbar}
+            panel={panel}
+            onTogglePanel={toggle}
+            onClosePanel={close}
+          />
+        ) : source !== undefined ? (
+          <SvgViewport key={source} source={source} name={architecturePath} />
+        ) : (
+          <p className="preview-message">
+            {design.loading
+              ? "Loading design architecture…"
+              : design.selectedPath
+                ? "No architecture available for this selection."
+                : "Loading and processing active architecture…"}
+          </p>
+        )}
+        {project && (
+          <TransientPanel
+            id="design-panel"
+            title="Create or edit a design"
+            open={panel === "design"}
+            onClose={close}
+          >
+            <DesignPanel workflow={design} />
+          </TransientPanel>
+        )}
+        <TransientPanel
+          id="diagnostics-panel"
+          title="Diagnostics"
+          open={panel === "diagnostics"}
+          onClose={close}
+          drawer
+        >
+          <WorkspaceDiagnostics document={current} design={design} />
+        </TransientPanel>
+        <TransientPanel
+          id="information-panel"
+          title="Project information"
+          open={panel === "information"}
+          onClose={close}
+        >
+          <p>{project?.name ?? "Server-selected project"}</p>
+          <p className="architecture-path">{architecturePath} · Apartment SVG 2.2</p>
+        </TransientPanel>
+        {!is3D && (
+          <TransientPanel
+            id="help-panel"
+            title="Information and help"
+            open={panel === "help"}
+            onClose={close}
+          >
+            <NavigationHelp mode="2D" />
+          </TransientPanel>
+        )}
+        {source !== undefined && (
+          <ProblemToast
+            signature={signature}
+            summary={problems[0] ?? ""}
+            onDetails={() => setPanel("diagnostics")}
+          />
+        )}
+        {source === undefined && problems.length > 0 && current.status !== "project-failure" && (
           <div className="empty-card">
-            <h2>
-              {document.status === "loading" ? "Loading your project…" : "Project unavailable"}
-            </h2>
-            <p role={document.status === "project-failure" ? "alert" : undefined}>
-              {document.status === "project-failure"
-                ? document.message
-                : "Connecting to the project selected by the PlanAxis server."}
-            </p>
+            <WorkspaceDiagnostics document={current} design={design} />
           </div>
-        </section>
-      ) : (
-        <>
-          <div className="workspace-bar focus-view-hidden" hidden={isFocusView}>
-            <span className="architecture-path" title={architecturePath}>
-              {architecturePath} · Apartment SVG 2.2
-            </span>
-            <div className="workspace-actions">
-              <button
-                aria-expanded={showDetails}
-                aria-controls="validation-details"
-                onClick={() => setShowDetails((value) => !value)}
-              >
-                {showDetails ? "Hide" : "Show"} validation details
-              </button>
-              {source !== undefined && (
-                <button aria-label="Enter Focus view" onClick={() => setIsFocusView(true)}>
-                  Focus view
-                </button>
-              )}
-            </div>
-          </div>
-          <div className={`workspace${showDetails ? " with-details" : ""}`}>
-            <div className="preview-area">
-              {document.status === "valid" ? (
-                <ValidWorkspace
-                  key={design.selectedPath}
-                  source={document.source}
-                  name={architecturePath}
-                  model={document.architecturalModel}
-                  onFailure={rendererFailure}
-                  isFocusView={isFocusView}
-                  scenarioPresentation={design.presentation}
-                  materials={design.loaded.materialProblem ? undefined : design.loaded.materials}
-                  onMaterialFailure={design.materialFailure}
-                />
-              ) : source !== undefined ? (
-                <SvgViewport
-                  key={source}
-                  source={source}
-                  name={architecturePath}
-                  isFocusView={isFocusView}
-                />
-              ) : (
-                <p className="preview-message">
-                  {design.loading
-                    ? "Loading design architecture…"
-                    : design.selectedPath
-                      ? "No architecture available for this selection."
-                      : "Loading and processing active architecture…"}
-                </p>
-              )}
-              {isFocusView && (
-                <button
-                  className="focus-view-close"
-                  aria-label="Exit Focus view"
-                  title="Exit Focus view"
-                  onClick={() => setIsFocusView(false)}
-                >
-                  <span aria-hidden="true">×</span>
-                </button>
-              )}
-            </div>
-            {showDetails && (
-              <aside
-                id="validation-details"
-                className="focus-view-hidden"
-                aria-label="Validation details"
-                hidden={isFocusView}
-              >
-                <p className="eyebrow">Validation details</p>
-                {design.selectedPath && !design.document ? (
-                  <p>See design diagnostics above.</p>
-                ) : (
-                  <ValidationDetails document={document} />
-                )}
-              </aside>
-            )}
-          </div>
-        </>
-      )}
+        )}
+      </main>
     </div>
   );
 }

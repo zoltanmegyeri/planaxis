@@ -79,107 +79,52 @@ function DesignEditor({
   );
 }
 
-export function DesignPanel({
-  workflow,
-  hidden,
-}: {
-  workflow: DesignWorkflow;
-  hidden: boolean;
-}): ReactElement {
+export function DesignPanel({ workflow }: { workflow: DesignWorkflow }): ReactElement {
   const [path, setPath] = useState("");
   const [name, setName] = useState("");
   const { loaded } = workflow;
   return (
-    <section
-      className="design-panel focus-view-hidden"
-      aria-label="Design scenarios"
-      hidden={hidden}
-    >
-      <label>
-        Design scenario{" "}
-        <select
-          aria-label="Design scenario"
-          value={workflow.selectedPath}
-          onChange={(event) => workflow.select(event.target.value)}
-        >
-          <option value="">No design</option>
-          {workflow.paths.map((choice) => (
-            <option key={choice} value={choice}>
-              {choice}
-            </option>
-          ))}
-        </select>
-      </label>
-      {workflow.discoveryError && (
-        <p role="alert">Design discovery / API: {workflow.discoveryError}</p>
+    <section className="design-panel" aria-label="Design scenarios">
+      {loaded.descriptor && (
+        <DesignEditor
+          key={loaded.descriptor.path}
+          descriptor={loaded.descriptor}
+          busy={workflow.busy}
+          save={workflow.save}
+        />
       )}
-      {workflow.loading && <p>Loading design scenario…</p>}
-      {loaded.problem && <p role="alert">{loaded.problem}</p>}
-      {loaded.materialProblem && (
-        <p role="alert">
-          {loaded.materialProblem} Persistent finishes are unavailable; default appearance is shown.
-        </p>
-      )}
-      {loaded.resolution?.ok && <p>Design resolved: {loaded.descriptor?.document.name}</p>}
-      {loaded.resolution && !loaded.resolution.ok && (
-        <div role="alert">
-          <p>Unresolved / stale design references. Default appearance is shown.</p>
-          <ul>
-            {loaded.resolution.errors.map((error, index) => (
-              <li key={index}>
-                {error.code}: {error.message}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      {loaded.descriptor && !loaded.resolution && !workflow.loading && (
-        <p>
-          Design is not applied. Its bound architecture must load and pass Apartment SVG validation.
-        </p>
-      )}
-      <details>
-        <summary>Create or edit a design</summary>
-        {loaded.descriptor && (
-          <DesignEditor
-            key={loaded.descriptor.path}
-            descriptor={loaded.descriptor}
-            busy={workflow.busy}
-            save={workflow.save}
-          />
-        )}
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            void workflow.create(path, name);
-          }}
-        >
-          <fieldset disabled={workflow.busy || !workflow.canCreate}>
-            <legend>Create design</legend>
-            <p>Architecture: {workflow.architecturePath ?? "No architecture displayed"}</p>
-            <label>
-              Descriptor path{" "}
-              <input
-                aria-label="New design path"
-                placeholder="designs/my-design.json"
-                required
-                value={path}
-                onChange={(event) => setPath(event.target.value)}
-              />
-            </label>
-            <label>
-              Name{" "}
-              <input
-                aria-label="New design name"
-                required
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-              />
-            </label>
-            <button type="submit">Create design</button>
-          </fieldset>
-        </form>
-      </details>
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          void workflow.create(path, name);
+        }}
+      >
+        <fieldset disabled={workflow.busy || !workflow.canCreate}>
+          <legend>Create design</legend>
+          <p>Architecture: {workflow.architecturePath ?? "No architecture displayed"}</p>
+          <label>
+            Descriptor path{" "}
+            <input
+              aria-label="New design path"
+              placeholder="designs/my-design.json"
+              required
+              value={path}
+              onChange={(event) => setPath(event.target.value)}
+            />
+          </label>
+          <label>
+            Name{" "}
+            <input
+              aria-label="New design name"
+              required
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+            />
+          </label>
+          <button type="submit">Create design</button>
+        </fieldset>
+      </form>
+
       {workflow.writeError && <p role="alert">{workflow.writeError}</p>}
       {workflow.notice && <p>{workflow.notice}</p>}
     </section>

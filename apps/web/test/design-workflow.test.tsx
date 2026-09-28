@@ -216,7 +216,7 @@ it.each(["http", "transport", "malformed", "unsafe-path"])(
       return new Response("/private/project/secret", { status: 500 });
     });
     await mount();
-    expect(status()).toBe("Valid");
+    expect(status()).toBe("Warning");
     expect(host.querySelector("img")).not.toBeNull();
     expect(host.textContent).toContain("Design discovery / API");
     expect(host.textContent).not.toContain("/private/project");
@@ -230,7 +230,7 @@ it.each([activePath, alternativePath])(
     await mount();
     await select();
     expect(host.textContent).toContain("Design resolved: Warm");
-    expect(status()).toBe("Valid");
+    expect(status()).toBe("Warning");
     expect(host.querySelector(".architecture-path")?.textContent).toContain(architecture);
     expect(resolveDesign).toHaveBeenCalledWith(
       expect.objectContaining({ path }),
@@ -358,7 +358,7 @@ it.each(["descriptor", "architecture"])(
       ),
     );
     expect(control("Design scenario").value).toBe("");
-    expect(status()).toBe("Valid");
+    expect(status()).toBe("Ready");
     expect(host.querySelector(".architecture-path")?.textContent).toContain(activePath);
   },
 );
@@ -532,7 +532,7 @@ it("recovers from an unsupported renderer exposure after saving a representable 
   expect(status()).toBe("Renderer failure");
   await change("Design exposure (EV)", "2");
   await submit("Design name");
-  expect(status()).toBe("Valid");
+  expect(status()).toBe("Warning");
   await click("3D");
   expect(renderer.setPresentationSettings).toHaveBeenLastCalledWith(
     expect.objectContaining({ exposureEv: 2 }),
@@ -634,7 +634,7 @@ it.each(["planaxis-material/1.0", "planaxis-material/1.1"])(
     });
     await mount();
     await select();
-    expect(status()).toBe("Valid");
+    expect(status()).toBe("Warning");
     expect(host.textContent).toContain("Material descriptor project / API resource failure");
     expect(host.textContent).toContain("Design resolved: Warm");
     expect(host.textContent).not.toContain("/private");
@@ -678,7 +678,7 @@ it.each(["adaptation", "rendering"])(
     await click("3D");
     if (stage === "rendering")
       await act(async () => renderer.onError(new Error("/private/rendering")));
-    expect(status()).toBe("Valid");
+    expect(status()).toBe("Warning");
     expect(host.textContent).toContain("Renderer material adaptation/rendering failed");
     expect(host.textContent).not.toContain("/private");
     expect(renderer.setModel.mock.lastCall).toHaveLength(1);
@@ -771,4 +771,56 @@ it("retains prepared textures across 2D/3D switches without new fetches or decod
   expect(renderer.setModel.mock.lastCall?.[1]).toBe(firstFinishes);
   expect(fetchMock).toHaveBeenCalledTimes(fetchCount);
   expect(createImageBitmap).toHaveBeenCalledTimes(1);
+});
+
+it("creates and edits a design through the transient toolbar panel", async () => {
+  await mount();
+  const panel = host.querySelector<HTMLElement>("#design-panel")!;
+  expect(panel.hidden).toBe(true);
+  const open = host.querySelector<HTMLButtonElement>('[aria-label="Create or edit a design"]')!;
+  await act(async () => open.click());
+  expect(panel.hidden).toBe(false);
+  await change("New design path", "designs/panel.json");
+  await change("New design name", "Panel design");
+  await submit("New design name");
+  expect(control("Design scenario").value).toBe("designs/panel.json");
+  expect(saved[0]).toEqual({
+    path: "designs/panel.json",
+    method: "POST",
+    document: { schema: "planaxis-design/1.0", name: "Panel design", architecture: activePath },
+  });
+  await change("Design name", "Edited in panel");
+  await submit("Design name");
+  expect(saved[1]?.method).toBe("PUT");
+  expect(saved[1]?.document.name).toBe("Edited in panel");
+  expect(panel.textContent).toContain("Design saved.");
+  await act(async () =>
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })),
+  );
+  expect(panel.hidden).toBe(true);
+  expect(host.querySelector("img")).not.toBeNull();
+});
+
+it("retains material warnings after toast dismissal and exposes their domain in the drawer", async () => {
+  await mount();
+  await select();
+  expect(status()).toBe("Warning");
+  expect(host.querySelector(".problem-toast")?.textContent).toContain(
+    "Material descriptor project / API resource failure",
+  );
+  await act(async () =>
+    host.querySelector<HTMLButtonElement>('[aria-label="Dismiss notification"]')!.click(),
+  );
+  expect(status()).toBe("Warning");
+  expect(host.querySelector(".problem-toast")).toBeNull();
+  await act(async () =>
+    host.querySelector<HTMLButtonElement>('[aria-label="Diagnostics status"]')!.click(),
+  );
+  const drawer = host.querySelector<HTMLElement>("#diagnostics-panel")!;
+  expect(drawer.hidden).toBe(false);
+  expect(drawer.textContent).toContain(
+    "Material descriptor project / API resource failure (HTTP 404)",
+  );
+  expect(drawer.textContent).toContain("Apartment SVG is valid");
+  expect(drawer.textContent).toContain("Persistent finishes are unavailable");
 });

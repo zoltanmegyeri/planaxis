@@ -110,7 +110,7 @@ it("resizes embedded FOV, applies selected DPR, replaces models and releases own
   expect(first?.children).toHaveLength(0);
   expect(scene.children.filter((object) => object.type === "Group")).toHaveLength(1);
   renderer.selectCamera(null);
-  expect(camera.fov).toBe(50);
+  expect(camera.fov).toBeCloseTo(verticalFov(fullFrameHorizontalFov(50), camera.aspect));
   renderer.dispose();
   renderer.dispose();
   const count = gpu.render.mock.calls.length;
@@ -171,13 +171,13 @@ it("keeps distant valid embedded cameras within the scene clipping range", async
   renderer.dispose();
 });
 
-it("keeps focal-length overrides independent from camera selection and resize", async () => {
+it("replaces manual focal overrides on camera selection and preserves them on resize", async () => {
   const renderer = createApartmentRenderer(canvas, vi.fn());
   renderer.resize(800, 400);
   renderer.setModel(modelFixture());
   await renderer.initialize();
   let camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
-  expect(camera.fov).toBe(50);
+  expect(camera.fov).toBeCloseTo(verticalFov(fullFrameHorizontalFov(50), camera.aspect));
 
   const inspectionPosition = camera.position.clone();
   renderer.setFocalLengthOverride(35);
@@ -187,8 +187,9 @@ it("keeps focal-length overrides independent from camera selection and resize", 
 
   renderer.selectCamera("camera-1");
   camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
-  expect(camera.fov).toBeCloseTo(verticalFov(fullFrameHorizontalFov(35), 2));
+  expect(camera.fov).toBeCloseTo(verticalFov(70, 2));
   const embeddedPosition = camera.position.clone();
+  renderer.setFocalLengthOverride(35);
 
   renderer.resize(400, 800);
   expect(camera.fov).toBeCloseTo(verticalFov(fullFrameHorizontalFov(35), 0.5));
@@ -199,7 +200,7 @@ it("keeps focal-length overrides independent from camera selection and resize", 
   expect(camera.position).toEqual(embeddedPosition);
 
   renderer.selectCamera(null);
-  expect(camera.fov).toBe(50);
+  expect(camera.fov).toBeCloseTo(verticalFov(fullFrameHorizontalFov(50), camera.aspect));
   renderer.dispose();
 });
 
@@ -249,7 +250,7 @@ it("anchors Walk to the first camera in document order at floor + 165 cm with ne
     expect.closeTo(0),
     expect.closeTo(1),
   ]);
-  expect(camera.fov).toBeCloseTo(verticalFov(80, 2));
+  expect(camera.fov).toBeCloseTo(verticalFov(fullFrameHorizontalFov(16), 2));
   expect(surface.frames.size).toBe(0);
   renderer.dispose();
 });
@@ -260,8 +261,8 @@ it("retains Walk pose and independent projection through view changes and resize
   const renderer = createApartmentRenderer(surface.canvas, vi.fn());
   renderer.setModel(model);
   await renderer.initialize();
-  renderer.setFocalLengthOverride(35);
   renderer.selectWalk();
+  renderer.setFocalLengthOverride(35);
   const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
   surface.key("keydown", "KeyW");
   surface.pointer("pointerdown");
@@ -280,14 +281,14 @@ it("retains Walk pose and independent projection through view changes and resize
     renderer.selectWalk();
     expect(camera.position).toEqual(position);
     expect(camera.quaternion.toArray()).toEqual(orientation.toArray());
-    expect(camera.fov).toBeCloseTo(verticalFov(fullFrameHorizontalFov(35), 0.5));
+    expect(camera.fov).toBeCloseTo(verticalFov(fullFrameHorizontalFov(16), 0.5));
     surface.pointer("pointermove", 500, 500);
     expect(camera.quaternion.toArray()).toEqual(orientation.toArray());
     surface.frame(1000);
     expect(camera.position).toEqual(position);
   }
   renderer.setFocalLengthOverride(null);
-  expect(camera.fov).toBeCloseTo(verticalFov(70, 0.5));
+  expect(camera.fov).toBeCloseTo(verticalFov(fullFrameHorizontalFov(16), 0.5));
   surface.key("keydown", "ShiftLeft");
   surface.key("keydown", "KeyW");
   surface.pointer("pointerdown");
@@ -298,7 +299,7 @@ it("retains Walk pose and independent projection through view changes and resize
     cameras: [{ ...source, position: { ...source.position, x: decimal("25") } }],
   });
   expect(surface.frames.size).toBe(0);
-  expect(camera.fov).toBe(50);
+  expect(camera.fov).toBeCloseTo(verticalFov(fullFrameHorizontalFov(50), camera.aspect));
   renderer.selectWalk();
   expect(camera.position.toArray()).toEqual([0.25, 1.65, 0.5]);
   const resetOrientation = camera.quaternion.clone();
@@ -328,7 +329,7 @@ it("rejects Walk without an embedded camera and keeps inspection available", asy
   expect(() => renderer.selectWalk()).toThrow("Free walk requires at least one camera");
   renderer.resize(800, 400);
   expect(camera.position).toEqual(inspection);
-  expect(camera.fov).toBe(50);
+  expect(camera.fov).toBeCloseTo(verticalFov(fullFrameHorizontalFov(50), camera.aspect));
   renderer.dispose();
 });
 
