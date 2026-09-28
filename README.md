@@ -173,23 +173,38 @@ The exact package structure may be refined during implementation. Architectural 
 ## Open a Floor Plan in the Browser
 
 The React browser application is the first official user-facing PlanAxis entry point.
-Start the backend with an existing conforming [PlanAxis project](#adopted-project-based-workflow),
-from the repository root in one terminal:
+From an installed workspace, start an existing conforming [PlanAxis project](#adopted-project-based-workflow)
+with one command from the repository root:
+
+```bash
+pnpm start -- --project "/path/to/my-apartment"
+```
+
+This builds the server, browser application, and their workspace dependencies, then starts
+one Fastify process. After it successfully listens, it prints:
+
+```text
+PlanAxis is running at http://127.0.0.1:3000/
+```
+
+Open that URL. Fastify serves the production browser build and the existing APIs from the
+same origin; no Vite process is needed. Browser requests remain relative, with no CORS
+configuration. Normal startup fails with a non-zero status if the browser entry document
+or its referenced build assets are missing, empty, or inaccessible. Running `pnpm start`
+rebuilds those artifacts before launch.
+
+For optional frontend development with Vite HMR, start an API-only backend in one terminal:
 
 ```bash
 pnpm --filter @planaxis/server... build
-node apps/server/dist/index.js --project "/path/to/my-apartment"
+node apps/server/dist/index.js --project "/path/to/my-apartment" --api-only
 ```
 
-In a second terminal, also from the repository root:
+Then run `pnpm dev:web` in another terminal and open the printed Vite URL. This builds the
+shared browser dependencies and starts Vite, whose narrow proxy forwards the supported
+project, architecture, design, and material API paths to `http://127.0.0.1:3000`.
+API-only mode does not require or serve a production browser build.
 
-```bash
-pnpm dev:web
-```
-
-This builds the shared browser dependencies and starts Vite. Open the local Vite URL printed
-in the terminal. Vite proxies only the project metadata, architecture, and design API paths to
-`http://127.0.0.1:3000`; browser requests use relative URLs with no CORS configuration.
 The browser automatically loads `/api/project`, validates its supported schema and metadata
 shape, then fetches `/api/project/architecture`. The project name and project-relative active
 architecture path identify the workspace; the physical root stays on the server.
@@ -309,8 +324,7 @@ The backend loading foundation now validates Project Format 1.0 manifests and re
 The server operates on one explicitly selected project for its lifetime. From the repository root, build and start it with an existing conforming project:
 
 ```bash
-pnpm --filter @planaxis/server... build
-node apps/server/dist/index.js --project "/path/to/my-apartment"
+pnpm start -- --project "/path/to/my-apartment"
 ```
 
 The required `--project <path>` accepts an absolute path or a path relative to the current working directory. Quote paths containing spaces; prefix a relative name beginning with `-` with `./`. Missing, duplicate, or unsupported arguments and invalid projects fail before listening with a non-zero process status. The server listens on `127.0.0.1:3000` and reports an occupied port clearly. Restart with another root to switch projects or reload the manifest selection.
@@ -333,9 +347,9 @@ Resource selectors require exactly one `path` query parameter and reject unknown
 
 Every material read re-enters the project-filesystem boundary for containment, regular-file, and symbolic-link checks. The server does not parse Material JSON or decode or inspect texture contents. Material Format parsing/validation belongs to `@planaxis/material`; the browser resolves descriptors and fetched texture bytes, and `@planaxis/renderer-three` owns image decoding, texture configuration, and GPU resources. No material discovery or write API is provided.
 
-Apartment SVG contents are served unchanged even when invalid; parsing and validation remain downstream. The server exposes only these controlled resources, never the complete project root or `.planaxis/`, and does not serve the React application or add CORS integration.
+Apartment SVG contents are served unchanged even when invalid; parsing and validation remain downstream. The server exposes only these controlled resources, never the complete project root or `.planaxis/`, and adds no CORS integration. Static serving is limited to the built browser application under `apps/web/dist`, resolved relative to the server module rather than the project root or current working directory. Unknown paths return 404; there is no SPA fallback.
 
-The browser uses the project, design, and both material APIs through the narrow development-only Vite proxy described above. Fastify does not serve the React build; the two-process development flow is the supported browser startup workflow. Server design persistence and browser scenario selection/editing are implemented. Phase 3 material loading and persistent rendering are implemented; richer redesign is deferred.
+The browser uses the project, design, and both material APIs on the Fastify origin during normal operation. The optional two-process Vite HMR workflow uses the narrow development-only proxy described above. Server design persistence and browser scenario selection/editing are implemented. Phase 3 material loading and persistent rendering are implemented; richer redesign is deferred.
 
 ## Validate an Apartment SVG
 
@@ -483,6 +497,7 @@ pnpm test
 pnpm build
 pnpm validate:svg <path-to-svg>
 pnpm dev:web
+pnpm start -- --project <path-to-project>
 ```
 
 These commands must remain reliable because they are part of both human development and formal coding-agent verification.

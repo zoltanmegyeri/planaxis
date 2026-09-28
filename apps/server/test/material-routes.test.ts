@@ -11,7 +11,7 @@ async function setup() {
   const fixture = await createTemporaryProject();
   const loaded = await loadProject(fixture.root);
   if (!loaded.ok) throw new Error(loaded.error.message);
-  const application = buildApplication(loaded.value);
+  const application = buildApplication(loaded.value, { apiOnly: true });
   onTestFinished(() => application.close());
   return { ...fixture, application, project: loaded.value };
 }

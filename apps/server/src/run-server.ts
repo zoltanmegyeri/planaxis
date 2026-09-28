@@ -18,9 +18,10 @@ export async function runServer(args: readonly string[]): Promise<0 | 1> {
       return 1;
     }
 
-    const application = buildApplication(project.value);
+    const application = buildApplication(project.value, { apiOnly: invocation.apiOnly });
     const exitCode = await startServer(application);
     if (exitCode !== 0) await application.close();
+    else if (!invocation.apiOnly) console.log("PlanAxis is running at http://127.0.0.1:3000/");
     return exitCode;
   } catch (error: unknown) {
     console.error("Failed to prepare the PlanAxis server.", error);

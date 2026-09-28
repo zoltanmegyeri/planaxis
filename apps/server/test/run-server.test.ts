@@ -7,27 +7,65 @@ import * as appModule from "../src/app.js";
 import * as projectModule from "../src/project/load-project.js";
 import { runServer } from "../src/run-server.js";
 import * as startModule from "../src/start-server.js";
+import { createTemporaryBrowserBuild } from "./temporary-browser-build.js";
 import { createTemporaryProject } from "./temporary-project.js";
 
-function observeStartup() {
-  const buildSpy = vi.spyOn(appModule, "buildApplication");
+async function observeStartup() {
+  const browserBuild = await createTemporaryBrowserBuild();
+  const buildApplication = appModule.buildApplication;
+  const buildSpy = vi
+    .spyOn(appModule, "buildApplication")
+    .mockImplementation((project, options) =>
+      buildApplication(project, { ...options, browserBuildRoot: browserBuild.root }),
+    );
   const startSpy = vi.spyOn(startModule, "startServer");
   const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
   onTestFinished(() => {
     vi.restoreAllMocks();
   });
-  return { buildSpy, startSpy, errorSpy };
+  return { buildSpy, startSpy, errorSpy, logSpy, browserBuild };
 }
 
 describe("runServer", () => {
+  it("returns a non-zero status and no browser URL for a missing build", async () => {
+    const { root } = await createTemporaryProject();
+    const { browserBuild, errorSpy, logSpy } = await observeStartup();
+    await rm(browserBuild.root, { recursive: true });
+    expect(await runServer(["--project", root])).toBe(1);
+    expect(errorSpy).toHaveBeenCalledWith(
+      "Failed to start the PlanAxis server.",
+      expect.objectContaining({
+        message: expect.stringContaining("production browser build is missing or unusable"),
+      }),
+    );
+    expect(logSpy).not.toHaveBeenCalled();
+  });
+
+  it("starts the explicit API-only mode without a build or a browser URL", async () => {
+    const { root, manifest } = await createTemporaryProject();
+    const { browserBuild, startSpy, logSpy } = await observeStartup();
+    await rm(browserBuild.root, { recursive: true });
+    startSpy.mockImplementation(async (application) => {
+      onTestFinished(() => application.close());
+      expect((await application.inject("/api/project")).json()).toEqual(manifest);
+      expect((await application.inject("/")).statusCode).toBe(404);
+      return 0;
+    });
+    expect(await runServer(["--", "--project", root, "--api-only"])).toBe(0);
+    expect(logSpy).not.toHaveBeenCalled();
+  });
+
   it("loads one project before constructing and starting its application", async () => {
     const { root, manifest, bytes } = await createTemporaryProject();
-    const { buildSpy, startSpy } = observeStartup();
+    const { buildSpy, startSpy, logSpy } = await observeStartup();
     const loadSpy = vi.spyOn(projectModule, "loadProject");
     startSpy.mockImplementation(async (application) => {
       onTestFinished(() => application.close());
       expect((await application.inject("/api/project")).json()).toEqual(manifest);
       expect((await application.inject("/api/project/architecture")).rawPayload).toEqual(bytes);
+      expect((await application.inject("/")).statusCode).toBe(200);
+      expect(logSpy).not.toHaveBeenCalled();
       return 0;
     });
 
@@ -36,12 +74,13 @@ describe("runServer", () => {
     const loaded = await loadSpy.mock.results[0]?.value;
     expect(loaded?.ok).toBe(true);
     if (!loaded?.ok) throw new Error("Expected a loaded project.");
-    expect(buildSpy).toHaveBeenCalledExactlyOnceWith(loaded.value);
+    expect(buildSpy).toHaveBeenCalledExactlyOnceWith(loaded.value, { apiOnly: false });
     expect(startSpy).toHaveBeenCalledExactlyOnceWith(buildSpy.mock.results[0]?.value);
+    expect(logSpy).toHaveBeenCalledExactlyOnceWith("PlanAxis is running at http://127.0.0.1:3000/");
   });
 
   it("rejects invalid invocation before loading or constructing an application", async () => {
-    const { buildSpy, startSpy, errorSpy } = observeStartup();
+    const { buildSpy, startSpy, errorSpy } = await observeStartup();
     const loadSpy = vi.spyOn(projectModule, "loadProject");
     expect(await runServer([])).toBe(1);
     expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("--project"));
@@ -59,7 +98,7 @@ describe("runServer", () => {
       } else if (kind === "missing architecture") {
         await rm(path.join(root, manifest.architecture.active));
       }
-      const { buildSpy, startSpy, errorSpy } = observeStartup();
+      const { buildSpy, startSpy, errorSpy } = await observeStartup();
       expect(
         await runServer(["--project", kind === "missing root" ? path.join(root, "absent") : root]),
       ).toBe(1);
@@ -70,7 +109,7 @@ describe("runServer", () => {
   );
 
   it("reports unexpected project loading failures without starting HTTP", async () => {
-    const { buildSpy, startSpy, errorSpy } = observeStartup();
+    const { buildSpy, startSpy, errorSpy } = await observeStartup();
     const error = new Error("Unexpected filesystem failure");
     vi.spyOn(projectModule, "loadProject").mockRejectedValue(error);
     expect(await runServer(["--project", "project"])).toBe(1);
@@ -81,7 +120,7 @@ describe("runServer", () => {
 
   it("propagates listen failure and closes the prepared application", async () => {
     const { root } = await createTemporaryProject();
-    const { startSpy } = observeStartup();
+    const { startSpy, logSpy } = await observeStartup();
     const closeSpy = vi.fn();
     startSpy.mockImplementation(async (application) => {
       application.addHook("onClose", async () => {
@@ -91,5 +130,6 @@ describe("runServer", () => {
     });
     expect(await runServer(["--project", root])).toBe(1);
     expect(closeSpy).toHaveBeenCalledOnce();
+    expect(logSpy).not.toHaveBeenCalled();
   });
 });

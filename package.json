@@ -11,6 +11,7 @@
   },
   "packageManager": "pnpm@11.24.0",
   "scripts": {
+    "start": "pnpm --filter @planaxis/server... --filter @planaxis/web... run build && node apps/server/dist/index.js",
     "build": "pnpm --recursive run build",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
