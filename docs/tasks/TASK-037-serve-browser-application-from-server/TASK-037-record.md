@@ -2,17 +2,17 @@
 
 ## Task Metadata
 
-- **Status:** In Progress
+- **Status:** Completed
 - **Created:** 2026-09-28
 - **Issued:** 2026-09-28
-- **Completed:** —
+- **Completed:** 2026-09-28
 - **Agent:** Codex
 - **Repository:** PlanAxis
 - **Description:** `TASK-037-description.md`
 - **Related tasks:** TASK-002, TASK-023, TASK-024
 - **Related ADRs:** ADR-001, ADR-002, ADR-004
 - **Related specifications:** PlanAxis Project Format 1.0
-- **Implementation commits:** —
+- **Implementation commits:** 1756018b16ac2111ac74d8a66bf8d1bf72cd4bd4
 
 ## Purpose
 
@@ -26,17 +26,31 @@ The authoritative task description is stored in:
 
 `TASK-037-description.md`
 
-The task was formally issued on 2026-09-28 and is now in progress.
+The task was formally issued on 2026-09-28 and remained immutable throughout execution.
 
 ## Execution Record
 
 ### Result
 
-Pending.
+Codex implemented the single-server PlanAxis runtime workflow.
+
+The implementation:
+
+- added a root `pnpm start -- --project <path>` workflow that builds the server, browser application, and required workspace dependencies before launching Fastify;
+- added `@fastify/static` and production browser serving from `apps/web/dist`;
+- validates the browser entry document and referenced build assets before normal startup;
+- serves `/` and built browser assets from the same Fastify origin as `/health` and the existing project APIs;
+- preserves API route precedence and leaves unknown routes as 404 responses without a SPA fallback;
+- added `--api-only` server startup for the optional Vite HMR development workflow without requiring a production browser build;
+- prints `http://127.0.0.1:3000/` only after successful normal server startup;
+- added focused server tests for static serving, build validation, API precedence, startup argument behavior, and URL reporting;
+- updated README, AGENTS, and architecture documentation to describe the single-server normal workflow and optional Vite development workflow.
 
 ### Verification
 
-Pending.
+The implementation was reported as successful and accepted by the human maintainer.
+
+Exact command-by-command verification results were not separately provided during task-record finalization and are therefore not recorded as PASS here.
 
 ### Deviations from Description
 
@@ -50,11 +64,13 @@ None.
 
 ### Review Status
 
-Pending
+Accepted
 
 ### Review Notes
 
-None.
+The TASK-037 implementation was accepted as successful.
+
+The committed changes establish the intended one-command, one-process, one-port normal runtime while retaining Vite HMR through the explicit API-only server mode.
 
 ### Human Changes After Agent Execution
 
@@ -64,11 +80,20 @@ None.
 
 ### Implementation Commits
 
-—
+```text
+1756018b16ac2111ac74d8a66bf8d1bf72cd4bd4
+```
 
 ### Commit Messages
 
-—
+```text
+feat(server): serve the browser application from Fastify
+
+Add one-command startup, browser build checks, and API-only development mode.
+Cover static serving and startup behavior; update workflow documentation.
+
+Task: TASK-037
+```
 
 ### Supersession
 
@@ -76,12 +101,12 @@ None.
 
 ## Notes
 
-TASK-037 implements the server-serving direction already anticipated by ADR-001.
+TASK-037 completes the transition of normal PlanAxis browser operation from the previous two-process Vite/Fastify workflow to a single Fastify runtime.
 
-The intended normal runtime becomes:
+The normal workflow is now:
 
 ```text
-one startup command
+pnpm start -- --project <path>
     ↓
 one Fastify process on 127.0.0.1:3000
     ├── built React application
@@ -89,4 +114,4 @@ one Fastify process on 127.0.0.1:3000
     └── /api/...
 ```
 
-The separate Vite server remains an optional development/HMR tool rather than the normal PlanAxis runtime.
+Vite remains available as the optional development/HMR workflow by starting the backend with `--api-only`.
