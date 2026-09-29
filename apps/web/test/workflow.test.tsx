@@ -1215,14 +1215,14 @@ it("uses one transient instant and changes lighting without model, camera, or na
   const walkCalls = rendererMocks.selectWalk.mock.calls.length;
   vi.mocked(Date.now).mockReturnValue(instant + 86400000);
   await selectQuality("3D lighting mode", "physical");
-  expect(rendererMocks.setLightingMode).toHaveBeenLastCalledWith("physical", instant);
+  expect(rendererMocks.setLightingMode).toHaveBeenLastCalledWith("physical", instant, "sunny");
   expect(qualityControl("3D camera").value).toBe("@walk");
   await selectQuality("3D quality preset", "Performance");
   expect(qualityControl("3D shadow quality").value).toBe("Low");
   expect(qualityControl("3D fill light").disabled).toBe(true);
   expect(qualityControl("3D environment lighting").disabled).toBe(true);
   await selectQuality("3D lighting mode", "studio");
-  expect(rendererMocks.setLightingMode).toHaveBeenLastCalledWith("studio", instant);
+  expect(rendererMocks.setLightingMode).toHaveBeenLastCalledWith("studio", instant, "sunny");
   expect(qualityControl("3D shadow quality").value).toBe("Off");
   expect(qualityControl("3D fill light").value).toBe("Medium");
   expect(rendererMocks.setModel).toHaveBeenCalledTimes(modelCalls);
@@ -1231,4 +1231,98 @@ it("uses one transient instant and changes lighting without model, camera, or na
   expect(rendererMocks.selectWalk).toHaveBeenCalledTimes(walkCalls);
   expect(rendererMocks.dispose).not.toHaveBeenCalled();
   expect(window.localStorage.getItem(QUALITY_STORAGE_KEY)).not.toMatch(/physical|studio|instant/i);
+});
+
+async function slideDaylight(label: string, value: string): Promise<void> {
+  const element = host.querySelector<HTMLInputElement>(`[aria-label="${label}"]`);
+  if (!element) throw new Error(`Missing ${label}`);
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(element, value);
+    element.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+}
+it.each([undefined, "Europe/Budapest"])(
+  "edits stacked calendar sliders in %s and restores transient daylight across modes and views",
+  async (timeZone) => {
+    const location = { latitude: 47.4979, longitude: 19.0402, northHeading: 270, timeZone };
+    const source = fixture("valid/minimal-semantic-schema.svg").replace(
+      '"level":',
+      `"location": ${JSON.stringify(location)}, "level":`,
+    );
+    const build = vi.spyOn(model3D, "buildArchitecturalModel3D");
+    await mountProject(source);
+    await clickView("3D");
+    await selectQuality("3D lighting mode", "physical");
+    expect(qualityControl("Physical weather").value).toBe("sunny");
+    expect([...qualityControl("Physical weather").options].map((option) => option.text)).toEqual([
+      "Sunny",
+      "Overcast",
+    ]);
+    expect(host.textContent).toContain(timeZone ?? "UTC (no time zone declared)");
+    const sliders = [...host.querySelectorAll<HTMLInputElement>(".daylight-controls input")];
+    expect(sliders.map((slider) => slider.getAttribute("aria-label"))).toEqual([
+      "Physical date",
+      "Physical time",
+    ]);
+    expect(sliders.map((slider) => [slider.type, slider.min, slider.max, slider.step])).toEqual([
+      ["range", "1", "366", "1"],
+      ["range", "0", "1439", "1"],
+    ]);
+    const modelCalls = rendererMocks.setModel.mock.calls.length;
+    const buildCalls = build.mock.calls.length;
+    await selectQuality("3D camera", "@walk");
+    const walkCalls = rendererMocks.selectWalk.mock.calls.length;
+    await slideDaylight("Physical date", "60");
+    expect(host.textContent).toContain("2024-02-29");
+    expect(host.textContent).toContain(timeZone ? "10:00" : "08:00");
+    await slideDaylight("Physical time", "1439");
+    expect(host.textContent).toContain("2024-02-29");
+    expect(host.textContent).toContain("23:59");
+    const instant = Date.parse(timeZone ? "2024-02-29T22:59:00Z" : "2024-02-29T23:59:00Z");
+    expect(rendererMocks.setLightingMode).toHaveBeenLastCalledWith("physical", instant, "sunny");
+    await selectQuality("Physical weather", "overcast");
+    await selectQuality("3D lighting mode", "studio");
+    expect(host.querySelector('[aria-label="Physical time"]')).toBeNull();
+    await selectQuality("3D quality preset", "Performance");
+    await selectQuality("3D lighting mode", "physical");
+    expect(rendererMocks.setLightingMode).toHaveBeenLastCalledWith("physical", instant, "overcast");
+    expect(qualityControl("3D camera").value).toBe("@walk");
+    expect(rendererMocks.setModel).toHaveBeenCalledTimes(modelCalls);
+    expect(build).toHaveBeenCalledTimes(buildCalls);
+    expect(rendererMocks.selectWalk).toHaveBeenCalledTimes(walkCalls);
+    await clickControl("Full screen");
+    await browserExit();
+    await clickView("2D");
+    await clickView("3D");
+    expect(rendererMocks.setLightingMode).toHaveBeenLastCalledWith("physical", instant, "overcast");
+    expect(host.textContent).toContain("2024-02-29");
+    expect(host.textContent).toContain("23:59");
+    expect(qualityControl("Physical weather").value).toBe("overcast");
+    expect(window.localStorage.getItem(QUALITY_STORAGE_KEY)).not.toMatch(
+      /weather|instant|sunny|overcast/i,
+    );
+  },
+);
+it("explains DST gaps without changing the instant and reports repeated minutes", async () => {
+  const source = fixture("valid/minimal-semantic-schema.svg").replace(
+    '"level":',
+    '"location": {"latitude": 47.5, "longitude": 19, "northHeading": 270, "timeZone": "Europe/Budapest"}, "level":',
+  );
+  await mountProject(source);
+  await clickView("3D");
+  await selectQuality("3D lighting mode", "physical");
+  await slideDaylight("Physical date", "91");
+  const calls = rendererMocks.setLightingMode.mock.calls.length;
+  await slideDaylight("Physical time", "150");
+  expect(rendererMocks.setLightingMode).toHaveBeenCalledTimes(calls);
+  expect(host.textContent).toContain("does not exist");
+  expect(host.textContent).toContain("10:00");
+  await slideDaylight("Physical date", "301");
+  await slideDaylight("Physical time", "150");
+  expect(host.textContent).toContain("using the earlier occurrence");
+  expect(rendererMocks.setLightingMode).toHaveBeenLastCalledWith(
+    "physical",
+    Date.parse("2024-10-27T00:30:00Z"),
+    "sunny",
+  );
 });

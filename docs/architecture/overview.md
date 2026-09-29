@@ -605,22 +605,42 @@ This package has no React, Three.js, network, local-time-zone, or current-clock 
 Exact geographic metadata crosses an explicit approximate-simulation boundary into native
 numbers; no authoritative apartment geometry is calculated or changed with those numbers.
 
-The browser owns the transient `studio | physical` selection, defaulting to Studio, and captures
-`Date.now()` once for the active 3D viewport's runtime state. Neither field is persisted or
-continuously advanced. Physical is disabled with an explanation when validated location is
-absent; no latitude, longitude, or north direction is guessed. Optional SVG time zone and
-elevation are not needed for this calculation.
+The browser owns transient `studio | physical` selection (Studio by default), a session-start
+instant, and `PhysicalSimulation { instant, weather }` (Sunny by default). App-level memory
+retains these across rendering-panel, fullscreen, camera, and 2D/3D transitions. Nothing is
+persisted or continuously advanced. Physical is gated by validated location/orientation.
 
-`ApartmentRenderer.setLightingMode(mode, instant)` preserves architecture, finishes, camera,
-Walk pose, and presentation settings. Studio uses the generated RoomEnvironment, arbitrary
-key, and saved environment/fill/shadow quality preferences. Physical maps the PlanAxis Sun
-vector to Three.js `(X,Z,Y)` and positions the directional light toward the Sun from the
-apartment-centered target. Elevation at/below zero disables direct light; above it uses
-qualitative white intensity 3. Physical sets the environment to null and ambient fill to zero,
-even after quality changes. Its shadows cannot be disabled: a retained Off preference uses
-Low (1024); other shadow resolutions remain selectable. Returning to Studio restores saved
-preferences. Mode/instant changes invalidate the static shadow map and render immediately.
-Model replacement recalculates against the new metadata, falling back to Studio without location.
+The stacked Date/Time sliders display ISO calendar dates and HH:MM. The year is captured from
+the session instant in the declared SVG time zone (explicit UTC when absent); day bounds are
+1–365/366, and minute bounds 0–1439. `createCivilClock` uses explicitly zoned Gregorian `Intl`
+formatting and UTC arithmetic. Offset candidates on both sides of a transition are round-trip
+checked: nonexistent minutes are rejected with UI feedback, and repeated minutes select the
+earlier occurrence with feedback. Unsupported time zones produce an explanation, never a local
+zone fallback. Date edits preserve civil time; time edits preserve the civil date.
+
+`deriveDaylight` smoothly attenuates direct Sun between 0° and 30°, changes the clear-Sun
+character from roughly 2500 K at the horizon to 5600 K above 35°, and uses a cooler 7000 K
+character with 4.5% direct strength for Overcast. Direct strength is zero at/below the horizon.
+Day and twilight weights vary smoothly across -6°…8° and -12°…0° respectively. These are
+qualitative simulation values, not measured irradiance or meteorological predictions.
+
+`ApartmentRenderer.setLightingMode(mode, instant, weather?)` retains architecture, finishes,
+camera/Walk pose, and presentation. Omitting weather retains the current weather. Studio restores
+the room environment, white key, and saved environment/fill/shadow preferences. Physical maps
+the same solar direction to the light and a renderer-owned TSL background. Its gradient,
+Sun-aligned glow/disc, and linear-color palettes cover blue day, warm low Sun, twilight, dark
+night, and low-contrast Overcast. A background node avoids picking, shadow casting, camera
+clipping, and persistent sky assets. Uniform updates reuse the node; disposal releases it and
+its renderer-managed background resources. This equivalent procedural implementation keeps
+clouds and continuous animation out of scope.
+
+Physical always sets environment to null and ambient fill to zero. Shadows remain enabled
+(effective Low when the stored preference is Off). Three.js r186 PCF filtering works on WebGPU
+and its WebGL2 backend; Overcast uses a radius of 8 texels at 2048 resolution, scaled with map
+size, versus Sunny/Studio radius 1. Shadow intensity stays 1: faintness comes from the weak Sun,
+without bypassing architectural occlusion. Mode/instant/weather edits invalidate shadows and
+render immediately. Model replacement recalculates against new metadata, falling back to
+Studio without location. Studio lighting is independent of retained Physical conditions.
 
 Ceiling visual materials stay inward-facing and culled from above, but their independent
 shadow side is DoubleSide. Ceiling finish clones avoid changing shared floor/wall materials.
@@ -628,9 +648,10 @@ Walls retain entry-face shadowing and actual openings; window glass remains non-
 No fabricated slab thickness is added. Shadow resources and environment ownership follow the
 existing initialization/replacement/disposal lifecycle on WebGPU and the WebGL2 fallback.
 
-This first Phase 4 milestone supplies direct Sun geometry only. Diffuse/procedural sky,
-weather, time editing, artificial lighting, and authoritative photometry remain deferred.
-Dark interiors in Physical mode are expected until richer daylight illumination is added.
+Visible sky is exterior scenery, never an environment-map shortcut through opaque walls.
+Diffuse sky transport/realtime GI remains deferred; dark interiors are expected, particularly
+under Overcast. Artificial lighting, bloom, IES photometry, path tracing, and richer atmospheric
+effects remain future work.
 
 ---
 
@@ -1157,8 +1178,8 @@ The Project Format 1.0 loading and project-filesystem foundation is implemented 
 
 Phase 1 includes exact designable surfaces with shared physical mapping frames, renderer UV generation, transient texture-capable metallic/roughness PBR finish assignments with non-overlapping coverage, and zero-thickness transmissive glass (sections 5.8–5.9). Built-in environment lighting and transient intensity, yaw, tone-mapping, and EV exposure controls complete the Phase 1 presentation foundation. Phase 2 is complete: Design Format 1.0, shared validation/resolution, server persistence, and browser scenario discovery/selection/creation/editing are implemented. Phase 3 is complete for Material 1.0 and 1.1: the pure `@planaxis/material` format package, controlled server descriptor/texture reads, browser material resolution, renderer-owned texture decoding, and persistent PBR rendering with physical scale are implemented. Material 1.1 ambient-occlusion map/strength support is implemented throughout validation, browser/runtime translation, and Three.js adaptation, preserving Material 1.0 compatibility. Environment assets, lighting design, and post-processing remain later work.
 
-Phase 4 now implements the direct-Sun lighting foundation (section 7.1). Remaining sky/weather
-and richer lighting precede Phase 5 3D asset importing and placement.
+Phase 4 implements daylight controls, Sunny/Overcast weather, and a procedural sky (section 7.1).
+Realtime GI and richer lighting remain future work before Phase 5 asset importing and placement.
 
 The intended implementation order is now broadly:
 

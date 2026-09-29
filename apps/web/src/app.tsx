@@ -1,3 +1,5 @@
+import { DEFAULT_WEATHER } from "@planaxis/simulation";
+import type { LightingMode, PhysicalSimulation } from "@planaxis/simulation";
 import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
 import { DesignPanel } from "./design-panel.js";
@@ -19,6 +21,12 @@ const STATUS_LABELS = {
 };
 
 export function App(): ReactElement {
+  const [sessionInstant] = useState(() => Date.now());
+  const [simulation, setSimulation] = useState<PhysicalSimulation>(() => ({
+    instant: sessionInstant,
+    weather: DEFAULT_WEATHER,
+  }));
+  const [lightingMode, setLightingMode] = useState<LightingMode>("studio");
   const active = useDocument();
   const design = useDesign(active.document);
   const project = "project" in active.document ? active.document.project : undefined;
@@ -199,6 +207,11 @@ export function App(): ReactElement {
           <ThreeViewport
             key={design.selectedPath}
             model={current.architecturalModel}
+            simulation={simulation}
+            sessionInstant={sessionInstant}
+            onSimulationChange={setSimulation}
+            selectedLightingMode={lightingMode}
+            onLightingModeChange={setLightingMode}
             onFailure={rendererFailure}
             scenarioPresentation={design.presentation}
             materials={design.loaded.materialProblem ? undefined : design.loaded.materials}

@@ -964,3 +964,70 @@ it.each([0, -0.001, -30])("disables direct Sun at elevation %s", async (elevatio
     renderer.dispose();
   }
 });
+
+it("updates and releases the Physical background with weaker, cooler, softer Overcast Sun", async () => {
+  const surface = navigationSurface();
+  const renderer = createApartmentRenderer(surface.canvas, vi.fn());
+  const base = modelFixture();
+  const model = {
+    ...base,
+    metadata: {
+      ...base.metadata,
+      location: {
+        latitude: decimal("47.5"),
+        longitude: decimal("19"),
+        northHeading: decimal("270"),
+      },
+    },
+  };
+  renderer.setModel(model);
+  await renderer.initialize();
+  renderer.selectWalk();
+  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+  const pose = camera.position.clone();
+  const floor = scene.getObjectByName("floor");
+  const light = scene.children.find((item) => item instanceof DirectionalLight);
+  if (!light) throw new Error("Missing light");
+  const noon = Date.parse("2024-06-21T10:00:00Z");
+  renderer.setLightingMode("physical", noon, "sunny");
+  const sky = scene.backgroundNode;
+  if (!sky) throw new Error("Missing sky");
+  const skyDispose = vi.fn();
+  sky.addEventListener("dispose", skyDispose);
+  const sunnyColor = light.color.clone();
+  const sunnyStrength = light.intensity;
+  const sunnyRadius = light.shadow.radius;
+  for (const shadowQuality of ["Low", "Medium", "High"] as const) {
+    renderer.setQualitySettings({ ...DEFAULT_QUALITY_SETTINGS, shadowQuality });
+    renderer.setLightingMode("physical", noon, "overcast");
+    expect(light.intensity).toBeCloseTo(sunnyStrength * 0.045);
+    expect(light.color.b / light.color.r).toBeGreaterThan(sunnyColor.b / sunnyColor.r);
+    expect(light.shadow.radius).toBeGreaterThan(sunnyRadius * 3);
+    expect(light.shadow.intensity).toBe(1); // No occlusion bypass to fake soft shadows.
+    expect(light.castShadow).toBe(true);
+    expect(scene.environment).toBeNull();
+    expect(scene.backgroundNode).toBe(sky);
+  }
+  renderer.setLightingMode("studio", noon);
+  expect(scene.backgroundNode).toBeNull();
+  expect(light.color).toEqual(new Color(0xffffff));
+  expect(light.shadow.radius).toBe(1);
+  renderer.setLightingMode("physical", noon);
+  expect(light.intensity).toBeCloseTo(sunnyStrength * 0.045);
+  expect(scene.backgroundNode).toBe(sky);
+  renderer.setLightingMode("physical", Date.parse("2024-06-21T22:00:00Z"));
+  expect(light.intensity).toBe(0);
+  expect(scene.backgroundNode).toBe(sky);
+  expect(camera.position).toEqual(pose);
+  expect(scene.getObjectByName("floor")).toBe(floor);
+  expect(surface.frames.size).toBe(0);
+  renderer.setModel(model);
+  expect(scene.backgroundNode).toBe(sky);
+  expect(light.intensity).toBe(0);
+  renderer.setModel(base);
+  expect(scene.backgroundNode).toBeNull();
+  renderer.dispose();
+  expect(skyDispose).toHaveBeenCalledTimes(1);
+  expect(scene.backgroundNode).toBeNull();
+});

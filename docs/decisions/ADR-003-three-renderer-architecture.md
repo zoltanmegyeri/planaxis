@@ -124,11 +124,19 @@ The browser initializes one stable instant and defaults to Studio. Physical requ
 SVG location/orientation and replaces the arbitrary key with the calculated Sun. The adapter
 maps its scene-to-Sun vector from `(X,Y,Z)` to `(X,Z,Y)`, keeps the target at apartment center,
 and reframes shadows to cover the apartment. Sun intensity is zero at/below the horizon;
-otherwise the qualitative white intensity is 3, without claiming irradiance accuracy.
+otherwise elevation/weather determine its qualitative intensity and color, without claiming irradiance accuracy.
 Physical suppresses RoomEnvironment and ambient fill, and requires shadows even when the
 stored Studio preference is Off (effective Low). Mode changes invalidate shadows, render
 immediately, and preserve geometry, materials, and navigation. Studio preferences return
-unchanged. No sky/weather, time controls, persistence, or continuous solar loop is introduced.
+unchanged. The daylight-controls refinement adds transient Sunny/Overcast conditions and a
+renderer-owned TSL procedural background, driven by the same Sun direction. A simple gradient
+and Sun-aligned glow support day/twilight/night without clouds, textures, or environment GI.
+The node is reused across updates/model replacement and disposed with the renderer. Overcast
+uses weak cool direct Sun and wider resolution-scaled r186 PCF filtering on both backends,
+without reducing occlusion strength. Browser session state survives Studio and 2D/3D switches;
+explicitly zoned civil-time conversion belongs to simulation. No persistence or solar loop is
+introduced. See [solar simulation](../architecture/overview.md#71-solar-simulation) for the
+approximation, time-zone/DST policy, and deferred diffuse sky transport.
 
 The visually inward-facing ceiling casts from both sides using a separate shadow-side setting.
 Cloned ceiling finishes keep shared wall/floor finish policies unchanged. No slab thickness

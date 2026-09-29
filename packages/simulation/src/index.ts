@@ -100,3 +100,8 @@ export function planaxisSunDirection(northHeading: number, sun: SolarPosition): 
     z: Math.sin(elevation),
   };
 }
+
+export { DEFAULT_WEATHER, deriveDaylight } from "./daylight.js";
+export type { Weather, PhysicalSimulation, Daylight } from "./daylight.js";
+export { createCivilClock, daysInYear, formatCivilTime } from "./civil-time.js";
+export type { CivilTime, CivilResolution } from "./civil-time.js";

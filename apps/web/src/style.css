@@ -458,3 +458,14 @@ dd {
   color: #853d21;
   border-color: #be7751;
 }
+
+.daylight-controls {
+  margin: 0 0 14px;
+  padding: 0.75rem;
+  border: 1px solid var(--border, #ccd3d3);
+  border-radius: 0.4rem;
+}
+.daylight-controls > label {
+  display: flex;
+  margin-block: 0.5rem;
+}

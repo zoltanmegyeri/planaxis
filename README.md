@@ -278,15 +278,24 @@ The **Rendering → Lighting** selector starts in **Studio**, preserving the neu
 environment and fixed key light. **Physical** requires validated Apartment SVG
 `metadata.location` with latitude, longitude, and `northHeading`; it is unavailable without
 those fields. Physical uses a geographically oriented directional Sun and no room environment
-or ambient fill. Direct Sun is disabled at or below the geometric horizon. This initial
-Phase 4 foundation intentionally supplies direct Sun only: diffuse sky, weather, date/time
-controls, and photometric simulation remain deferred. Interiors can therefore look dark.
+or ambient fill. Its **Date** and **Time** sliders cover every day of the current session year
+(including leap day) and every minute from 00:00 through 23:59. The full date and 24-hour time
+are displayed. Edits use the SVG's declared time zone, or explicitly labeled UTC when absent.
+Skipped DST times leave the simulation unchanged with an explanation; repeated times select
+the earlier occurrence.
 
-The shared `@planaxis/simulation` package computes approximate solar position and the
-specification-defined PlanAxis direction independently of React and Three.js. The browser
-captures one transient instant from `Date.now()` per 3D viewport lifetime. It neither advances
-with the clock nor persists the instant or lighting mode. Switching modes preserves the scene,
-camera, Walk pose, materials, tone mapping, and exposure.
+**Sunny** is the initial weather: clear blue sky, warm low Sun, neutral high Sun, and crisp
+shadows. **Overcast** shows a cooler, low-contrast sky with very weak direct Sun and softer,
+faint shadows. The procedural exterior transitions through sunset and twilight to near-black
+night; direct Sun is zero at/below the geometric horizon. Visible sky is scenery, not realtime
+GI: diffuse sky transport is deferred and interiors may remain dark.
+
+The shared `@planaxis/simulation` package owns approximate solar position, daylight/weather
+weights, and civil-time conversion independently of React and Three.js. The browser captures
+one transient instant from `Date.now()` per loaded session, without advancing it automatically.
+Date/time/weather and lighting mode stay in memory only. Physical → Studio → Physical restores
+the previous simulation, including across 2D/3D switching; simulation edits preserve the scene,
+camera, Walk pose, materials, tone mapping, and exposure. Studio keeps its neutral lighting.
 
 Ceilings remain visually culled from above for Inspection but cast shadows from both sides;
 walls continue to block sunlight except at actual openings. Window glass remains transmissive
@@ -475,7 +484,7 @@ PlanAxis Design Format 1.0 is the accepted normative persistence contract for Ph
 
 Materials may be authored manually under `assets/materials/` and referenced from a design. Re-select the design (choose **No design**, then the scenario) to reread external edits. No catalog, material editor, file watching, or global cache is provided. Shared textures are fetched and decoded once per selected load, including packed map roles. Selection changes cancel obsolete requests and release prepared images, textures, and scene resources.
 
-Phase 4 now establishes physical daylight: Studio/Physical modes, renderer-independent solar simulation, and direct-light occlusion are implemented. Sky/weather and richer lighting remain future Phase 4 work. 3D asset importing and placement follow in Phase 5.
+Phase 4 implements transient daylight controls, Sunny/Overcast weather, a procedural day/twilight/night sky, and elevation-dependent direct Sun with architectural occlusion. Realtime GI, bloom, IES photometry, path tracing, and richer atmospheric effects remain future work. 3D asset importing and placement follow in Phase 5.
 
 Each implementation phase should have explicit acceptance criteria and automated tests.
 

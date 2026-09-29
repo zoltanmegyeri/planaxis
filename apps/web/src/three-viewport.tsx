@@ -1,4 +1,5 @@
-import type { LightingMode } from "@planaxis/simulation";
+import { DaylightControls } from "./daylight-controls.js";
+import type { LightingMode, PhysicalSimulation } from "@planaxis/simulation";
 import { createPortal } from "react-dom";
 import { isWorkspaceShortcut, NavigationHelp, TransientPanel } from "./transient-panel.js";
 import type { WorkspacePanel } from "./transient-panel.js";
@@ -53,10 +54,18 @@ export function ThreeViewport({
   scenarioPresentation,
   materials,
   onMaterialFailure,
-  initialSimulationInstant,
+  simulation,
+  sessionInstant,
+  onSimulationChange,
+  selectedLightingMode,
+  onLightingModeChange,
 }: {
   model: ArchitecturalModel3D;
-  initialSimulationInstant?: number;
+  simulation: PhysicalSimulation;
+  sessionInstant: number;
+  onSimulationChange: (next: PhysicalSimulation) => void;
+  selectedLightingMode: LightingMode;
+  onLightingModeChange: (mode: LightingMode) => void;
   onFailure: (error: unknown) => void;
   toolbar: HTMLDivElement | null;
   panel: WorkspacePanel;
@@ -77,11 +86,10 @@ export function ThreeViewport({
   const aspectRatioRef = useRef<RenderAspectRatio>(aspectRatio);
   aspectRatioRef.current = aspectRatio;
   const [ready, setReady] = useState(false);
-  const [simulationInstant] = useState(() => initialSimulationInstant ?? Date.now());
-  const [selectedLightingMode, setLightingMode] = useState<LightingMode>("studio");
+  const simulationInstant = simulation.instant;
   const lightingMode = model.metadata.location ? selectedLightingMode : "studio";
-  const lightingRef = useRef({ mode: lightingMode, instant: simulationInstant });
-  lightingRef.current = { mode: lightingMode, instant: simulationInstant };
+  const lightingRef = useRef({ mode: lightingMode, ...simulation });
+  lightingRef.current = { mode: lightingMode, ...simulation };
   const [nativeDpr, setNativeDpr] = useState(() => nativePixelRatio(window.devicePixelRatio));
   const [quality, setQuality] = useState(() => restoreQuality(nativeDpr));
   const qualityRef = useRef(quality);
@@ -198,7 +206,11 @@ export function ThreeViewport({
           fail(error);
         }
       } else instance.setModel(model);
-      instance.setLightingMode(lightingRef.current.mode, lightingRef.current.instant);
+      instance.setLightingMode(
+        lightingRef.current.mode,
+        lightingRef.current.instant,
+        lightingRef.current.weather,
+      );
       observer = new ResizeObserver(resize);
       observer.observe(area);
       void instance
@@ -386,8 +398,8 @@ export function ThreeViewport({
               if (mode !== "studio" && mode !== "physical") return;
               if (mode === "physical" && !model.metadata.location) return;
               try {
-                renderer.current?.setLightingMode(mode, simulationInstant);
-                setLightingMode(mode);
+                renderer.current?.setLightingMode(mode, simulationInstant, simulation.weather);
+                onLightingModeChange(mode);
               } catch (error) {
                 onFailure(error);
               }
@@ -406,9 +418,20 @@ export function ThreeViewport({
           </p>
         )}
         {lightingMode === "physical" && (
-          <p>
-            Direct Sun only; sky and weather lighting are not yet available. Shadows remain enabled.
-          </p>
+          <DaylightControls
+            simulation={simulation}
+            sessionInstant={sessionInstant}
+            timeZone={model.metadata.location?.timeZone}
+            ready={ready}
+            onChange={(next) => {
+              try {
+                renderer.current?.setLightingMode("physical", next.instant, next.weather);
+                onSimulationChange(next);
+              } catch (error) {
+                onFailure(error);
+              }
+            }}
+          />
         )}
         <QualityControls
           physical={lightingMode === "physical"}

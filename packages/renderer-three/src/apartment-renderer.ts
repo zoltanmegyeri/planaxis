@@ -1,5 +1,10 @@
-import { calculateSolarPosition, planaxisSunDirection } from "@planaxis/simulation";
-import type { LightingMode } from "@planaxis/simulation";
+import {
+  calculateSolarPosition,
+  planaxisSunDirection,
+  deriveDaylight,
+  DEFAULT_WEATHER,
+} from "@planaxis/simulation";
+import type { LightingMode, Weather } from "@planaxis/simulation";
 import type { ArchitecturalModel3D } from "@planaxis/model-3d";
 import {
   AmbientLight,
@@ -13,6 +18,7 @@ import {
 } from "three/webgpu";
 import type { RenderTarget } from "three/webgpu";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { createPhysicalSky, daylightSunColor } from "./physical-sky.js";
 import { buildApartmentScene } from "./apartment-scene.js";
 import type { ApartmentScene } from "./apartment-scene.js";
 import {
@@ -45,7 +51,7 @@ export interface ApartmentRenderer {
   setFocalLengthOverride(focalLengthMm: FullFrameFocalLength | null): void;
   setPresentationSettings(settings: RendererPresentationSettings): void;
   setQualitySettings(settings: RendererQualitySettings): void;
-  setLightingMode(mode: LightingMode, instant: number): void;
+  setLightingMode(mode: LightingMode, instant: number, weather?: Weather): void;
   render(): void;
   dispose(): void;
 }
@@ -65,6 +71,8 @@ export function createApartmentRenderer(
   let quality = DEFAULT_QUALITY_SETTINGS;
   let lightingMode: LightingMode = "studio";
   let simulationInstant = 0;
+  let weather: Weather = DEFAULT_WEATHER;
+  const sky = createPhysicalSky();
   let width = 1;
   let height = 1;
   let shadowRadius = 0.1;
@@ -184,6 +192,14 @@ export function createApartmentRenderer(
     fillLight.intensity =
       lightingMode === "studio" ? FILL_LIGHT_INTENSITIES[quality.fillLightLevel] : 0;
     light.intensity = 3; // Qualitative direct light, not authoritative irradiance.
+    light.color.set(0xffffff);
+    scene.backgroundNode = lightingMode === "physical" ? sky.node : null;
+    // r186 PCF uses radius on both WebGPU and WebGL2. Scale the wider weather
+    // filter with resolution, retaining full occlusion away from shadow edges.
+    light.shadow.radius =
+      lightingMode === "physical" && weather === "overcast"
+        ? (8 * light.shadow.mapSize.x) / 2048
+        : 1;
     if (apartment) {
       const center = apartment.bounds.getCenter(new Vector3());
       light.target.position.copy(center);
@@ -199,7 +215,10 @@ export function createApartmentRenderer(
         light.position
           .copy(center)
           .addScaledVector(new Vector3(direction.x, direction.z, direction.y), shadowRadius * 2);
-        light.intensity = sun.elevation > 0 ? 3 : 0;
+        const daylight = deriveDaylight(sun.elevation, weather);
+        light.intensity = 3 * daylight.directStrength;
+        light.color.copy(daylightSunColor(daylight));
+        sky.update(daylight, direction);
       } else {
         light.position.copy(center).add(new Vector3(shadowRadius, shadowRadius * 2, shadowRadius));
       }
@@ -335,7 +354,7 @@ export function createApartmentRenderer(
       applyLighting();
       render();
     },
-    setLightingMode(mode, instant) {
+    setLightingMode(mode, instant, nextWeather = weather) {
       if (disposed) return;
       if (mode !== "studio" && mode !== "physical") throw new Error("Invalid lighting mode.");
       if (!Number.isFinite(instant) || Math.abs(instant) > 8.64e15)
@@ -345,6 +364,9 @@ export function createApartmentRenderer(
           "Physical lighting requires Apartment SVG geographic location and orientation.",
         );
       }
+      if (nextWeather !== "sunny" && nextWeather !== "overcast")
+        throw new Error("Invalid weather.");
+      weather = nextWeather;
       lightingMode = mode;
       simulationInstant = instant;
       applyShadows();
@@ -362,6 +384,8 @@ export function createApartmentRenderer(
       controls.dispose();
       apartment?.dispose();
       light.dispose();
+      scene.backgroundNode = null;
+      sky.dispose();
       scene.clear();
       // init owns in-flight backend allocation; release it when that allocation settles.
       if (!initialization || initialized) releaseRenderer();
