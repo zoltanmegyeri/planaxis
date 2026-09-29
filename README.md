@@ -138,6 +138,7 @@ PlanAxis is a pnpm workspace monorepo organized around the following areas:
 │   ├── model-3d/
 │   ├── design/
 │   ├── material/
+│   ├── simulation/
 │   └── renderer-three/
 │
 ├── examples/
@@ -271,13 +272,33 @@ The surface foundation also exposes exact physical mapping frames shared by base
 
 Call `buildApartmentScene(model, finishes)` or `renderer.setModel(model, finishes)` with `RuntimeFinishOptions`. Texture references are in-process symbols resolved to already loaded, borrowed Three.js textures. The adapter creates and disposes its own configured clones; callers retain ownership of source textures and decoded images. Finish assignment has no browser selection UI or persistence semantics. See the [runtime finish contract](docs/architecture/overview.md#59-renderer-adapter) for map conventions and an API example.
 
-Window planes use physically based transmission with zero thickness and qualitative clear/frosted/tinted defaults. A built-in neutral room environment supplies image-based lighting (IBL) and reflections without network downloads or project assets. It replaces hemisphere ambient illumination; the deterministic directional key/shadow light remains. The neutral background stays separate from the lighting environment.
+Window planes use physically based transmission with zero thickness and qualitative clear/frosted/tinted defaults. In the default **Studio** lighting mode, a built-in neutral room environment supplies image-based lighting (IBL) and reflections without network downloads or project assets. It replaces hemisphere ambient illumination; the deterministic directional key/shadow light remains. The neutral background stays separate from the lighting environment.
+
+The **Rendering → Lighting** selector starts in **Studio**, preserving the neutral room
+environment and fixed key light. **Physical** requires validated Apartment SVG
+`metadata.location` with latitude, longitude, and `northHeading`; it is unavailable without
+those fields. Physical uses a geographically oriented directional Sun and no room environment
+or ambient fill. Direct Sun is disabled at or below the geometric horizon. This initial
+Phase 4 foundation intentionally supplies direct Sun only: diffuse sky, weather, date/time
+controls, and photometric simulation remain deferred. Interiors can therefore look dark.
+
+The shared `@planaxis/simulation` package computes approximate solar position and the
+specification-defined PlanAxis direction independently of React and Three.js. The browser
+captures one transient instant from `Date.now()` per 3D viewport lifetime. It neither advances
+with the clock nor persists the instant or lighting mode. Switching modes preserves the scene,
+camera, Walk pose, materials, tone mapping, and exposure.
+
+Ceilings remain visually culled from above for Inspection but cast shadows from both sides;
+walls continue to block sunlight except at actual openings. Window glass remains transmissive
+and does not cast an opaque shadow. Physical always enables architectural shadowing (Low when
+the retained Studio preference is Off), disables environment/fill controls, and restores those
+Studio preferences on return.
 
 The **Rendering** panel offers **Tone mapping** (AgX by default, ACES Filmic, or Neutral), **Exposure** (−4 to +4 EV in 0.1-stop increments), **Environment intensity** (0–4 in 0.1 increments), and **Environment rotation** (0–360° in 1° increments). Defaults are 0 EV, intensity 1, and rotation 0°. Exposure converts to the renderer multiplier as `2 ** EV`; positive environment yaw turns architectural +X toward +Y. Controls update the next frame immediately and remain disabled until initialization completes. Camera, Walk, lens, resize, and fullscreen changes preserve presentation selections for the viewport lifetime. Fullscreen hides every control except its exit button.
 
 With **No design** selected, presentation controls remain transient. A resolved design applies its saved tone mapping and exposure; edit these in the design editor rather than the Rendering panel. Environment intensity and rotation always remain transient. Resolved designs also apply Material 1.0 and 1.1 persistent finishes, including packed ORM textures shared across ambient-occlusion, roughness, and metalness roles. Material-management UI, environment assets, lighting design, and post-processing remain deferred.
 
-The same **Rendering** panel also offers **Quality**, **Pixel ratio**, **Shadows**, **Environment lighting**, and **Fill light**. Quality changes apply immediately without rebuilding the apartment or resetting navigation. Walk redraws are coalesced to display frames, and unchanged architectural shadows are reused during navigation. All individual settings stay editable; changing a preset's settings selects **Custom**. Selecting a named preset reapplies every setting below:
+The same **Rendering** panel also offers **Quality**, **Pixel ratio**, **Shadows**, **Environment lighting**, and **Fill light**. Quality changes apply immediately without rebuilding the apartment or resetting navigation. Walk redraws are coalesced to display frames, and unchanged architectural shadows are reused during navigation. In Studio, all individual settings stay editable; changing a preset's settings selects **Custom**. Selecting a named preset reapplies every setting below:
 
 | Preset | Pixel ratio | Shadows | Environment lighting | Fill light |
 | --- | --- | --- | --- | --- |
@@ -453,6 +474,8 @@ PlanAxis Design Format 1.0 is the accepted normative persistence contract for Ph
 `@planaxis/material` exposes `parseMaterialDescriptor(text, descriptorPath)` and `validateMaterialDescriptor(value, descriptorPath)`. They return structured JSON/format failures or an immutable descriptor with exact project-relative `path` identity and a separate durable `document`. `getEffectiveMaterial(descriptor)` exposes normative defaults without modifying the document. The package has no runtime dependencies and performs no filesystem access, image decoding, or renderer adaptation. Both [Material Format 1.0](docs/specifications/planaxis-material/1.0.md) and [Material Format 1.1](docs/specifications/planaxis-material/1.1.md) are implemented. AO strength is valid only with an AO map, defaults effectively to 1 when omitted, and must be finite in [0, 1]. Without an AO map, no AO strength state is added.
 
 Materials may be authored manually under `assets/materials/` and referenced from a design. Re-select the design (choose **No design**, then the scenario) to reread external edits. No catalog, material editor, file watching, or global cache is provided. Shared textures are fetched and decoded once per selected load, including packed map roles. Selection changes cancel obsolete requests and release prepared images, textures, and scene resources.
+
+Phase 4 now establishes physical daylight: Studio/Physical modes, renderer-independent solar simulation, and direct-light occlusion are implemented. Sky/weather and richer lighting remain future Phase 4 work. 3D asset importing and placement follow in Phase 5.
 
 Each implementation phase should have explicit acceptance criteria and automated tests.
 

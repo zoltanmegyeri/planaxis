@@ -1,3 +1,5 @@
+import { calculateSolarPosition, planaxisSunDirection } from "@planaxis/simulation";
+import type { LightingMode } from "@planaxis/simulation";
 import type { ArchitecturalModel3D } from "@planaxis/model-3d";
 import {
   AmbientLight,
@@ -43,6 +45,7 @@ export interface ApartmentRenderer {
   setFocalLengthOverride(focalLengthMm: FullFrameFocalLength | null): void;
   setPresentationSettings(settings: RendererPresentationSettings): void;
   setQualitySettings(settings: RendererQualitySettings): void;
+  setLightingMode(mode: LightingMode, instant: number): void;
   render(): void;
   dispose(): void;
 }
@@ -60,6 +63,8 @@ export function createApartmentRenderer(
   applyPresentationSettings(renderer, scene, DEFAULT_PRESENTATION_SETTINGS);
   let environment: RenderTarget | undefined;
   let quality = DEFAULT_QUALITY_SETTINGS;
+  let lightingMode: LightingMode = "studio";
+  let simulationInstant = 0;
   let width = 1;
   let height = 1;
   let shadowRadius = 0.1;
@@ -171,6 +176,58 @@ export function createApartmentRenderer(
     applyEffectiveProjection();
     render();
   };
+  const applyLighting = (): void => {
+    scene.environment =
+      lightingMode === "studio" && quality.environmentLightingEnabled
+        ? (environment?.texture ?? null)
+        : null;
+    fillLight.intensity =
+      lightingMode === "studio" ? FILL_LIGHT_INTENSITIES[quality.fillLightLevel] : 0;
+    light.intensity = 3; // Qualitative direct light, not authoritative irradiance.
+    if (apartment) {
+      const center = apartment.bounds.getCenter(new Vector3());
+      light.target.position.copy(center);
+      if (lightingMode === "physical" && model?.metadata.location) {
+        const location = model.metadata.location;
+        // Explicit boundary from exact permanent metadata to approximate runtime simulation.
+        const sun = calculateSolarPosition(
+          location.latitude.toNumber(),
+          location.longitude.toNumber(),
+          simulationInstant,
+        );
+        const direction = planaxisSunDirection(location.northHeading.toNumber(), sun);
+        light.position
+          .copy(center)
+          .addScaledVector(new Vector3(direction.x, direction.z, direction.y), shadowRadius * 2);
+        light.intensity = sun.elevation > 0 ? 3 : 0;
+      } else {
+        light.position.copy(center).add(new Vector3(shadowRadius, shadowRadius * 2, shadowRadius));
+      }
+    }
+  };
+  const applyShadows = (): void => {
+    // Physical direct light must never bypass architectural occlusion, including a
+    // saved Performance preset. Retain the Studio preference for switching back.
+    const mapSize =
+      SHADOW_MAP_SIZES[quality.shadowQuality] || (lightingMode === "physical" ? 1024 : 0);
+    const changed =
+      light.castShadow !== (mapSize !== 0) || (mapSize !== 0 && light.shadow.mapSize.x !== mapSize);
+    if (mapSize !== 0 && light.shadow.map && light.shadow.mapSize.x !== mapSize) {
+      // Recreate GPU shadow bindings on resolution changes, preserving scene and pose.
+      const previous = light;
+      light = previous.clone();
+      scene.remove(previous, previous.target);
+      previous.dispose();
+      scene.add(light, light.target);
+    }
+    renderer.shadowMap.enabled = mapSize !== 0;
+    light.castShadow = mapSize !== 0;
+    if (mapSize !== 0) {
+      light.shadow.mapSize.set(mapSize, mapSize);
+      light.shadow.normalBias = ((2 * shadowRadius) / mapSize) * 2;
+      if (changed) light.shadow.needsUpdate = true;
+    }
+  };
   controls.addEventListener("change", render);
   return {
     initialize() {
@@ -183,7 +240,7 @@ export function createApartmentRenderer(
             return;
           }
           environment = createStudioEnvironment(renderer);
-          scene.environment = quality.environmentLightingEnabled ? environment.texture : null;
+          applyLighting();
           initialized = true;
           render();
         })
@@ -205,6 +262,7 @@ export function createApartmentRenderer(
       }
       apartment = replacement;
       model = next;
+      if (!model.metadata.location) lightingMode = "studio";
       scene.add(apartment.group);
       const center = apartment.bounds.getCenter(new Vector3());
       const radius = Math.max(apartment.bounds.getSize(new Vector3()).length(), 0.1);
@@ -223,6 +281,8 @@ export function createApartmentRenderer(
         far: radius * 5,
       });
       light.shadow.camera.updateProjectionMatrix();
+      applyShadows();
+      applyLighting();
       light.shadow.needsUpdate = true;
       selectCamera(null);
     },
@@ -270,29 +330,26 @@ export function createApartmentRenderer(
         renderer.setPixelRatio(settings.pixelRatio);
         renderer.setSize(width, height, false);
       }
-      const mapSize = SHADOW_MAP_SIZES[settings.shadowQuality];
-      if (mapSize !== 0 && light.shadow.map && light.shadow.mapSize.x !== mapSize) {
-        // Three.js r185 retains stale GPU bindings when an allocated shadow target
-        // is resized. A fresh light identity rebuilds its shadow nodes/bindings;
-        // clone only light configuration, never apartment meshes or camera state.
-        const previous = light;
-        light = previous.clone();
-        scene.remove(previous, previous.target);
-        previous.dispose();
-        scene.add(light, light.target);
-      }
-      renderer.shadowMap.enabled = mapSize !== 0;
-      light.castShadow = mapSize !== 0;
-      if (mapSize !== 0) {
-        light.shadow.mapSize.set(mapSize, mapSize);
-        light.shadow.normalBias = ((2 * shadowRadius) / mapSize) * 2;
-        if (settings.shadowQuality !== quality.shadowQuality) light.shadow.needsUpdate = true;
-      }
-      scene.environment = settings.environmentLightingEnabled
-        ? (environment?.texture ?? null)
-        : null;
-      fillLight.intensity = FILL_LIGHT_INTENSITIES[settings.fillLightLevel];
       quality = { ...settings };
+      applyShadows();
+      applyLighting();
+      render();
+    },
+    setLightingMode(mode, instant) {
+      if (disposed) return;
+      if (mode !== "studio" && mode !== "physical") throw new Error("Invalid lighting mode.");
+      if (!Number.isFinite(instant) || Math.abs(instant) > 8.64e15)
+        throw new Error("Invalid simulation instant.");
+      if (mode === "physical" && !model?.metadata.location) {
+        throw new Error(
+          "Physical lighting requires Apartment SVG geographic location and orientation.",
+        );
+      }
+      lightingMode = mode;
+      simulationInstant = instant;
+      applyShadows();
+      applyLighting();
+      light.shadow.needsUpdate = true;
       render();
     },
     render,

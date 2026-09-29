@@ -1,3 +1,4 @@
+import * as simulation from "@planaxis/simulation";
 import { createDecimal as decimal } from "@planaxis/geometry";
 import { beforeEach, expect, it, vi } from "vitest";
 import type { PerspectiveCamera, Scene, WebGPURenderer } from "three/webgpu";
@@ -781,62 +782,185 @@ it("refreshes static shadows only for model replacement and shadow-quality chang
   renderer.dispose();
 });
 
-it("replaces allocated shadow resources on resolution changes without resetting Walk or PBR geometry", async () => {
-  const surface = navigationSurface();
-  const onError = vi.fn();
-  const renderer = createApartmentRenderer(surface.canvas, onError);
-  renderer.setModel(modelFixture());
-  await renderer.initialize();
-  renderer.selectWalk();
-  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
-  const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
-  const floor = scene.getObjectByName("floor");
-  const position = camera.position.clone();
-  const orientation = camera.quaternion.toArray();
-  const getLight = (): DirectionalLight => {
-    const result = scene.children.find((object) => object instanceof DirectionalLight);
-    if (!(result instanceof DirectionalLight)) throw new Error("Missing shadow light");
-    return result;
-  };
-  for (const shadowQuality of ["High", "Medium", "Low", "High", "Medium"] as const) {
-    const previous = getLight();
-    // A real backend allocates this target on its first shadow pass. Leaving it
-    // null in the GPU mock hid the unsafe in-place resizing regression.
-    const target = new RenderTarget(previous.shadow.mapSize.x, previous.shadow.mapSize.y);
-    previous.shadow.map = target;
-    const disposed = vi.fn();
-    target.addEventListener("dispose", disposed);
-    const lightDisposed = vi.fn();
-    previous.addEventListener("dispose", lightDisposed);
-    gpu.render.mockImplementationOnce(() => {
-      expect(getLight()).not.toBe(previous);
-      expect(getLight().shadow.map).toBeNull();
-      expect(lightDisposed).toHaveBeenCalledTimes(1);
+it.each(["studio", "physical"] as const)(
+  "replaces allocated shadow resources in %s without resetting Walk or PBR geometry",
+  async (mode) => {
+    const surface = navigationSurface();
+    const onError = vi.fn();
+    const renderer = createApartmentRenderer(surface.canvas, onError);
+    const base = modelFixture();
+    renderer.setModel({
+      ...base,
+      metadata: {
+        ...base.metadata,
+        location: {
+          latitude: decimal("47.5"),
+          longitude: decimal("19"),
+          northHeading: decimal("270"),
+        },
+      },
     });
-    renderer.setQualitySettings({ ...DEFAULT_QUALITY_SETTINGS, shadowQuality });
-    expect(onError).not.toHaveBeenCalled();
-    const replacement = getLight();
-    expect(replacement).not.toBe(previous);
-    expect(disposed).toHaveBeenCalledTimes(1);
-    expect(previous.parent).toBeNull();
-    expect(previous.target.parent).toBeNull();
-    expect(replacement.position).toEqual(previous.position);
-    expect(replacement.target.position).toEqual(previous.target.position);
-    expect(replacement.shadow.camera.projectionMatrix).toEqual(
-      previous.shadow.camera.projectionMatrix,
-    );
-    expect(replacement.shadow.autoUpdate).toBe(false);
-    expect(replacement.shadow.needsUpdate).toBe(true);
-    expect(scene.children.filter((object) => object instanceof DirectionalLight)).toHaveLength(1);
-    expect(scene.getObjectByName("floor")).toBe(floor);
-    expect(camera.position).toEqual(position);
-    expect(camera.quaternion.toArray()).toEqual(orientation);
+    renderer.setLightingMode(mode, Date.parse("2024-06-21T08:00:00Z"));
+    await renderer.initialize();
+    renderer.selectWalk();
+    const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+    const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+    const floor = scene.getObjectByName("floor");
+    const position = camera.position.clone();
+    const orientation = camera.quaternion.toArray();
+    const getLight = (): DirectionalLight => {
+      const result = scene.children.find((object) => object instanceof DirectionalLight);
+      if (!(result instanceof DirectionalLight)) throw new Error("Missing shadow light");
+      return result;
+    };
+    for (const shadowQuality of ["High", "Medium", "Low", "High", "Medium"] as const) {
+      const previous = getLight();
+      // A real backend allocates this target on its first shadow pass. Leaving it
+      // null in the GPU mock hid the unsafe in-place resizing regression.
+      const target = new RenderTarget(previous.shadow.mapSize.x, previous.shadow.mapSize.y);
+      previous.shadow.map = target;
+      const disposed = vi.fn();
+      target.addEventListener("dispose", disposed);
+      const lightDisposed = vi.fn();
+      previous.addEventListener("dispose", lightDisposed);
+      gpu.render.mockImplementationOnce(() => {
+        expect(getLight()).not.toBe(previous);
+        expect(getLight().shadow.map).toBeNull();
+        expect(lightDisposed).toHaveBeenCalledTimes(1);
+      });
+      renderer.setQualitySettings({ ...DEFAULT_QUALITY_SETTINGS, shadowQuality });
+      expect(onError).not.toHaveBeenCalled();
+      const replacement = getLight();
+      expect(replacement).not.toBe(previous);
+      expect(disposed).toHaveBeenCalledTimes(1);
+      expect(previous.parent).toBeNull();
+      expect(previous.target.parent).toBeNull();
+      expect(replacement.position).toEqual(previous.position);
+      expect(replacement.target.position).toEqual(previous.target.position);
+      expect(replacement.shadow.camera.projectionMatrix).toEqual(
+        previous.shadow.camera.projectionMatrix,
+      );
+      expect(replacement.shadow.autoUpdate).toBe(false);
+      expect(replacement.shadow.needsUpdate).toBe(true);
+      expect(scene.children.filter((object) => object instanceof DirectionalLight)).toHaveLength(1);
+      expect(scene.getObjectByName("floor")).toBe(floor);
+      expect(camera.position).toEqual(position);
+      expect(camera.quaternion.toArray()).toEqual(orientation);
+      renderer.setQualitySettings({
+        ...DEFAULT_QUALITY_SETTINGS,
+        shadowQuality,
+        fillLightLevel: "Low",
+      });
+      expect(getLight()).toBe(replacement);
+    }
+    renderer.dispose();
+  },
+);
+
+it("switches Studio and Physical lighting without resetting navigation or rebuilding geometry", async () => {
+  const surface = navigationSurface();
+  const renderer = createApartmentRenderer(surface.canvas, vi.fn());
+  const base = modelFixture();
+  const model = {
+    ...base,
+    metadata: {
+      ...base.metadata,
+      location: {
+        latitude: decimal("47.4979"),
+        longitude: decimal("19.0402"),
+        northHeading: decimal("270"),
+      },
+    },
+  };
+  renderer.setModel(model);
+  await renderer.initialize();
+  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  const environment = scene.environment;
+  const floor = scene.getObjectByName("floor");
+  const getLight = () => {
+    const light = scene.children.find((object) => object instanceof DirectionalLight);
+    if (!light) throw new Error("Missing light");
+    return light;
+  };
+  const studioOffset = getLight().position.clone().sub(getLight().target.position);
+  const instant = Date.parse("2024-06-21T08:00:00Z");
+  for (const select of [
+    () => renderer.selectCamera(null),
+    () => renderer.selectCamera("camera-1"),
+    () => renderer.selectWalk(),
+  ]) {
+    select();
+    const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+    const pose = camera.matrixWorld.clone();
+    const position = camera.position.clone();
+    renderer.setLightingMode("physical", instant);
+    const light = getLight();
+    const direction = light.position.clone().sub(light.target.position).normalize();
+    // NOAA reference A=111.43932, E=49.28737 with northHeading=270,
+    // mapped from PlanAxis (X,Y,Z) to Three (X,Z,Y).
+    expect(direction.x).toBeCloseTo(0.607, 2);
+    expect(direction.y).toBeCloseTo(0.758, 2);
+    expect(direction.z).toBeCloseTo(0.238, 2);
+    expect(light.intensity).toBe(3);
+    expect(light.shadow.needsUpdate).toBe(true);
+    expect(scene.environment).toBeNull();
     renderer.setQualitySettings({
       ...DEFAULT_QUALITY_SETTINGS,
-      shadowQuality,
-      fillLightLevel: "Low",
+      shadowQuality: "Off",
+      fillLightLevel: "High",
     });
-    expect(getLight()).toBe(replacement);
+    expect(getLight().castShadow).toBe(true);
+    expect(gpu.instances[0]?.shadowMap.enabled).toBe(true);
+    expect(scene.children.find((object) => object instanceof AmbientLight)?.intensity).toBe(0);
+    expect(scene.environment).toBeNull();
+    renderer.setLightingMode("studio", instant);
+    expect(scene.environment).toBe(environment);
+    expect(getLight().position.clone().sub(getLight().target.position)).toEqual(studioOffset);
+    expect(getLight().castShadow).toBe(false);
+    expect(scene.children.find((object) => object instanceof AmbientLight)?.intensity).toBe(2);
+    expect(scene.getObjectByName("floor")).toBe(floor);
+    expect(camera.position).toEqual(position);
+    expect(camera.matrixWorld).toEqual(pose);
+    expect(surface.frames.size).toBe(0);
   }
+  renderer.setLightingMode("physical", Date.parse("2024-06-21T22:00:00Z"));
+  expect(getLight().intensity).toBe(0);
+  renderer.setModel(model);
+  expect(getLight().intensity).toBe(0);
+  expect(scene.environment).toBeNull();
+  renderer.setModel(base);
+  expect(getLight().intensity).toBe(3);
+  expect(scene.environment).toBe(environment);
+  expect(() => renderer.setLightingMode("physical", instant)).toThrow("requires Apartment SVG");
   renderer.dispose();
+  expect(gpu.environmentDispose).toHaveBeenCalledTimes(1);
+});
+
+it.each([0, -0.001, -30])("disables direct Sun at elevation %s", async (elevation) => {
+  const solar = vi
+    .spyOn(simulation, "calculateSolarPosition")
+    .mockReturnValue({ azimuth: 90, elevation });
+  const renderer = createApartmentRenderer(canvas, vi.fn());
+  const base = modelFixture();
+  renderer.setModel({
+    ...base,
+    metadata: {
+      ...base.metadata,
+      location: {
+        latitude: decimal("0"),
+        longitude: decimal("0"),
+        northHeading: decimal("270"),
+      },
+    },
+  });
+  try {
+    renderer.setLightingMode("physical", Date.parse("2024-06-21T08:00:00Z"));
+    await renderer.initialize();
+    const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+    expect(scene.children.find((object) => object instanceof DirectionalLight)?.intensity).toBe(0);
+    expect(scene.environment).toBeNull();
+  } finally {
+    solar.mockRestore();
+    renderer.dispose();
+  }
 });

@@ -8,12 +8,14 @@ export function QualityControls({
   preference,
   nativeDpr,
   ready,
+  physical = false,
   onPreset,
   onEdit,
 }: {
   preference: QualityPreference;
   nativeDpr: number;
   ready: boolean;
+  physical?: boolean;
   onPreset: (preset: QualityPreset) => void;
   onEdit: (update: Partial<RendererQualitySettings>) => void;
 }): ReactElement {
@@ -62,13 +64,19 @@ export function QualityControls({
         <select
           aria-label="3D shadow quality"
           disabled={!ready}
-          value={preference.settings.shadowQuality}
+          value={
+            physical && preference.settings.shadowQuality === "Off"
+              ? "Low"
+              : preference.settings.shadowQuality
+          }
           onChange={(event) => {
             if (isQualityLevel(event.target.value)) onEdit({ shadowQuality: event.target.value });
           }}
         >
           {QUALITY_LEVELS.map((level) => (
-            <option key={level}>{level}</option>
+            <option key={level} disabled={physical && level === "Off"}>
+              {level}
+            </option>
           ))}
         </select>
       </label>
@@ -77,8 +85,8 @@ export function QualityControls({
         <input
           type="checkbox"
           aria-label="3D environment lighting"
-          disabled={!ready}
-          checked={preference.settings.environmentLightingEnabled}
+          disabled={!ready || physical}
+          checked={!physical && preference.settings.environmentLightingEnabled}
           onChange={(event) => onEdit({ environmentLightingEnabled: event.target.checked })}
         />
       </label>
@@ -86,8 +94,8 @@ export function QualityControls({
         Fill light{" "}
         <select
           aria-label="3D fill light"
-          disabled={!ready}
-          value={preference.settings.fillLightLevel}
+          disabled={!ready || physical}
+          value={physical ? "Off" : preference.settings.fillLightLevel}
           onChange={(event) => {
             if (isQualityLevel(event.target.value)) onEdit({ fillLightLevel: event.target.value });
           }}

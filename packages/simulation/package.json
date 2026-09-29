@@ -1,8 +1,8 @@
 {
-  "name": "@planaxis/renderer-three",
+  "name": "@planaxis/simulation",
   "version": "0.0.0",
   "private": true,
-  "description": "PlanAxis Three.js renderer adapter",
+  "description": "Renderer-independent runtime solar simulation",
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.js",
@@ -18,16 +18,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "@planaxis/geometry": "workspace:*",
-    "@planaxis/model-3d": "workspace:*",
-    "three": "0.186.1",
-    "@planaxis/simulation": "workspace:*"
-  },
   "devDependencies": {
-    "@types/three": "0.186.0",
-    "vitest": "catalog:",
-    "@planaxis/parser": "workspace:*",
-    "@planaxis/validator": "workspace:*"
+    "vitest": "catalog:"
   }
 }

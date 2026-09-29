@@ -30,6 +30,13 @@ The React application in `apps/web` is the first official user-facing entry poin
 
 ADR-004 and PlanAxis Project Format 1.0 adopt a filesystem-backed project as the top-level application container. The server-side loading foundation in `apps/server/src/project/` validates manifests and required structure and provides a read-only filesystem boundary for one canonical root. Apartment SVG contents remain independently validated downstream. The server requires one `--project <path>` at startup, loads it before listening on `127.0.0.1:3000`, and exposes controlled project metadata and active-architecture HTTP APIs. Phase 0 browser integration is implemented: the browser validates project metadata and fetches active architecture through relative APIs, from the same Fastify origin during normal operation. For optional Vite HMR, start the backend with `--project <path> --api-only` and run `pnpm dev:web`; the narrow development-only proxy forwards supported APIs to the loopback server. API-only mode requires no production browser build. Normal startup validates the browser entry and referenced assets before listening and reports the browser URL only after successful listening. Static serving is confined to `apps/web/dist`, with no SPA fallback or project-root mount. Local SVG picker and drag/drop loading are removed.
 
+Phase 4 lighting foundations are implemented: `@planaxis/simulation` owns approximate,
+renderer-independent solar position and PlanAxis Sun direction. The browser owns a transient
+Studio/Physical selection (Studio by default) and one stable runtime instant. Physical requires
+validated SVG location/orientation, uses direct Sun only, and disables Studio environment/fill.
+Ceilings remain visually culled from above while casting two-sided shadows. Sky/weather and
+richer lighting remain future work; 3D asset importing/placement follows in Phase 5.
+
 AI-assisted design and photorealistic rendering are downstream features. They must not replace or weaken the deterministic geometry and validation pipeline.
 
 ## Repository Language

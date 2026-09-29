@@ -474,17 +474,17 @@ renderer.setModel(model, {
 });
 ```
 
-No assignments preserve the neutral opaque surface materials. Fixed elements and utility markers remain neutral. Windows retain their zero-thickness opening-center planes and use `MeshPhysicalMaterial` transmission with opacity 1 and thickness 0, consistent with [Three.js thin-surface transmission](https://threejs.org/docs/pages/MeshPhysicalMaterial.html). Deterministic defaults use IOR 1.5, roughness 0.05 for clear/unspecified/other, roughness 0.5 for frosted, and a neutral gray tint for tinted glass. These are qualitative visualization choices, not manufacturer properties or inferred glazing construction. The built-in room environment supplies lighting and reflections for these materials; this remains a visualization foundation rather than a photometric renderer.
+No assignments preserve the neutral opaque surface materials. Fixed elements and utility markers remain neutral. Windows retain their zero-thickness opening-center planes and use `MeshPhysicalMaterial` transmission with opacity 1 and thickness 0, consistent with [Three.js thin-surface transmission](https://threejs.org/docs/pages/MeshPhysicalMaterial.html). Deterministic defaults use IOR 1.5, roughness 0.05 for clear/unspecified/other, roughness 0.5 for frosted, and a neutral gray tint for tinted glass. These are qualitative visualization choices, not manufacturer properties or inferred glazing construction. In Studio, the built-in room environment supplies lighting and reflections for these materials; this remains a visualization foundation rather than a photometric renderer.
 
 `RendererPresentationSettings` belongs to `renderer-three` and contains only `environmentIntensity`, `environmentRotationDegrees`, `toneMapping`, and `exposureEv`. `setPresentationSettings(settings)` validates the complete update before mutation and renders immediately through the event-driven lifecycle. The public tone-mapping vocabulary is exactly AgX (default), ACES Filmic, and Neutral, mapped internally to Three.js constants. Exposure is `2 ** exposureEv`, with default 0 EV. Intensity defaults to 1 and accepts any finite non-negative number. Rotation defaults to 0 and accepts any finite degrees, wrapping to [0, 360). Positive yaw turns architectural +X toward +Y, mapped to negative Three.js Y rotation because the coordinate conversion changes handedness. Exposure must be finite and produce a finite positive multiplier; invalid updates throw without changing state or requesting a frame. Renderer numeric bounds are independent of browser slider ranges.
 
-After backend initialization, the renderer generates one 256-pixel-face PMREM using the built-in deterministic Three.js `RoomEnvironment` and the WebGPU-compatible `PMREMGenerator`. No project assets or network images are needed. The resulting texture is assigned only to `scene.environment` when environment lighting is enabled; the background remains neutral `0xe8ecec`. Environment intensity and yaw use scene environment properties and affect PBR lighting/reflections without moving geometry or cameras. Hemisphere illumination is removed. The existing directional key/shadow light retains its apartment-relative positioning and bounds-scaled framing/bias, with runtime shadow resolution described below. Environment generation resources are released after generation; the output target/texture lasts for the renderer instance and is released on disposal. Initialization failure and disposal during pending backend initialization retain explicit cleanup paths.
+After backend initialization, the renderer generates one 256-pixel-face PMREM using the built-in deterministic Three.js `RoomEnvironment` and the WebGPU-compatible `PMREMGenerator`. No project assets or network images are needed. The resulting texture is assigned only to `scene.environment` in Studio when environment lighting is enabled; the background remains neutral `0xe8ecec`. Environment intensity and yaw use scene environment properties and affect PBR lighting/reflections without moving geometry or cameras. Hemisphere illumination is removed. The existing directional key/shadow light retains its apartment-relative positioning and bounds-scaled framing/bias, with runtime shadow resolution described below. Environment generation resources are released after generation; the output target/texture lasts for the renderer instance and is released on disposal. Initialization failure and disposal during pending backend initialization retain explicit cleanup paths.
 
 React owns the transient presentation selections and passes full updates to the renderer. The transient Rendering panel controls use intensity 0–4 / step 0.1, yaw 0–360° / step 1°, and exposure −4–4 EV / step 0.1. They are disabled until readiness and outside the fullscreen render element. Settings survive orbit, embedded-camera selection, Walk, focal-length changes, resize, and model replacement in the same renderer instance. Updates neither rebuild architectural models nor start a persistent render loop.
 
 `RendererQualitySettings` is a separate renderer-owned runtime contract: `pixelRatio`, `shadowQuality`, `environmentLightingEnabled`, and `fillLightLevel`. `setQualitySettings` validates the complete update before mutation and renders immediately. DPR must be finite and positive; changes call the backend's pixel-ratio and buffer-size APIs with retained CSS dimensions, without touching the camera. `resize(width, height)` owns viewport/projection size only and retains the chosen DPR. No hard DPR cap remains in the adapter.
 
-Shadow levels Off/Low/Medium/High disable shadows or select 1024/2048/4096-square PCF shadow maps. Both backend shadow enablement and directional-light casting are disabled for Off; the directional light itself remains. Enabled levels retain the fixed depth bias and recompute the bounds-scaled normal bias as two shadow texels. When an already allocated shadow map changes resolution, the adapter clones the directional-light configuration into a fresh light identity and disposes the previous light/target. This avoids stale depth-texture bindings after in-place shadow resizing in Three.js r185; apartment meshes, materials, cameras, and navigation are retained. The static apartment/key-light shadow map disables automatic updates and is invalidated on model replacement or a shadow-quality change (including re-enablement), rather than regenerated during navigation. Environment disablement sets `scene.environment` to null, removing IBL/reflections while retaining the generated target and independent intensity/yaw values for re-enablement. Fill levels Off/Low/Medium/High set a white `AmbientLight` to 0/0.5/1/2; it adds non-directional diffuse illumination using the existing PBR materials, textures, and AO behavior. Quality updates do not replace meshes/materials, rebuild domain models, or start an idle render loop, and settings survive model replacement within an instance. Walk input updates the pose immediately but coalesces GPU redraws into one pending animation frame; an immediate settings/view update consumes that pending redraw, and disposal/device loss cancels it. This bounds queued work when pointer input outpaces the display.
+In Studio, shadow levels Off/Low/Medium/High disable shadows or select 1024/2048/4096-square PCF shadow maps. Both backend shadow enablement and directional-light casting are disabled for Off; the directional light itself remains. Enabled levels retain the fixed depth bias and recompute the bounds-scaled normal bias as two shadow texels. When an already allocated shadow map changes resolution, the adapter clones the directional-light configuration into a fresh light identity and disposes the previous light/target. This avoids stale depth-texture bindings after in-place shadow resizing in Three.js r185; apartment meshes, materials, cameras, and navigation are retained. The static apartment/key-light shadow map disables automatic updates and is invalidated on lighting-mode/instant changes, model replacement, or a shadow-quality change (including re-enablement), rather than regenerated during navigation. Environment disablement sets `scene.environment` to null, removing IBL/reflections while retaining the generated target and independent intensity/yaw values for re-enablement. Fill levels Off/Low/Medium/High set a white `AmbientLight` to 0/0.5/1/2; it adds non-directional diffuse illumination using the existing PBR materials, textures, and AO behavior. Quality updates do not replace meshes/materials, rebuild domain models, or start an idle render loop, and settings survive model replacement within an instance. Walk input updates the pose immediately but coalesces GPU redraws into one pending animation frame; an immediate settings/view update consumes that pending redraw, and disposal/device loss cancels it. This bounds queued work when pointer input outpaces the display.
 
 The browser owns native-DPR discovery, accessible toolbar controls, presets, and browser-local persistence in `planaxis.render-quality.v1`. DPR options are every positive integer strictly below native DPR followed by exact native DPR; invalid/non-positive/non-finite native values fall back to 1. Performance selects DPR 1, shadows Off, environment Off, fill Medium. Balanced (the default) selects min(2, native DPR), shadows Medium, environment On, fill Off. High selects native DPR, shadows High, environment On, fill Off. Performance retains its required DPR 1 even if browser zoom produces native DPR below 1; the control displays that preset value separately from the selectable native options. Manual effective changes mark the state Custom; named preset selection reapplies all four settings. Browser resize events refresh native DPR without rebuilding the renderer.
 
@@ -593,11 +593,44 @@ Runtime state must not be written into the canonical Apartment SVG unless the sp
 
 ### 7.1. Solar Simulation
 
-When sufficient geographic metadata and an unambiguous runtime instant are available, the renderer or a dedicated simulation service may derive solar position.
+`@planaxis/simulation` implements `calculateSolarPosition(latitude, longitude, instant)`:
+latitude/longitude are degrees, east-positive longitude, and instant is Unix milliseconds.
+NOAA's compact [fractional-year equations](https://gml.noaa.gov/grad/solcalc/solareqns.PDF)
+produce geographic azimuth clockwise from north and elevation above the geometric horizon,
+without refraction. Fixed tests compare against NOAA's fuller Meeus calculator within 0.5°
+for representative inputs; this is practical visualization, not precision astronomy.
+`planaxisSunDirection(northHeading, sun)` applies Apartment SVG 2.2 §8.3.4 exactly:
+`H = normalize360(N + A)`, direction `(cos(E)cos(H), cos(E)sin(H), sin(E))` toward the Sun.
+This package has no React, Three.js, network, local-time-zone, or current-clock dependency.
+Exact geographic metadata crosses an explicit approximate-simulation boundary into native
+numbers; no authoritative apartment geometry is calculated or changed with those numbers.
 
-The Apartment SVG specification defines the coordinate-system transformation from geographic solar azimuth/elevation into the PlanAxis 3D coordinate system.
+The browser owns the transient `studio | physical` selection, defaulting to Studio, and captures
+`Date.now()` once for the active 3D viewport's runtime state. Neither field is persisted or
+continuously advanced. Physical is disabled with an explanation when validated location is
+absent; no latitude, longitude, or north direction is guessed. Optional SVG time zone and
+elevation are not needed for this calculation.
 
-The architectural model should expose the required persistent metadata without embedding a specific astronomical or atmospheric rendering library into the domain layer.
+`ApartmentRenderer.setLightingMode(mode, instant)` preserves architecture, finishes, camera,
+Walk pose, and presentation settings. Studio uses the generated RoomEnvironment, arbitrary
+key, and saved environment/fill/shadow quality preferences. Physical maps the PlanAxis Sun
+vector to Three.js `(X,Z,Y)` and positions the directional light toward the Sun from the
+apartment-centered target. Elevation at/below zero disables direct light; above it uses
+qualitative white intensity 3. Physical sets the environment to null and ambient fill to zero,
+even after quality changes. Its shadows cannot be disabled: a retained Off preference uses
+Low (1024); other shadow resolutions remain selectable. Returning to Studio restores saved
+preferences. Mode/instant changes invalidate the static shadow map and render immediately.
+Model replacement recalculates against the new metadata, falling back to Studio without location.
+
+Ceiling visual materials stay inward-facing and culled from above, but their independent
+shadow side is DoubleSide. Ceiling finish clones avoid changing shared floor/wall materials.
+Walls retain entry-face shadowing and actual openings; window glass remains non-shadow-casting.
+No fabricated slab thickness is added. Shadow resources and environment ownership follow the
+existing initialization/replacement/disposal lifecycle on WebGPU and the WebGL2 fallback.
+
+This first Phase 4 milestone supplies direct Sun geometry only. Diffuse/procedural sky,
+weather, time editing, artificial lighting, and authoritative photometry remain deferred.
+Dark interiors in Physical mode are expected until richer daylight illumination is added.
 
 ---
 
@@ -771,6 +804,7 @@ packages/
     model-3d/
     design/
     material/
+    simulation/
     renderer-three/
 ```
 
@@ -856,9 +890,15 @@ Validation enforces version-specific recursively closed objects, finite scalar r
 
 This package has no dependency on `design`, `model-3d`, applications, filesystem APIs, browsers, React, or Three.js. Resource existence, project-root containment, symbolic-link checks, image decoding, and runtime PBR adaptation remain separate later stages. Material resolution does not alter Design 1.0 material-reference conformance.
 
+### `simulation`
+
+Owns pure runtime solar calculation and the PlanAxis Sun vector; see section 7.1. It has no
+runtime dependencies. Neither simulation output nor lighting-mode selection is architectural
+or design persistence.
+
 ### `renderer-three`
 
-Owns Three.js scene construction, triangulation of derived architectural surfaces, physical UV generation, transient texture-capable PBR assignment, transmissive glass, neutral defaults, cameras, controls, and GPU resources. It depends on `model-3d` and exact geometry types, remains independent of React, and exposes explicit initialization, replacement, resize, camera selection, rendering, and disposal. The browser owns ResizeObserver and view state. Rendering is event-driven; no persistent application loop remains when inactive.
+Owns Three.js scene construction, triangulation of derived architectural surfaces, physical UV generation, transient texture-capable PBR assignment, transmissive glass, neutral defaults, cameras, controls, and GPU resources. It depends on `simulation`, `model-3d`, and exact geometry types, remains independent of React, and exposes explicit initialization, replacement, resize, camera selection, rendering, and disposal. The browser owns ResizeObserver and view state. Rendering is event-driven; no persistent application loop remains when inactive.
 
 The renderer's `selectWalk()` activates a model-local `WalkControls` session. The first camera in document order supplies horizontal position and heading; Walk uses a 16 mm full-frame default lens. The initial eye position uses `model.floor.z + 165 cm`, independent of source camera Z, with neutral pitch and zero roll. Exact coordinates cross the existing centimeters-to-meters boundary once. Walk pose, input, and speed are transient renderer state; neither the SVG nor the domain model changes. A session preserves its pose across inspection/embedded-camera selection and resets when the model is replaced.
 
@@ -1117,6 +1157,9 @@ The Project Format 1.0 loading and project-filesystem foundation is implemented 
 
 Phase 1 includes exact designable surfaces with shared physical mapping frames, renderer UV generation, transient texture-capable metallic/roughness PBR finish assignments with non-overlapping coverage, and zero-thickness transmissive glass (sections 5.8–5.9). Built-in environment lighting and transient intensity, yaw, tone-mapping, and EV exposure controls complete the Phase 1 presentation foundation. Phase 2 is complete: Design Format 1.0, shared validation/resolution, server persistence, and browser scenario discovery/selection/creation/editing are implemented. Phase 3 is complete for Material 1.0 and 1.1: the pure `@planaxis/material` format package, controlled server descriptor/texture reads, browser material resolution, renderer-owned texture decoding, and persistent PBR rendering with physical scale are implemented. Material 1.1 ambient-occlusion map/strength support is implemented throughout validation, browser/runtime translation, and Three.js adaptation, preserving Material 1.0 compatibility. Environment assets, lighting design, and post-processing remain later work.
 
+Phase 4 now implements the direct-Sun lighting foundation (section 7.1). Remaining sky/weather
+and richer lighting precede Phase 5 3D asset importing and placement.
+
 The intended implementation order is now broadly:
 
 ```text
@@ -1142,9 +1185,13 @@ PlanAxis Design Format specification
     ↓
 design scenario implementation (`@planaxis/design` + server/browser integration)
     ↓
-project-local material/model asset formats
+project-local material format and rendering
     ↓
-lighting and richer design workflows
+Phase 4: lighting foundations and richer daylight
+    ↓
+Phase 5: 3D asset importing and placement
+    ↓
+richer design workflows
     ↓
 AI-assisted design and presentation workflows
 ```

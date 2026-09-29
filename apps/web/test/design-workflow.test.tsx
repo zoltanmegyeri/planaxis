@@ -20,6 +20,7 @@ const renderer = vi.hoisted(() => ({
   setFocalLengthOverride: vi.fn(),
   setPresentationSettings: vi.fn(),
   setQualitySettings: vi.fn(),
+  setLightingMode: vi.fn(),
   dispose: vi.fn(),
 }));
 vi.mock("@planaxis/renderer-three", async (original) => ({
@@ -90,6 +91,7 @@ async function server(url: string | URL | Request, init?: RequestInit): Promise<
   throw new Error(`Unexpected request: ${String(url)}`);
 }
 beforeEach(() => {
+  vi.spyOn(Date, "now").mockReturnValue(Date.parse("2024-06-21T08:00:00Z"));
   descriptors = new Map([
     [path, baseline],
     [otherPath, { ...baseline, name: "Other", architecture: activePath }],

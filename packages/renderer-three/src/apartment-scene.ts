@@ -6,6 +6,7 @@ import {
   BufferGeometry,
   Float32BufferAttribute,
   FrontSide,
+  DoubleSide,
   Group,
   Material,
   Mesh,
@@ -118,12 +119,26 @@ export function buildApartmentScene(
     for (const kind of ["floor", "ceiling"] as const) {
       const surfaces = derived.surfaces.filter((surface) => surface.kind === kind);
       // Inward-facing boundaries expose the interior without invented slab thickness.
-      surfaceMesh(
+      const boundary = surfaceMesh(
         surfaces,
         material(kind === "floor" ? 0xb5afa4 : 0xe9e7e1),
         group,
-        kind === "floor",
-      ).name = kind;
+        true,
+      );
+      boundary.name = kind;
+      if (kind === "ceiling") {
+        // The inward visual face stays culled from above. A zero-thickness ceiling
+        // blocks sunlight on either side, independently of inspection visibility.
+        // Clone finishes so a shared floor/wall assignment keeps its shadow policy.
+        const shadowFinish = (finish: Material): Material => {
+          const clone = materials.own(finish.clone());
+          clone.shadowSide = DoubleSide;
+          return clone;
+        };
+        boundary.material = Array.isArray(boundary.material)
+          ? boundary.material.map(shadowFinish)
+          : shadowFinish(boundary.material);
+      }
     }
     for (const wall of model.walls) {
       const surfaces = derived.surfaces.filter(

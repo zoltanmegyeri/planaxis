@@ -23,6 +23,7 @@ const rendererMocks = vi.hoisted(() => ({
   setFocalLengthOverride: vi.fn(),
   setPresentationSettings: vi.fn(),
   setQualitySettings: vi.fn(),
+  setLightingMode: vi.fn(),
   render: vi.fn(),
   dispose: vi.fn(),
 }));
@@ -91,6 +92,7 @@ async function browserExit(): Promise<void> {
 }
 
 beforeEach(() => {
+  vi.spyOn(Date, "now").mockReturnValue(Date.parse("2024-06-21T08:00:00Z"));
   fullscreenElement = null;
   Object.defineProperty(document, "fullscreenElement", {
     configurable: true,
@@ -997,7 +999,7 @@ it("exposes primary actions in one toolbar and keeps secondary settings transien
   await clickControl("Rendering");
   const rendering = host.querySelector<HTMLElement>("#rendering-panel");
   expect(rendering?.hidden).toBe(false);
-  expect(rendering?.querySelectorAll("input, select")).toHaveLength(9);
+  expect(rendering?.querySelectorAll("input, select")).toHaveLength(10);
   await clickControl("Camera settings");
   expect(rendering?.hidden).toBe(true);
   expect(host.querySelector<HTMLElement>("#camera-panel")?.hidden).toBe(false);
@@ -1176,4 +1178,57 @@ it("uses fullscreenchange as the source of truth and exits through the close but
   await clickControl("Exit full screen");
   expect(exitFullscreen).toHaveBeenCalledTimes(1);
   expect(host.querySelector('[aria-label="Exit full screen"]')).toBeNull();
+});
+
+it("requires SVG location for Physical lighting and keeps Studio as the default", async () => {
+  await mountProject();
+  await clickView("3D");
+  const control = qualityControl("3D lighting mode");
+  expect(control.value).toBe("studio");
+  expect(control.querySelector<HTMLOptionElement>('[value="physical"]')?.disabled).toBe(true);
+  expect(host.textContent).toContain(
+    "Physical lighting requires geographic location and north orientation",
+  );
+  await selectQuality("3D lighting mode", "physical");
+  expect(rendererMocks.setLightingMode).not.toHaveBeenCalledWith("physical", expect.anything());
+});
+
+it("uses one transient instant and changes lighting without model, camera, or navigation resets", async () => {
+  const instant = Date.parse("2024-06-21T08:00:00Z");
+  vi.spyOn(Date, "now").mockReturnValue(instant);
+  const source = fixture("valid/minimal-semantic-schema.svg").replace(
+    '"level":',
+    '"location": {"latitude": 47.4979, "longitude": 19.0402, "northHeading": 270}, "level":',
+  );
+  const build = vi.spyOn(model3D, "buildArchitecturalModel3D");
+  await mountProject(source);
+  await clickView("3D");
+  expect(qualityControl("3D lighting mode").value).toBe("studio");
+  expect(
+    qualityControl("3D lighting mode").querySelector<HTMLOptionElement>('[value="physical"]')
+      ?.disabled,
+  ).toBe(false);
+  await selectQuality("3D camera", "@walk");
+  const modelCalls = rendererMocks.setModel.mock.calls.length;
+  const buildCalls = build.mock.calls.length;
+  const cameraCalls = rendererMocks.selectCamera.mock.calls.length;
+  const walkCalls = rendererMocks.selectWalk.mock.calls.length;
+  vi.mocked(Date.now).mockReturnValue(instant + 86400000);
+  await selectQuality("3D lighting mode", "physical");
+  expect(rendererMocks.setLightingMode).toHaveBeenLastCalledWith("physical", instant);
+  expect(qualityControl("3D camera").value).toBe("@walk");
+  await selectQuality("3D quality preset", "Performance");
+  expect(qualityControl("3D shadow quality").value).toBe("Low");
+  expect(qualityControl("3D fill light").disabled).toBe(true);
+  expect(qualityControl("3D environment lighting").disabled).toBe(true);
+  await selectQuality("3D lighting mode", "studio");
+  expect(rendererMocks.setLightingMode).toHaveBeenLastCalledWith("studio", instant);
+  expect(qualityControl("3D shadow quality").value).toBe("Off");
+  expect(qualityControl("3D fill light").value).toBe("Medium");
+  expect(rendererMocks.setModel).toHaveBeenCalledTimes(modelCalls);
+  expect(build).toHaveBeenCalledTimes(buildCalls);
+  expect(rendererMocks.selectCamera).toHaveBeenCalledTimes(cameraCalls);
+  expect(rendererMocks.selectWalk).toHaveBeenCalledTimes(walkCalls);
+  expect(rendererMocks.dispose).not.toHaveBeenCalled();
+  expect(window.localStorage.getItem(QUALITY_STORAGE_KEY)).not.toMatch(/physical|studio|instant/i);
 });

@@ -22,8 +22,8 @@ need; React remains responsible for application UI only.
 
 Use `WebGPURenderer` from `three/webgpu`, with its supported automatic WebGL2 fallback.
 Both backends use the same scene and materials. An unavailable backend or unexpected
-model/rendering failure becomes an explicit application failure. Three.js 0.185.1 and
-matching release-line typings 0.185.4 were selected from current npm registry metadata;
+model/rendering failure becomes an explicit application failure. Three.js 0.186.1 and
+matching release-line typings 0.186.0 were selected from npm registry metadata checked on 2026-09-29;
 both are stable and non-deprecated, with no conflicting engine or peer constraints.
 
 The centralized renderer boundary converts exact centimeters to meters:
@@ -37,14 +37,15 @@ This conversion changes handedness to preserve SVG screen layout with architectu
 Surface winding is adjusted so the floor faces upward and the ceiling faces downward.
 Model-space Z already includes the level offset;
 the renderer must not apply it again. Exact values convert to JavaScript numbers only
-inside this package, including angles before trigonometry. Renderer values never flow
+inside this package, including geographic metadata supplied to approximate runtime solar
+simulation. Renderer and simulation values never flow
 back into the authoritative model.
 
 ## Geometry and visualization
 
 Triangulate the trusted floor and ceiling polygons with Three.js polygon triangulation. They
-have no slab thickness. Floor faces upward; ceiling faces downward and does not cast
-shadows, allowing inspection from above while showing the ceiling from inside.
+have no slab thickness. Floor faces upward; ceiling faces downward for inspection from above while showing the
+ceiling from inside. The ceiling casts two-sided shadows independently of visual culling.
 
 ### Surface foundation refinement (2026-09-13)
 
@@ -111,6 +112,27 @@ preserves the domain/rendering boundary.
 
 Persistent material/environment assets, presentation and design-scenario persistence,
 lighting design, and post-processing remain future work.
+
+### Physical daylight refinement (2026-09-29)
+
+Introduce `@planaxis/simulation` for deterministic, renderer-independent solar azimuth,
+geometric elevation, and the Apartment SVG 2.2 north-heading conversion. The compact NOAA
+fractional-year equations use explicit Unix milliseconds and UTC only. Native numbers here
+are approximate runtime simulation values, never authoritative geometry or persistence.
+
+The browser initializes one stable instant and defaults to Studio. Physical requires validated
+SVG location/orientation and replaces the arbitrary key with the calculated Sun. The adapter
+maps its scene-to-Sun vector from `(X,Y,Z)` to `(X,Z,Y)`, keeps the target at apartment center,
+and reframes shadows to cover the apartment. Sun intensity is zero at/below the horizon;
+otherwise the qualitative white intensity is 3, without claiming irradiance accuracy.
+Physical suppresses RoomEnvironment and ambient fill, and requires shadows even when the
+stored Studio preference is Off (effective Low). Mode changes invalidate shadows, render
+immediately, and preserve geometry, materials, and navigation. Studio preferences return
+unchanged. No sky/weather, time controls, persistence, or continuous solar loop is introduced.
+
+The visually inward-facing ceiling casts from both sides using a separate shadow-side setting.
+Cloned ceiling finishes keep shared wall/floor finish policies unchanged. No slab thickness
+or opaque window blocker is invented.
 
 ## Cameras and lifecycle
 

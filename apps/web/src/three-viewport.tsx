@@ -1,3 +1,4 @@
+import type { LightingMode } from "@planaxis/simulation";
 import { createPortal } from "react-dom";
 import { isWorkspaceShortcut, NavigationHelp, TransientPanel } from "./transient-panel.js";
 import type { WorkspacePanel } from "./transient-panel.js";
@@ -52,8 +53,10 @@ export function ThreeViewport({
   scenarioPresentation,
   materials,
   onMaterialFailure,
+  initialSimulationInstant,
 }: {
   model: ArchitecturalModel3D;
+  initialSimulationInstant?: number;
   onFailure: (error: unknown) => void;
   toolbar: HTMLDivElement | null;
   panel: WorkspacePanel;
@@ -74,6 +77,11 @@ export function ThreeViewport({
   const aspectRatioRef = useRef<RenderAspectRatio>(aspectRatio);
   aspectRatioRef.current = aspectRatio;
   const [ready, setReady] = useState(false);
+  const [simulationInstant] = useState(() => initialSimulationInstant ?? Date.now());
+  const [selectedLightingMode, setLightingMode] = useState<LightingMode>("studio");
+  const lightingMode = model.metadata.location ? selectedLightingMode : "studio";
+  const lightingRef = useRef({ mode: lightingMode, instant: simulationInstant });
+  lightingRef.current = { mode: lightingMode, instant: simulationInstant };
   const [nativeDpr, setNativeDpr] = useState(() => nativePixelRatio(window.devicePixelRatio));
   const [quality, setQuality] = useState(() => restoreQuality(nativeDpr));
   const qualityRef = useRef(quality);
@@ -190,6 +198,7 @@ export function ThreeViewport({
           fail(error);
         }
       } else instance.setModel(model);
+      instance.setLightingMode(lightingRef.current.mode, lightingRef.current.instant);
       observer = new ResizeObserver(resize);
       observer.observe(area);
       void instance
@@ -366,7 +375,43 @@ export function ThreeViewport({
         open={panel === "rendering"}
         onClose={onClosePanel}
       >
+        <label>
+          Lighting{" "}
+          <select
+            aria-label="3D lighting mode"
+            value={lightingMode}
+            disabled={!ready}
+            onChange={(event) => {
+              const mode = event.target.value;
+              if (mode !== "studio" && mode !== "physical") return;
+              if (mode === "physical" && !model.metadata.location) return;
+              try {
+                renderer.current?.setLightingMode(mode, simulationInstant);
+                setLightingMode(mode);
+              } catch (error) {
+                onFailure(error);
+              }
+            }}
+          >
+            <option value="studio">Studio</option>
+            <option value="physical" disabled={!model.metadata.location}>
+              Physical
+            </option>
+          </select>
+        </label>
+        {!model.metadata.location && (
+          <p>
+            Physical lighting requires geographic location and north orientation in the Apartment
+            SVG.
+          </p>
+        )}
+        {lightingMode === "physical" && (
+          <p>
+            Direct Sun only; sky and weather lighting are not yet available. Shadows remain enabled.
+          </p>
+        )}
         <QualityControls
+          physical={lightingMode === "physical"}
           preference={quality}
           nativeDpr={nativeDpr}
           ready={ready}
@@ -416,7 +461,7 @@ export function ThreeViewport({
             max={4}
             step={0.1}
             value={presentation.environmentIntensity}
-            disabled={!ready}
+            disabled={!ready || lightingMode === "physical"}
             onChange={(event) =>
               updatePresentation({ environmentIntensity: Number(event.target.value) })
             }
@@ -431,7 +476,7 @@ export function ThreeViewport({
             max={360}
             step={1}
             value={presentation.environmentRotationDegrees}
-            disabled={!ready}
+            disabled={!ready || lightingMode === "physical"}
             onChange={(event) =>
               updatePresentation({ environmentRotationDegrees: Number(event.target.value) })
             }

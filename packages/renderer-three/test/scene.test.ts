@@ -371,3 +371,39 @@ it("consumes base surface targets with neutral materials and never renders space
   scene.dispose();
   plain.dispose();
 });
+
+it("keeps the ceiling invisible from above while blocking overhead Sun and preserving window access", () => {
+  const scene = buildApartmentScene(modelFixture());
+  const ceiling = scene.group.getObjectByName("ceiling");
+  if (!(ceiling instanceof Mesh) || Array.isArray(ceiling.material))
+    throw new Error("Missing ceiling");
+  const overhead = new Raycaster(new Vector3(0.25, 4, 1), new Vector3(0, -1, 0));
+  expect(overhead.intersectObject(ceiling)).toHaveLength(0);
+  expect(ceiling.visible).toBe(true);
+  expect(ceiling.castShadow).toBe(true);
+  const shadowMaterials: MeshStandardMaterial[] = [];
+  const casters: Mesh[] = [];
+  scene.group.traverse((object) => {
+    if (!(object instanceof Mesh) || !object.castShadow) return;
+    const adapt = (material: MeshStandardMaterial) => {
+      const clone = material.clone();
+      clone.side = material.shadowSide ?? FrontSide;
+      shadowMaterials.push(clone);
+      return clone;
+    };
+    const caster = new Mesh(
+      object.geometry,
+      Array.isArray(object.material) ? object.material.map(adapt) : adapt(object.material),
+    );
+    caster.name = object.name;
+    caster.matrixWorld.copy(object.matrixWorld);
+    casters.push(caster);
+  });
+  expect(overhead.intersectObjects(casters)[0]?.object.name).toBe("ceiling");
+  const windowRay = new Raycaster(new Vector3(0.25, 3, -1), new Vector3(0, -3, 2).normalize());
+  expect(windowRay.intersectObjects(casters)[0]?.object.name).toBe("floor");
+  const wallRay = new Raycaster(new Vector3(0.45, 3, -1), new Vector3(0, -3, 2).normalize());
+  expect(wallRay.intersectObjects(casters)[0]?.object.name).not.toBe("floor");
+  for (const material of shadowMaterials) material.dispose();
+  scene.dispose();
+});
