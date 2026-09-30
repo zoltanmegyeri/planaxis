@@ -26,7 +26,7 @@ Apartment SVG
     -> interactive visualization / later design workflows
 ```
 
-The React application in `apps/web` is the first official user-facing entry point. `pnpm start -- --project <path>` builds the server, browser, and required workspace dependencies, then starts one Fastify process serving the production browser application and APIs at `http://127.0.0.1:3000/`. The browser loads the server-selected project’s active Apartment SVG for browser-side validation with a safe read-only 2D SVG pan/zoom viewer and the implemented 3D workflow. React and browser APIs remain application-layer concerns under ADR-002. The dedicated `@planaxis/renderer-three` adapter provides WebGPU-first Three.js rendering with its supported WebGL2 fallback. It converts exact centimeters to meters only at the renderer boundary, mapping PlanAxis `(X, Y, Z)` to Three.js `(X, Z, Y)`. Valid documents support 2D/3D switching, orbit inspection, embedded-camera viewing, and free-walk navigation; invalid documents retain the 2D diagnostic workflow. Advanced lighting/materials and AI-assisted features remain future stages.
+The React application in `apps/web` is the first official user-facing entry point. `pnpm start -- --project <path>` builds the server, browser, and required workspace dependencies, then starts one Fastify process serving the production browser application and APIs at `http://127.0.0.1:3000/`. The browser loads the server-selected project’s active Apartment SVG for browser-side validation with a safe read-only 2D SVG pan/zoom viewer and the implemented 3D workflow. React and browser APIs remain application-layer concerns under ADR-002. The dedicated `@planaxis/renderer-three` adapter provides WebGPU-first Three.js rendering with its supported WebGL2 fallback. It converts exact centimeters to meters only at the renderer boundary, mapping PlanAxis `(X, Y, Z)` to Three.js `(X, Z, Y)`. Valid documents support 2D/3D switching, orbit inspection, embedded-camera viewing, and free-walk navigation; invalid documents retain the 2D diagnostic workflow. Persistent materials and physical daylight simulation are implemented; persistent Design 1.1 luminaires, artificial-light rendering/editing, realtime GI, 3D asset placement, and AI-assisted features remain later stages.
 
 ADR-004 and PlanAxis Project Format 1.0 adopt a filesystem-backed project as the top-level application container. The server-side loading foundation in `apps/server/src/project/` validates manifests and required structure and provides a read-only filesystem boundary for one canonical root. Apartment SVG contents remain independently validated downstream. The server requires one `--project <path>` at startup, loads it before listening on `127.0.0.1:3000`, and exposes controlled project metadata and active-architecture HTTP APIs. Phase 0 browser integration is implemented: the browser validates project metadata and fetches active architecture through relative APIs, from the same Fastify origin during normal operation. For optional Vite HMR, start the backend with `--project <path> --api-only` and run `pnpm dev:web`; the narrow development-only proxy forwards supported APIs to the loopback server. API-only mode requires no production browser build. Normal startup validates the browser entry and referenced assets before listening and reports the browser URL only after successful listening. Static serving is confined to `apps/web/dist`, with no SPA fallback or project-root mount. Local SVG picker and drag/drop loading are removed.
 
@@ -37,8 +37,10 @@ mode and 2D/3D changes. Physical requires validated SVG location/orientation; mi
 use labeled UTC. The renderer owns a procedural day/twilight/night sky, elevation-dependent
 Sun color/strength, and softer Overcast shadows. Physical disables Studio environment/fill;
 visible sky is not GI and interiors may remain dark. Ceilings cast two-sided shadows while
-visually culled from above. Realtime GI, bloom, IES, path tracing, and richer atmospheric effects
-remain future work; 3D asset importing/placement follows in Phase 5.
+visually culled from above. PlanAxis Design Format 1.1 is the accepted persistent luminaire
+contract; its package/server/browser implementation is the next Phase 4 persistence step.
+Artificial-light rendering/editing, realtime GI, bloom, IES, path tracing, and richer atmospheric
+effects remain future work; 3D asset importing/placement follows in Phase 5.
 
 AI-assisted design and photorealistic rendering are downstream features. They must not replace or weaken the deterministic geometry and validation pipeline.
 
@@ -113,31 +115,42 @@ A Project Format change must be deliberate and versioned. Do not silently widen 
 
 ### PlanAxis Design Format specification
 
-The normative design-scenario specification is:
+The latest normative design-scenario specification is:
 
 ```text
-docs/specifications/planaxis-design/1.0.md
+docs/specifications/planaxis-design/1.1.md
 ```
 
-It defines durable renderer-independent design descriptors under `designs/`, including:
+Design Format 1.0 remains a valid earlier schema. Interpret a descriptor according to its declared supported schema version; do not silently migrate or reinterpret it.
+
+Design 1.1 preserves the existing renderer-independent scenario semantics under `designs/` and adds persistent luminaires. The accepted contract includes:
 
 - identity by descriptor project-relative path;
 - the required human-readable `name`;
 - strict binding to exactly one Apartment SVG architecture;
 - persistent finish assignments addressed by stable finish-target IDs;
-- project-relative material references under `assets/materials/` without material-resource existence or content semantics in Design 1.0;
+- project-relative material references under `assets/materials/`, with material-resource semantics resolved independently;
 - optional tone-mapping and exposure presentation overrides;
+- an optional non-empty `luminaires` array with unique design-local IDs;
+- `point`, `spot`, `linear`, and `area` luminaire types;
+- model-space centimeter placement and renderer-independent orientation where applicable;
+- nominal luminous flux in lumens, white-light color temperature in Kelvin, explicit enabled state, and dimming;
+- type-specific spot beam angle and linear/area emitter dimensions;
 - recursively closed JSON structures;
-- the distinction between design-format conformance, project resolution, architecture resolution, and independent material resolution.
+- the distinction between design-format conformance, project resolution, architecture resolution, independent material resolution, and later renderer adaptation.
 
-Treat it as normative for design-descriptor semantics.
+Design 1.1 deliberately does not define implicit Apartment SVG utility binding, fixture-model references, IES profiles, RGB light color, or persistent runtime daylight/date/time/weather state.
+
+Treat the applicable version as normative for design-descriptor semantics.
 
 Do not:
 
 - duplicate architectural geometry in a design descriptor;
 - implicitly apply a design to an architecture other than its declared binding;
-- invent material semantics while implementing Design 1.0;
-- silently repair stale or unresolved finish targets;
+- invent material semantics while implementing a Design Format version;
+- infer luminaire semantics from Apartment SVG utility markers;
+- serialize Three.js light classes or other renderer state as luminaire persistence;
+- silently repair stale or unresolved finish targets or move luminaires during ordinary loading;
 - add undocumented design properties or extension fields.
 
 A Design Format change must be deliberate and versioned. Do not silently widen or reinterpret the accepted format for implementation convenience.
@@ -405,7 +418,7 @@ In particular, the agent may and, when relevant, must read authoritative documen
 AGENTS.md
 docs/specifications/apartment-svg/2.2.md
 docs/specifications/planaxis-project/1.0.md
-docs/specifications/planaxis-design/1.0.md
+docs/specifications/planaxis-design/1.1.md
 docs/architecture/overview.md
 docs/development/coding-guidelines.md
 docs/development/testing.md
@@ -455,7 +468,7 @@ For a formal delegated task after the applicable safety check succeeds:
 2. Read the non-task repository documents explicitly required by that description.
 3. Read the normative Apartment SVG sections relevant to the task when applicable.
 4. Read the PlanAxis Project Format specification when the task concerns project containers, project files, project paths, persistence, project-serving APIs, or project filesystem access.
-5. Read the PlanAxis Design Format specification when the task concerns design descriptors, design persistence, architecture binding, finish assignments, persisted presentation overrides, or design-resolution behavior.
+5. Read the applicable PlanAxis Design Format specification when the task concerns design descriptors, design persistence, architecture binding, finish assignments, persisted presentation overrides, persistent luminaires, or design-resolution behavior. Read the earlier version as well when compatibility behavior is part of the task.
 6. Read relevant architecture, coding, testing, and ADR documents.
 7. Inspect the existing implementation, tests, and, during review continuation, the current task working set before introducing further changes.
 
@@ -521,7 +534,7 @@ For Apartment SVG parser and validator work, cover both:
 
 For PlanAxis Project Format work, cover valid and invalid manifests and paths, root containment, symbolic-link behavior where the host supports it, and the normative separation between project-format validity and Apartment SVG validity.
 
-For PlanAxis Design Format work, cover valid and invalid descriptors, recursive closed-schema rules, project-relative architecture/material paths, duplicate finish-target rejection, strict architecture binding, finish-target resolution, and the normative separation between structural conformance and project/architecture/material resolution.
+For PlanAxis Design Format work, cover valid and invalid descriptors for every supported version under test, recursive closed-schema rules, project-relative architecture/material paths, duplicate finish-target rejection, strict architecture binding, finish-target resolution, and the normative separation between structural conformance and project/architecture/material resolution. For Design 1.1 luminaire work, also cover unique luminaire IDs, exact type discrimination, position/orientation rules, lumens/Kelvin/enabled/dimming constraints, type-specific beam/dimension fields, and rejection of unsupported fixture/IES/RGB/implicit-attachment properties.
 
 Prefer small, focused fixtures or isolated temporary project trees that isolate one rule.
 

@@ -18,8 +18,8 @@ Normative format behavior is defined by:
 ```text
 docs/specifications/apartment-svg/2.2.md
 docs/specifications/planaxis-project/1.0.md
-docs/specifications/planaxis-design/1.0.md
-docs/specifications/planaxis-material/1.0.md
+docs/specifications/planaxis-design/1.1.md
+docs/specifications/planaxis-material/1.1.md
 ```
 
 Tests must verify implementation against the applicable specification. They must not accidentally redefine it.
@@ -32,11 +32,11 @@ The PlanAxis test suite should provide confidence that:
 
 - Apartment SVG documents are interpreted deterministically;
 - PlanAxis projects and project-relative paths are interpreted according to Project Format 1.0;
-- PlanAxis design descriptors are interpreted according to Design Format 1.0;
+- PlanAxis design descriptors are interpreted according to their declared supported Design Format version, including Design 1.0 and 1.1;
 - valid inputs are accepted;
 - invalid inputs are rejected for the correct reason;
 - project-format validity remains separate from Apartment SVG validity;
-- design-format conformance remains separate from project resolution, architecture resolution, and Material Format resolution;
+- design-format conformance remains separate from project resolution, architecture resolution, Material Format resolution, and renderer adaptation of persistent luminaires;
 - Material Format conformance remains separate from project-resource resolution, texture decoding, and renderer adaptation;
 - project filesystem access cannot escape the canonical project root;
 - exact decimal arithmetic is preserved in authoritative geometry;
@@ -52,6 +52,8 @@ A passing suite is necessary but not sufficient: the tests themselves must refle
 
 For Material Format behavior, expected results must come from the PlanAxis Material Format specification. Material tests should keep descriptor validation, project-resource resolution, image decoding, and renderer adaptation observable as distinct stages rather than collapsing them into one generic success/failure path.
 
+For Design Format behavior, expected results must come from the descriptor's declared supported Design Format specification. Design 1.1 tests must keep structural luminaire conformance separate from later renderer mapping. At minimum, focused 1.1 coverage should exercise unique design-local luminaire IDs, exact `point`/`spot`/`linear`/`area` discrimination, model-space position, required/prohibited orientation, orientation-angle bounds, positive lumens/Kelvin, explicit enabled state, dimming in `[0, 1]`, spot beam angle, positive linear/area dimensions, and rejection of RGB, IES, fixture-model, implicit utility-attachment, or other unknown properties.
+
 ---
 
 ## 3. General Testing Principles
@@ -64,7 +66,7 @@ Good targets include:
 
 - accepted or rejected Apartment SVG documents;
 - accepted or rejected project manifests and project-relative paths;
-- accepted or rejected Design 1.0 descriptors and architecture-resolution outcomes;
+- accepted or rejected Design 1.0 / 1.1 descriptors and architecture-resolution outcomes;
 - structured validation errors;
 - exact derived geometry;
 - project-root containment behavior;
@@ -82,7 +84,7 @@ For Apartment SVG behavior, expected results must come from the Apartment SVG sp
 
 For project-container, manifest, path, and project-filesystem behavior, expected results must come from the PlanAxis Project Format specification and accepted architecture/ADR constraints.
 
-For design-descriptor structure, strict architecture binding, finish-assignment semantics, persisted presentation overrides, and resolution boundaries, expected results must come from the PlanAxis Design Format specification.
+For design-descriptor structure, strict architecture binding, finish-assignment semantics, persisted presentation overrides, persistent luminaire semantics, and resolution boundaries, expected results must come from the applicable PlanAxis Design Format specification. Tests must not infer a relationship between an Apartment SVG ceiling-light utility and a Design 1.1 luminaire merely because their IDs or positions resemble each other.
 
 Do not encode an implementation bug into a test merely because the current implementation behaves that way.
 
@@ -834,15 +836,17 @@ If behavior intentionally changes, update implementation, tests, documentation, 
 
 ## 42. Specification Versioning Tests
 
-Apartment SVG and PlanAxis Project Format are independently versioned.
+Apartment SVG, PlanAxis Project Format, PlanAxis Design Format, and PlanAxis Material Format are independently versioned.
 
-When support for multiple versions of either format is introduced, tests must make the target version explicit.
+When multiple versions of a format are supported, tests must make the target version explicit and verify version-specific closed-schema behavior.
 
-Avoid silently interpreting an older document/project using newer semantics.
+Avoid silently interpreting an older document/project/descriptor using newer semantics.
+
+For Design Format compatibility, keep Design 1.0 valid under its own contract, verify that 1.0 rejects the 1.1-only `luminaires` property, verify that Design 1.1 preserves the existing finish/presentation/architecture semantics, and do not treat ordinary reads as implicit migration.
 
 A versioned fixture hierarchy may be introduced when multiple supported versions make it useful. Do not add this complexity before it is needed.
 
-Project Format migration tests, when migration is introduced, must verify that migration is explicit and preserves durable project data rather than silently rewriting a project merely because it was opened.
+Project or descriptor migration tests, when migration is introduced, must verify that migration is explicit and preserves durable data rather than silently rewriting content merely because it was opened.
 
 ---
 
@@ -879,6 +883,8 @@ Before considering test work complete, verify:
 - footprint topology and containment are covered when relevant;
 - level-relative and model-space Z semantics are distinguished correctly;
 - Project Format closed-manifest rules are covered when relevant;
+- Design Format version-specific closed-schema and compatibility rules are covered when relevant;
+- Design 1.1 luminaire identity, type discrimination, numeric/orientation constraints, and unsupported-field rejection are covered when relevant;
 - project-relative path syntax is tested independently from filesystem resolution where practical;
 - root containment and symbolic-link policy are covered for filesystem-backed project work;
 - project-format validity is tested separately from Apartment SVG validity;
@@ -912,4 +918,4 @@ For behavior covered by PlanAxis, completion normally requires:
 6. updated normative specification and/or ADR when the contract or architecture changes;
 7. successful lint, typecheck, test, and build verification once those commands are available.
 
-For normative Apartment SVG and PlanAxis Project Format rules, tests should make the relationship between the specification rule and implemented behavior clear enough that future contributors can understand which invariant is being protected.
+For normative Apartment SVG, PlanAxis Project Format, PlanAxis Design Format, and PlanAxis Material Format rules, tests should make the relationship between the specification rule and implemented behavior clear enough that future contributors can understand which invariant is being protected.

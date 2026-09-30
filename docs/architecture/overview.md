@@ -13,11 +13,11 @@ The normative definitions of PlanAxis external formats are:
 ```text
 docs/specifications/apartment-svg/2.2.md
 docs/specifications/planaxis-project/1.0.md
-docs/specifications/planaxis-design/1.0.md
+docs/specifications/planaxis-design/1.1.md
 docs/specifications/planaxis-material/1.1.md
 ```
 
-The Apartment SVG specification takes precedence for apartment geometry and semantic interpretation. The PlanAxis Project Format specification takes precedence for filesystem-backed project-container, manifest, path, and project-root semantics. The PlanAxis Design Format specification takes precedence for durable design-scenario descriptors, architecture binding, finish assignments, and persisted presentation overrides.
+The Apartment SVG specification takes precedence for apartment geometry and semantic interpretation. The PlanAxis Project Format specification takes precedence for filesystem-backed project-container, manifest, path, and project-root semantics. The applicable PlanAxis Design Format specification takes precedence for durable design-scenario descriptors, architecture binding, finish assignments, persisted presentation overrides, and persistent luminaire semantics.
 
 ---
 
@@ -222,35 +222,35 @@ Project loading therefore establishes only the project-container guarantees requ
 
 ### 4.6. PlanAxis design descriptor
 
-PlanAxis Design Format 1.0 defines the durable renderer-independent design layer stored under `designs/`.
+PlanAxis Design Format 1.1 is the latest accepted durable renderer-independent design contract stored under `designs/`. Design Format 1.0 remains a valid earlier schema and is the version currently implemented by `@planaxis/design`, the server design APIs, and the browser scenario workflow.
 
-The descriptor's project-relative path is its identity; Version 1.0 has no separate internal design ID. Its required `name` is display metadata only.
+The descriptor's project-relative path is its identity; neither Design 1.0 nor 1.1 adds a separate internal design ID. Its required `name` is display metadata only.
 
-Each design is strictly bound to exactly one Apartment SVG through a project-relative path under `architecture/`. A design must not be implicitly applied to another architectural alternative merely because element or finish-target IDs happen to match.
+Each design is strictly bound to exactly one Apartment SVG through a project-relative path under `architecture/`. A design must not be implicitly applied to another architectural alternative merely because element or finish-target IDs happen to match or luminaire coordinates appear compatible.
 
-Version 1.0 may persist:
+Across the accepted versions:
 
-- finish assignments from stable architectural `FinishTargetId` values to project-relative material-resource references under `assets/materials/`;
-- optional PlanAxis-owned tone-mapping and exposure-EV presentation overrides.
+- Design 1.0 persists finish assignments from stable architectural `FinishTargetId` values to project-relative material-resource references under `assets/materials/` and optional PlanAxis-owned tone-mapping/exposure-EV overrides;
+- Design 1.1 preserves those semantics and adds self-contained persistent `point`, `spot`, `linear`, and `area` luminaires with design-local identity, model-space centimeter placement, renderer-independent orientation where applicable, nominal luminous flux, Kelvin white-light color temperature, enabled/dimming state, and type-specific beam/dimension fields.
 
-The material reference is intentionally opaque in Phase 2. Design Format 1.0 validates its project-relative location but does not require the resource to exist and defines no material-resource contents or rendering semantics.
+Material references remain independently resolved. Design 1.1 luminaires introduce no fixture-model, IES, RGB-light, or implicit Apartment SVG utility reference; those concerns remain outside this accepted version.
 
-Design validation/resolution remains layered:
+Design validation/resolution is version-aware and layered:
 
 ```text
 JSON parse
-    -> Design 1.0 structural conformance
+    -> declared Design Format structural conformance
     -> project/architecture resolution
     -> Apartment SVG validation
     -> architectural surface + finish-target derivation
     -> finish-target resolution
 ```
 
-Material resolution is separate from Design Format conformance. PlanAxis Material Format 1.1 is the latest accepted descriptor and texture-resource contract, adding optional ambient-occlusion map and strength semantics while a structurally conforming design may still contain an unresolved material resource. The material pipeline supports both Material 1.0 and 1.1, validating each under its declared schema without migration or reinterpretation. A syntactically valid but missing/stale finish target continues to prevent architecture resolution independently.
+Material resolution is separate from Design Format conformance. PlanAxis Material Format 1.1 is the latest accepted descriptor and texture-resource contract, adding optional ambient-occlusion map and strength semantics while a structurally conforming design may still contain an unresolved material resource. The material pipeline supports both Material 1.0 and 1.1, validating each under its declared schema without migration or reinterpretation. A syntactically valid but missing/stale finish target continues to prevent architecture resolution independently. Design 1.1 luminaires are self-contained, so this version introduces no separate luminaire-resource resolution stage.
 
-The design descriptor is a separate durable source of design intent. It does not duplicate or override Apartment SVG architectural truth, and it must not contain Three.js objects, GPU resources, runtime texture symbols, or other renderer implementation state.
+The design descriptor is a separate durable source of design intent. It does not duplicate or override Apartment SVG architectural truth, and it must not contain Three.js objects, GPU resources, runtime texture symbols, renderer light classes, or other renderer implementation state. Apartment SVG ceiling-light utilities remain architectural semantics and do not implicitly become or bind to Design 1.1 luminaires.
 
-The shared `@planaxis/design` package implements pure Design 1.0 validation and architecture/finish-target resolution. The server uses structural validation for explicit design creates/updates and exposes controlled discovery and raw reads. The browser implements scenario selection, exact bound-architecture loading, resolution, and explicit creation/editing. PlanAxis Material Format 1.1 is the latest accepted persistent material contract; `@planaxis/material` implements the Material 1.0 / 1.1 pure format boundary, and the server implements controlled raw material-resource reads. Browser Material 1.0 / 1.1 resolution and persistent rendering complete Phase 3, including Material 1.1 ambient-occlusion support.
+The shared `@planaxis/design` package currently implements pure Design 1.0 validation and architecture/finish-target resolution. The server uses that structural validation for explicit Design 1.0 creates/updates and exposes controlled discovery and raw reads. The browser implements Design 1.0 scenario selection, exact bound-architecture loading, resolution, and explicit creation/editing. Design 1.1 luminaire validation/persistence integration is accepted architecture but not yet implemented. PlanAxis Material Format 1.1 is the latest accepted persistent material contract; `@planaxis/material` implements the Material 1.0 / 1.1 pure format boundary, and the server implements controlled raw material-resource reads. Browser Material 1.0 / 1.1 resolution and persistent rendering complete Phase 3, including Material 1.1 ambient-occlusion support.
 
 ---
 
@@ -490,7 +490,7 @@ The browser owns native-DPR discovery, accessible toolbar controls, presets, and
 
 Only the preset/Custom state and these four quality fields are stored locally, with a versioned envelope, runtime validation, and explicit field selection. Named presets restore using the current display policy; Custom DPR selects the largest available option at or below its saved value, or the smallest option when none qualifies. Missing, malformed, unsupported, or unreadable storage falls back to Balanced; failed writes leave session rendering functional. This preference mechanism never writes to the server or project/design/material/SVG formats and never persists camera, design selection, aspect ratio, fullscreen, tone mapping, exposure, or environment intensity/rotation.
 
-The renderer APIs remain runtime-only. The browser maps resolved Design 1.0 presentation overrides and effective Material 1.0 / 1.1 finishes to these contracts. Persistent paths never enter the runtime material model. Environment assets, material-management UI, lighting design, and post-processing remain future work.
+The renderer APIs remain runtime-only. The browser currently maps resolved Design 1.0 presentation overrides and effective Material 1.0 / 1.1 finishes to these contracts. Persistent paths never enter the runtime material model. Design 1.1 persistent luminaire semantics are accepted but not yet mapped to renderer lights. Artificial-light rendering/editing, environment assets, material-management UI, and post-processing remain future work.
 
 Responsibilities may include:
 
@@ -577,15 +577,16 @@ Examples of persistent apartment facts include:
 - optional elevation;
 - optional civil time zone.
 
-PlanAxis Design Format 1.0 defines persistent design facts including strict architecture binding, finish-target-to-material-resource references, and optional tone-mapping/exposure overrides.
+PlanAxis Design Format 1.1 is the latest accepted design contract. It preserves strict architecture binding, finish-target-to-material-resource references, and optional tone-mapping/exposure overrides, and adds persistent luminaire definitions including their enabled and dimming state. Design 1.0 remains a valid earlier schema and is the currently implemented design persistence version.
 
-Material Format 1.1 is the latest accepted contract for persistent material assets, while Material 1.0 remains a valid earlier schema. Other future project/design facts may include imported objects, lighting design, environment assets, and saved generated outputs. Those contracts must be defined by their own accepted formats rather than guessed into the current project manifest or Design Format 1.0.
+Material Format 1.1 is the latest accepted contract for persistent material assets, while Material 1.0 remains a valid earlier schema. Other future project/design facts may include imported objects, environment assets, saved generated outputs, fixture-model relationships, and photometric profile references. Those contracts must be defined by their own accepted formats rather than guessed into the current project manifest or Design Format.
 
 Examples of runtime state include:
 
-- selected date and time;
-- current lamp on/off state;
-- dimmer values;
+- selected daylight date and time;
+- Sunny/Overcast weather;
+- Studio/Physical lighting-mode selection;
+- transient preview-only luminaire overrides that have not been committed to a Design 1.1 descriptor;
 - interactive camera/navigation state;
 - renderer settings.
 
@@ -650,8 +651,10 @@ existing initialization/replacement/disposal lifecycle on WebGPU and the WebGL2 
 
 Visible sky is exterior scenery, never an environment-map shortcut through opaque walls.
 Diffuse sky transport/realtime GI remains deferred; dark interiors are expected, particularly
-under Overcast. Artificial lighting, bloom, IES photometry, path tracing, and richer atmospheric
-effects remain future work.
+under Overcast. Design 1.1 now defines persistent idealized luminaire semantics, but their
+package/server/browser integration and renderer mapping remain unimplemented. Artificial-light
+rendering/editing, bloom, IES photometry, path tracing, and richer atmospheric effects remain
+future work.
 
 ---
 
@@ -893,11 +896,13 @@ It must not depend on Three.js.
 
 ### `design`
 
-Implements the pure shared PlanAxis Design Format 1.0 boundary. `parseDesignDescriptor(text, descriptorPath)` parses decoded JSON text, and `validateDesignDescriptor(value, descriptorPath)` validates parsed untrusted data and external path identity. Success produces a nominal, immutable `ValidatedDesignDescriptor` with `path` and `document`; only `document` represents the serialized format. Optional sections remain absent when omitted, and presentation numbers use ordinary JavaScript numeric semantics.
+Currently implements the pure shared PlanAxis Design Format 1.0 boundary. `parseDesignDescriptor(text, descriptorPath)` parses decoded JSON text, and `validateDesignDescriptor(value, descriptorPath)` validates parsed untrusted data and external path identity. Success produces a nominal, immutable `ValidatedDesignDescriptor` with `path` and `document`; only `document` represents the serialized format. Optional sections remain absent when omitted, and presentation numbers use ordinary JavaScript numeric semantics.
 
-Expected failures return `DesignValidationResult` with a JSON/format stage, stable `DESIGN_*` code, field location, and message. Validation checks recursively closed objects, path and target syntax, assignment uniqueness, and presentation values without resolving resources.
+Expected failures return `DesignValidationResult` with a JSON/format stage, stable `DESIGN_*` code, field location, and message. The current implementation validates Design 1.0 recursively closed objects, path and target syntax, assignment uniqueness, and presentation values without resolving resources.
 
 `resolveDesignArchitecture(design, { path, finishTargets })` is a separate pure stage. The caller must supply the exact bound architecture identity and targets derived after full Apartment SVG validation, such as `deriveArchitecturalSurfaces(model).finishTargets`. Binding mismatches and unresolved targets return distinct structured resolution errors; missing targets are reported in assignment order without repair or fallback. Successful resolution returns the unchanged descriptor and does not establish filesystem accessibility or material validity.
+
+Design Format 1.1 is the latest accepted contract and the next extension of this package boundary. Its luminaire semantics must remain renderer-independent and version-aware: unique design-local IDs, exact discriminated `point`/`spot`/`linear`/`area` shapes, ordinary finite numeric placement/orientation/output fields, and no Three.js, fixture-asset, IES, RGB, or implicit Apartment SVG utility semantics.
 
 The package uses renderer-independent `model-3d` types only. Filesystem access, SVG loading/validation, material resolution, renderer application, and browser/server lifecycle remain outside this boundary.
 
@@ -909,7 +914,7 @@ Validation enforces version-specific recursively closed objects, finite scalar r
 
 `getEffectiveMaterial(descriptor)` returns immutable effective scalar/alpha values using the [normative Material 1.1 defaults](../specifications/planaxis-material/1.1.md#20-defaults-and-normalized-interpretation) and the unchanged earlier Material 1.0 defaults, without changing or rewriting the durable document. AO strength defaults effectively to 1 only when an AO map exists; otherwise no AO strength state exists. Material 1.0 rejects the 1.1-only AO properties. Map roles retain explicit color/channel semantics and common mapping dimensions. All Material Format numeric fields use ordinary finite JavaScript numbers, independently of authoritative architectural geometry.
 
-This package has no dependency on `design`, `model-3d`, applications, filesystem APIs, browsers, React, or Three.js. Resource existence, project-root containment, symbolic-link checks, image decoding, and runtime PBR adaptation remain separate later stages. Material resolution does not alter Design 1.0 material-reference conformance.
+This package has no dependency on `design`, `model-3d`, applications, filesystem APIs, browsers, React, or Three.js. Resource existence, project-root containment, symbolic-link checks, image decoding, and runtime PBR adaptation remain separate later stages. Material resolution does not alter Design 1.0 or 1.1 material-reference conformance.
 
 ### `simulation`
 
@@ -1102,7 +1107,7 @@ Apartment SVG architecture
 
 The Project Format, Apartment SVG, PlanAxis Design Format, and PlanAxis Material Format remain independently versioned.
 
-Project Format 1.0 intentionally does not define subordinate resource/descriptor schemas itself. PlanAxis Design Format 1.0 independently defines durable design-scenario descriptors under `designs/`, and PlanAxis Material Format 1.1 is the latest independently versioned contract for reusable material descriptors and supported texture resources under `assets/materials/`; Material 1.0 remains a valid earlier schema. Future model-asset formats should likewise be introduced only when concrete implementation requirements establish their correct boundaries.
+Project Format 1.0 intentionally does not define subordinate resource/descriptor schemas itself. PlanAxis Design Format 1.1 is the latest independently versioned contract for durable design-scenario descriptors under `designs/`; Design 1.0 remains a valid earlier schema. PlanAxis Material Format 1.1 is the latest independently versioned contract for reusable material descriptors and supported texture resources under `assets/materials/`; Material 1.0 remains a valid earlier schema. Future model-asset and photometric-resource formats should likewise be introduced only when concrete implementation requirements establish their correct boundaries.
 
 ---
 
@@ -1174,12 +1179,11 @@ The executable repository bootstrap, authoritative numeric and geometric foundat
 
 Apartment SVG 2.2 is the normative apartment format, and the parser, validator, CLI, and trusted 2D domain pipeline are fully aligned with it. Schema and reference stages preserve the mandatory exact-decimal footprint while leaving geometry checks to the geometry stage. Successful geometric validation guarantees footprint topology, positive area, exact orthogonality, root viewBox containment, and complete stationary placement containment within the closed footprint. Hinged-door open-leaf geometry is exempt from footprint containment but remains inside the viewBox. Camera collisions compare level-local Z ranges consistently. `ValidatedApartment2D` retains the canonical footprint and unchanged level-local architectural Z values, with the level offset stored separately. Exact, renderer-independent 3D geometry foundations are implemented in `@planaxis/geometry`: `Point3D`, `VerticalRange`, `RectangularPrism3D`, and `HorizontalPolygonSurface3D`. Point comparisons reuse the centralized geometric tolerance, and range height is derived with exact decimal subtraction. These primitives carry no architectural or transformation semantics. `@planaxis/model-3d` implements deterministic `ArchitecturalModel3D` construction from trusted 2D input using these primitives, preserving architectural semantics and resolved relationships without renderer objects or unsupported physical assumptions. The Three.js adapter and browser 2D/3D workflow are implemented as described above.
 
-The Project Format 1.0 loading and project-filesystem foundation is implemented in `apps/server/src/project/`, as described in section 8.3. Server startup selects and loads one required project root before listening on loopback, and controlled project metadata and active-architecture HTTP APIs are implemented. The browser loads project metadata and active architecture through these APIs, completing the server-backed Phase 0 workflow. Project-format validity and Apartment SVG validity remain independent. PlanAxis Design Format 1.0 validation and pure architecture/finish-target resolution are implemented in `@planaxis/design`. Server design discovery, raw reads, validated persistence, and selected architecture reads are implemented. Browser design loading, validation/resolution, creation, and editing are implemented. PlanAxis Material Format 1.0 / 1.1 parsing, validation, trusted descriptors, and effective defaults are implemented in `@planaxis/material`. Controlled raw material descriptor and texture APIs are implemented on the server. Browser resolution and rendering integration complete Phase 3; richer redesign is deferred.
+The Project Format 1.0 loading and project-filesystem foundation is implemented in `apps/server/src/project/`, as described in section 8.3. Server startup selects and loads one required project root before listening on loopback, and controlled project metadata and active-architecture HTTP APIs are implemented. The browser loads project metadata and active architecture through these APIs, completing the server-backed Phase 0 workflow. Project-format validity and Apartment SVG validity remain independent. PlanAxis Design Format 1.0 validation and pure architecture/finish-target resolution are implemented in `@planaxis/design`; server design discovery/raw reads/validated persistence and browser loading/resolution/creation/editing also currently support Design 1.0. Design Format 1.1 is the latest accepted contract and adds persistent luminaire semantics, but that extension is not yet implemented. PlanAxis Material Format 1.0 / 1.1 parsing, validation, trusted descriptors, and effective defaults are implemented in `@planaxis/material`. Controlled raw material descriptor and texture APIs are implemented on the server. Browser resolution and rendering integration complete Phase 3; richer redesign is deferred.
 
-Phase 1 includes exact designable surfaces with shared physical mapping frames, renderer UV generation, transient texture-capable metallic/roughness PBR finish assignments with non-overlapping coverage, and zero-thickness transmissive glass (sections 5.8–5.9). Built-in environment lighting and transient intensity, yaw, tone-mapping, and EV exposure controls complete the Phase 1 presentation foundation. Phase 2 is complete: Design Format 1.0, shared validation/resolution, server persistence, and browser scenario discovery/selection/creation/editing are implemented. Phase 3 is complete for Material 1.0 and 1.1: the pure `@planaxis/material` format package, controlled server descriptor/texture reads, browser material resolution, renderer-owned texture decoding, and persistent PBR rendering with physical scale are implemented. Material 1.1 ambient-occlusion map/strength support is implemented throughout validation, browser/runtime translation, and Three.js adaptation, preserving Material 1.0 compatibility. Environment assets, lighting design, and post-processing remain later work.
+Phase 1 includes exact designable surfaces with shared physical mapping frames, renderer UV generation, transient texture-capable metallic/roughness PBR finish assignments with non-overlapping coverage, and zero-thickness transmissive glass (sections 5.8–5.9). Built-in environment lighting and transient intensity, yaw, tone-mapping, and EV exposure controls complete the Phase 1 presentation foundation. Phase 2 is complete: Design Format 1.0, shared validation/resolution, server persistence, and browser scenario discovery/selection/creation/editing are implemented. Phase 3 is complete for Material 1.0 and 1.1: the pure `@planaxis/material` format package, controlled server descriptor/texture reads, browser material resolution, renderer-owned texture decoding, and persistent PBR rendering with physical scale are implemented. Material 1.1 ambient-occlusion map/strength support is implemented throughout validation, browser/runtime translation, and Three.js adaptation, preserving Material 1.0 compatibility.
 
-Phase 4 implements daylight controls, Sunny/Overcast weather, and a procedural sky (section 7.1).
-Realtime GI and richer lighting remain future work before Phase 5 asset importing and placement.
+Phase 4 has implemented the physical-daylight foundation and daylight controls described in section 7.1. Design Format 1.1 is now the accepted persistent luminaire contract; its `@planaxis/design`, server, and browser persistence implementation is the next Phase 4 step. Artificial-light rendering/editing, realtime GI, bloom, IES photometry, path tracing, environment assets, and richer atmospheric effects remain future Phase 4 work before Phase 5 asset importing and placement.
 
 The intended implementation order is now broadly:
 
@@ -1208,7 +1212,7 @@ design scenario implementation (`@planaxis/design` + server/browser integration)
     ↓
 project-local material format and rendering
     ↓
-Phase 4: lighting foundations and richer daylight
+Phase 4: lighting foundations, persistent luminaires, and richer lighting
     ↓
 Phase 5: 3D asset importing and placement
     ↓

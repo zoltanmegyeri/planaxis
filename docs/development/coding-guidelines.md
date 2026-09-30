@@ -18,8 +18,8 @@ Normative external formats are defined by:
 ```text
 docs/specifications/apartment-svg/2.2.md
 docs/specifications/planaxis-project/1.0.md
-docs/specifications/planaxis-design/1.0.md
-docs/specifications/planaxis-material/1.0.md
+docs/specifications/planaxis-design/1.1.md
+docs/specifications/planaxis-material/1.1.md
 ```
 
 These guidelines describe how PlanAxis code should be written. They do not redefine Apartment SVG semantics, PlanAxis Project Format semantics, PlanAxis Design Format semantics, PlanAxis Material Format semantics, or architecture.
@@ -152,7 +152,7 @@ const raw: unknown = JSON.parse(text);
 const metadata = validateApartmentMetadata(raw);
 ```
 
-The same principle applies to project manifests, Design 1.0 descriptors, and future project-local descriptors.
+The same principle applies to project manifests, Design 1.0 / 1.1 descriptors, material descriptors, and future project-local descriptors.
 
 ### 4.5. Prefer explicit return types on public APIs
 
@@ -478,7 +478,7 @@ The processing stages defined by the architecture should remain observable and t
 
 The same distinction applies to `planaxis.project.json`: JSON parsing is not Project Format validation, and Project Format validation is not Apartment SVG validation.
 
-Likewise, parsing a design JSON object is not Design Format validation; Design Format conformance is distinct from project/architecture resolution, and material resolution remains outside Design Format 1.0. Parsing a material JSON object is likewise distinct from Material Format validation, project-resource resolution, texture decoding, and renderer adaptation.
+Likewise, parsing a design JSON object is not Design Format validation. Validate according to the descriptor's declared supported Design Format version; Design Format conformance is distinct from project/architecture resolution, and material resolution remains outside both Design 1.0 and 1.1. Design 1.1 luminaires are self-contained persistent design data and do not create fixture-model or IES resource resolution. Parsing a material JSON object is likewise distinct from Material Format validation, project-resource resolution, texture decoding, and renderer adaptation.
 
 ### 9.2. Do not guess
 
@@ -524,7 +524,7 @@ Apartment SVG validation errors should support the information required by the A
 
 Project Format errors should remain distinguishable from Apartment SVG errors and should identify the relevant manifest or path rule without unnecessarily exposing private machine-local filesystem details to an untrusted client.
 
-Design Format errors should remain distinguishable from project-filesystem failures, Apartment SVG validation failures, stale/unresolved finish targets, and Material Format/resource-resolution failures.
+Design Format errors should remain distinguishable from project-filesystem failures, Apartment SVG validation failures, stale/unresolved finish targets, Material Format/resource-resolution failures, and renderer adaptation failures. Invalid Design 1.1 luminaire structure or values are Design Format failures; later inability to render a valid luminaire is a separate renderer/application failure.
 
 Material Format errors should remain distinguishable from project-filesystem failures, missing texture resources, texture decoding failures, and renderer adaptation failures.
 
@@ -1016,6 +1016,7 @@ Before considering an implementation change complete, verify:
 - parsing, validation, domain, rendering, project-filesystem, and HTTP responsibilities remain separated;
 - Apartment SVG semantics match the normative specification when applicable;
 - PlanAxis Project Format semantics match the normative specification when applicable;
+- PlanAxis Design Format semantics match the descriptor's normative supported version when applicable, including Design 1.1 luminaire rules;
 - project-format validity remains separate from Apartment SVG validity;
 - project paths are canonical, portable, and confined to the canonical root;
 - no project resource symlink traversal was introduced contrary to Project Format 1.0;
