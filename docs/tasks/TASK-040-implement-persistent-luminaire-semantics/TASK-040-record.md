@@ -2,17 +2,17 @@
 
 ## Task Metadata
 
-- **Status:** In Progress
+- **Status:** Completed
 - **Created:** 2026-09-30
 - **Issued:** 2026-09-30
-- **Completed:** —
+- **Completed:** 2026-09-30
 - **Agent:** Codex
 - **Repository:** PlanAxis
 - **Description:** `TASK-040-description.md`
 - **Related tasks:** TASK-039
 - **Related ADRs:** ADR-002, ADR-004
 - **Related specifications:** PlanAxis Design Format 1.0, PlanAxis Design Format 1.1, PlanAxis Project Format 1.0
-- **Implementation commits:** —
+- **Implementation commits:** a6a530d221148148ad6d681c23e9191eb4f1061f
 
 ## Purpose
 
@@ -26,17 +26,32 @@ The authoritative task description is stored in:
 
 `TASK-040-description.md`
 
-The task was formally issued on 2026-09-30 and remains immutable throughout execution.
+The task was formally issued on 2026-09-30 and remained immutable throughout execution.
 
 ## Execution Record
 
 ### Result
 
-Pending.
+Codex implemented persistent PlanAxis Design Format 1.1 luminaire semantics across the shared design package, server persistence path, and browser design workflow.
+
+The implementation:
+
+- added version-aware Design 1.0 / 1.1 descriptor support in `@planaxis/design`;
+- added renderer-independent persistent luminaire types and validation for `point`, `spot`, `linear`, and `area`;
+- preserved Design 1.0 behavior and closed-schema compatibility;
+- preserved Design 1.1 luminaire data through architecture resolution and server serialization;
+- updated server design writes to accept supported Design 1.0 and 1.1 descriptors;
+- updated browser design creation to use Design 1.1 by default;
+- preserved the declared schema version when editing existing scenarios;
+- preserved Design 1.1 luminaires through name/presentation edits without introducing rendering or luminaire-editing UI;
+- added focused design, server, and browser regression coverage;
+- updated current-state documentation to distinguish implemented luminaire persistence from deferred rendering/editing.
 
 ### Verification
 
-Pending.
+No verification failures were reported for the completed implementation.
+
+Command-by-command verification results were not separately provided during task-record finalization.
 
 ### Deviations from Description
 
@@ -50,11 +65,13 @@ None.
 
 ### Review Status
 
-Pending
+Accepted
 
 ### Review Notes
 
-None.
+The TASK-040 implementation was accepted as successful.
+
+Persistent Design 1.1 luminaire semantics are now integrated through validation, server persistence, and browser scenario preservation while artificial-light rendering and luminaire-editing UI remain intentionally deferred.
 
 ### Human Changes After Agent Execution
 
@@ -64,11 +81,20 @@ None.
 
 ### Implementation Commits
 
-—
+```text
+a6a530d221148148ad6d681c23e9191eb4f1061f
+```
 
 ### Commit Messages
 
-—
+```text
+feat(design): support persistent Design 1.1 luminaires
+
+Validate all luminaire types and preserve schema and luminaire data
+through server persistence and browser edits. Add regression coverage.
+
+Task: TASK-040
+```
 
 ### Supersession
 
@@ -76,8 +102,8 @@ None.
 
 ## Notes
 
-TASK-040 is the persistence/domain portion of Phase 4 Stage 4.3.
+TASK-040 completed the persistence/domain portion of Phase 4 Stage 4.3.
 
-The task must not introduce Three.js luminaire rendering or luminaire placement/editing controls. Those belong to the subsequent artificial-light implementation stage.
+PlanAxis now supports Design Format 1.1 persistent luminaires through the shared design contract, server persistence, and browser scenario workflow while retaining Design 1.0 compatibility.
 
-Newly created design scenarios should use Design Format 1.1. Existing Design 1.0 descriptors must remain Design 1.0 unless a future explicit migration operation is introduced.
+Three.js luminaire rendering and interactive luminaire placement/editing remain outside TASK-040 and belong to the subsequent artificial-light implementation stage.
