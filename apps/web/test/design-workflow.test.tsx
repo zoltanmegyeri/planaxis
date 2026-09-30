@@ -377,7 +377,7 @@ it.each([false, true])(
         method: "POST",
         path: "designs/new.json",
         document: {
-          schema: "planaxis-design/1.0",
+          schema: "planaxis-design/1.1",
           name: "New scenario",
           architecture: selected ? alternativePath : activePath,
         },
@@ -789,7 +789,7 @@ it("creates and edits a design through the transient toolbar panel", async () =>
   expect(saved[0]).toEqual({
     path: "designs/panel.json",
     method: "POST",
-    document: { schema: "planaxis-design/1.0", name: "Panel design", architecture: activePath },
+    document: { schema: "planaxis-design/1.1", name: "Panel design", architecture: activePath },
   });
   await change("Design name", "Edited in panel");
   await submit("Design name");
@@ -826,3 +826,78 @@ it("retains material warnings after toast dismissal and exposes their domain in 
   expect(drawer.textContent).toContain("Apartment SVG is valid");
   expect(drawer.textContent).toContain("Persistent finishes are unavailable");
 });
+
+it.each(["planaxis-design/1.0", "planaxis-design/1.1"] as const)(
+  "loads, selects, edits and reloads %s without migration or luminaire rendering",
+  async (schema) => {
+    const point = {
+      id: "z-pendant",
+      type: "point" as const,
+      position: { x: -2000.25, y: 2000, z: 900 },
+      luminousFluxLumens: 1234.5,
+      colorTemperatureKelvin: 2700,
+      enabled: false,
+      dimming: 0.8,
+    };
+    const orientation = { headingDegrees: 359.99, pitchDegrees: -90, rollDegrees: 180 };
+    const luminaires = [
+      point,
+      { ...point, id: "b-spot", type: "spot" as const, orientation, beamAngleDegrees: 36.5 },
+      { ...point, id: "a-linear", type: "linear" as const, orientation, lengthCm: 125.25 },
+      { ...point, id: "c-area", type: "area" as const, orientation, widthCm: 80, heightCm: 40 },
+    ];
+    const document = {
+      ...baseline,
+      schema,
+      finishes: [{ target: "floor", material: materialPath }],
+      ...(schema === "planaxis-design/1.1" ? { luminaires } : {}),
+    };
+    descriptors.set(path, document);
+    await mount();
+    await select();
+    expect(host.textContent).toContain("Design resolved: Warm");
+    expect(saved).toEqual([]);
+    await click("3D");
+    const renderedModel = renderer.setModel.mock.calls[0]?.[0];
+    expect(renderedModel).not.toHaveProperty("luminaires");
+    const options = renderer.setModel.mock.calls[0]?.[1] as RuntimeFinishOptions;
+    expect(Object.keys(options).sort()).toEqual(["assignments", "resolveTexture"]);
+    expect(options.assignments?.get("floor")).toMatchObject({
+      baseColor: [0.8, 0.6, 0.4],
+      roughness: 0.7,
+    });
+    expect(renderer.setPresentationSettings).toHaveBeenLastCalledWith(
+      expect.objectContaining({ toneMapping: "Neutral", exposureEv: 6 }),
+    );
+    await change("Design name", "Renamed lighting");
+    await submit("Design name");
+    expect(saved[0]?.document).toEqual({ ...document, name: "Renamed lighting" });
+    await change("Design tone mapping", "aces-filmic");
+    await change("Design exposure (EV)", "-2.5");
+    await submit("Design name");
+    expect(saved[1]?.document).toEqual({
+      ...document,
+      name: "Renamed lighting",
+      presentation: { toneMapping: "aces-filmic", exposureEv: -2.5 },
+    });
+    await change("Design tone mapping", "");
+    await change("Design exposure (EV)", "");
+    await submit("Design name");
+    expect(saved[2]?.document).not.toHaveProperty("presentation");
+    for (const save of saved) {
+      expect(save.document.schema).toBe(schema);
+      expect(save.document.architecture).toBe(alternativePath);
+      expect(save.document.finishes).toEqual(document.finishes);
+      expect(save.document.luminaires).toEqual(
+        schema === "planaxis-design/1.1" ? luminaires : undefined,
+      );
+    }
+    expect(renderer.setModel).toHaveBeenCalledTimes(1);
+    await select("");
+    await select();
+    expect(host.textContent).toContain("Design resolved: Renamed lighting");
+    await change("Design name", "Reloaded lighting");
+    await submit("Design name");
+    expect(saved[3]?.document).toEqual({ ...saved[2]?.document, name: "Reloaded lighting" });
+  },
+);

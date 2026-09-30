@@ -475,3 +475,81 @@ describe("selected architecture resource HTTP API", () => {
     },
   );
 });
+
+describe("version-preserving design writes", () => {
+  const point = {
+    id: "pendant",
+    type: "point",
+    position: { x: -10, y: 2000, z: 1200 },
+    luminousFluxLumens: 1200,
+    colorTemperatureKelvin: 2700,
+    enabled: false,
+    dimming: 0.8,
+  };
+  const orientation = { headingDegrees: 90, pitchDegrees: -90, rollDegrees: 180 };
+  const luminaires = [
+    point,
+    { ...point, id: "spot", type: "spot", orientation, beamAngleDegrees: 36 },
+    { ...point, id: "linear", type: "linear", orientation, lengthCm: 80 },
+    { ...point, id: "area", type: "area", orientation, widthCm: 60, heightCm: 30 },
+  ];
+  it.each(["planaxis-design/1.0", "planaxis-design/1.1"])(
+    "POST/PUT round-trips %s through disk and GET",
+    async (schema) => {
+      const { application, root } = await setup();
+      const relative = "designs/lighting.json";
+      const original = { ...design, schema, ...(schema.endsWith("1.1") ? { luminaires } : {}) };
+      for (const method of ["POST", "PUT"] as const) {
+        const payload =
+          method === "POST"
+            ? original
+            : {
+                ...original,
+                name: "Renamed",
+                presentation: { toneMapping: "neutral", exposureEv: -1.5 },
+              };
+        const response = await application.inject({ method, url: designUrl(relative), payload });
+        expect(response.statusCode).toBe(method === "POST" ? 201 : 204);
+        const persisted: unknown = JSON.parse(await readFile(path.join(root, relative), "utf8"));
+        expect(persisted).toEqual(payload);
+        expect((await application.inject(designUrl(relative))).json()).toEqual(payload);
+        expect(persisted).not.toHaveProperty("document");
+        expect(persisted).not.toHaveProperty("path");
+      }
+    },
+  );
+  it.each([
+    ["planaxis-design/1.0", [point], "DESIGN_UNKNOWN_PROPERTY", "$.luminaires"],
+    [
+      "planaxis-design/1.1",
+      [{ ...point, dimming: 2 }],
+      "DESIGN_INVALID_LUMINAIRE_NUMBER",
+      "$.luminaires[0].dimming",
+    ],
+    [
+      "planaxis-design/1.1",
+      [{ ...point, position: { ...point.position, utility: "light" } }],
+      "DESIGN_UNKNOWN_PROPERTY",
+      "$.luminaires[0].position.utility",
+    ],
+  ])(
+    "rejects invalid luminaire writes without changing durable data: %s %j",
+    async (schema, invalidLuminaires, code, location) => {
+      const { application, root } = await setup();
+      await mkdir(path.join(root, "designs"));
+      await writeFile(path.join(root, "designs/existing.json"), "original");
+      for (const method of ["POST", "PUT"] as const) {
+        const relative = method === "POST" ? "designs/new.json" : "designs/existing.json";
+        const response = await application.inject({
+          method,
+          url: designUrl(relative),
+          payload: { ...design, schema, luminaires: invalidLuminaires },
+        });
+        expect(response.statusCode).toBe(400);
+        expect(response.json()).toMatchObject({ error: { code, location } });
+      }
+      expect(await readFile(path.join(root, "designs/existing.json"), "utf8")).toBe("original");
+      expect(await readdir(path.join(root, "designs"))).toEqual(["existing.json"]);
+    },
+  );
+});

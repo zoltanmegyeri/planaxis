@@ -1,43 +1,17 @@
+import { closedObject } from "./design-object.js";
+import { validateLuminaires } from "./validate-luminaires.js";
 import { isDescriptorFilePath, isFinishTargetId, isProjectRelativePath } from "./design-lexical.js";
 import { designFailure, type DesignValidationResult } from "./design-result.js";
 import {
   DESIGN_SCHEMA,
+  DESIGN_SCHEMA_1_1,
+  type DesignLuminaire,
   type DesignDocument,
   type DesignFinishAssignment,
   type DesignPresentation,
   type DesignToneMapping,
   type ValidatedDesignDescriptor,
 } from "./design.js";
-
-function closedObject(
-  value: unknown,
-  location: string,
-  allowed: readonly string[],
-  required: readonly string[] = [],
-): DesignValidationResult<Record<string, unknown>> {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return designFailure("DESIGN_INVALID_OBJECT", location, "Expected a JSON object.");
-  }
-  for (const key of Object.keys(value)) {
-    if (!allowed.includes(key)) {
-      return designFailure(
-        "DESIGN_UNKNOWN_PROPERTY",
-        `${location}.${key}`,
-        "Unknown properties are prohibited.",
-      );
-    }
-  }
-  for (const key of required) {
-    if (!Object.hasOwn(value, key)) {
-      return designFailure(
-        "DESIGN_MISSING_PROPERTY",
-        `${location}.${key}`,
-        "Required property is missing.",
-      );
-    }
-  }
-  return { ok: true, value: value as Record<string, unknown> };
-}
 
 function validateFinishes(
   value: unknown,
@@ -65,7 +39,7 @@ function validateFinishes(
       return designFailure(
         "DESIGN_INVALID_TARGET",
         `${location}.target`,
-        "Expected a Design 1.0 finish target with Apartment SVG IDs.",
+        "Expected a Design Format finish target with Apartment SVG IDs.",
       );
     }
     if (targets.has(target)) {
@@ -140,16 +114,28 @@ export function validateDesignDescriptor(
   const checked = closedObject(
     value,
     "$",
-    ["schema", "name", "architecture", "finishes", "presentation"],
+    [
+      "schema",
+      "name",
+      "architecture",
+      "finishes",
+      "presentation",
+      ...(typeof value === "object" &&
+      value !== null &&
+      "schema" in value &&
+      value.schema === DESIGN_SCHEMA_1_1
+        ? ["luminaires"]
+        : []),
+    ],
     ["schema", "name", "architecture"],
   );
   if (!checked.ok) return checked;
   const document = checked.value;
-  if (document.schema !== DESIGN_SCHEMA) {
+  if (document.schema !== DESIGN_SCHEMA && document.schema !== DESIGN_SCHEMA_1_1) {
     return designFailure(
       "DESIGN_UNSUPPORTED_SCHEMA",
       "$.schema",
-      `Only ${DESIGN_SCHEMA} is supported.`,
+      `Expected ${DESIGN_SCHEMA} or ${DESIGN_SCHEMA_1_1}.`,
     );
   }
   if (typeof document.name !== "string" || !/[^\p{White_Space}\uFEFF]/u.test(document.name)) {
@@ -178,8 +164,16 @@ export function validateDesignDescriptor(
     if (!checkedPresentation.ok) return checkedPresentation;
     presentation = checkedPresentation.value;
   }
+  let luminaires: readonly DesignLuminaire[] | undefined;
+  if (Object.hasOwn(document, "luminaires")) {
+    const checkedLuminaires = validateLuminaires(document.luminaires);
+    if (!checkedLuminaires.ok) return checkedLuminaires;
+    luminaires = checkedLuminaires.value;
+  }
   const trusted: DesignDocument = Object.freeze({
-    schema: DESIGN_SCHEMA,
+    ...(document.schema === DESIGN_SCHEMA
+      ? { schema: DESIGN_SCHEMA }
+      : { schema: DESIGN_SCHEMA_1_1, ...(luminaires === undefined ? {} : { luminaires }) }),
     name: document.name,
     architecture: document.architecture,
     ...(finishes === undefined ? {} : { finishes }),

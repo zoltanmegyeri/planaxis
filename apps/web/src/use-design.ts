@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { DESIGN_SCHEMA, validateDesignDescriptor } from "@planaxis/design";
+import { DESIGN_SCHEMA_1_1, validateDesignDescriptor } from "@planaxis/design";
 import type { ValidatedDesignDescriptor } from "@planaxis/design";
 import { fetchDesignPaths, persistDesign } from "./design-api.js";
 import { designPresentation } from "./design-presentation.js";
@@ -175,7 +175,7 @@ export function useDesign(activeDocument: DocumentState) {
     )
       return;
     const checked = validateDesignDescriptor(
-      { schema: DESIGN_SCHEMA, name, architecture: architecturePath },
+      { schema: DESIGN_SCHEMA_1_1, name, architecture: architecturePath },
       path,
     );
     if (!checked.ok) {

@@ -19,7 +19,7 @@ export function editDesign(
   descriptor: ValidatedDesignDescriptor,
   draft: DesignDraft,
 ): DesignValidationResult<ValidatedDesignDescriptor> {
-  const { schema, architecture, finishes } = descriptor.document;
+  const { schema, architecture, finishes, luminaires } = descriptor.document;
   const presentation = {
     ...(draft.toneMapping === "" ? {} : { toneMapping: draft.toneMapping }),
     ...(draft.exposureEv.trim() === "" ? {} : { exposureEv: Number(draft.exposureEv) }),
@@ -27,9 +27,10 @@ export function editDesign(
   return validateDesignDescriptor(
     {
       schema,
-      name: draft.name,
       architecture,
       ...(finishes === undefined ? {} : { finishes }),
+      ...(luminaires === undefined ? {} : { luminaires }),
+      name: draft.name,
       ...(Object.keys(presentation).length === 0 ? {} : { presentation }),
     },
     descriptor.path,

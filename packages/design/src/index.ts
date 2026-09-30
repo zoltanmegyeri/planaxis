@@ -1,6 +1,9 @@
-export { DESIGN_SCHEMA } from "./design.js";
+export { DESIGN_SCHEMA, DESIGN_SCHEMA_1_1 } from "./design.js";
 export type {
   DesignDocument,
+  DesignLuminaire,
+  DesignLuminairePosition,
+  DesignLuminaireOrientation,
   DesignFinishAssignment,
   DesignPresentation,
   DesignToneMapping,
