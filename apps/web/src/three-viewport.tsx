@@ -15,6 +15,7 @@ import {
 } from "@planaxis/renderer-three";
 import type {
   ApartmentRenderer,
+  RuntimeLuminaire,
   FullFrameFocalLength,
   RendererPresentationSettings,
   RendererQualitySettings,
@@ -46,6 +47,7 @@ const WALK_VIEW = "@walk";
 
 export function ThreeViewport({
   model,
+  luminaires,
   onFailure,
   toolbar,
   panel,
@@ -61,6 +63,7 @@ export function ThreeViewport({
   onLightingModeChange,
 }: {
   model: ArchitecturalModel3D;
+  luminaires?: readonly RuntimeLuminaire[];
   simulation: PhysicalSimulation;
   sessionInstant: number;
   onSimulationChange: (next: PhysicalSimulation) => void;
@@ -75,6 +78,8 @@ export function ThreeViewport({
   materials?: LoadedMaterials | undefined;
   onMaterialFailure?: (() => void) | undefined;
 }): ReactElement {
+  const luminairesRef = useRef(luminaires);
+  luminairesRef.current = luminaires;
   const renderArea = useRef<HTMLDivElement>(null);
   const fullscreen = useFullscreen(renderArea);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -206,6 +211,7 @@ export function ThreeViewport({
           fail(error);
         }
       } else instance.setModel(model);
+      instance.setLuminaires(luminairesRef.current ?? []);
       instance.setLightingMode(
         lightingRef.current.mode,
         lightingRef.current.instant,
@@ -233,6 +239,13 @@ export function ThreeViewport({
       resizeRenderer.current = () => undefined;
     };
   }, [model, onFailure, materials, onMaterialFailure]);
+  useEffect(() => {
+    try {
+      renderer.current?.setLuminaires(luminaires ?? []);
+    } catch (error) {
+      onFailure(error);
+    }
+  }, [luminaires, onFailure]);
   useEffect(() => {
     resizeRenderer.current();
   }, [aspectRatio, fullscreen.active]);

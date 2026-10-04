@@ -14,6 +14,7 @@ const renderer = vi.hoisted(() => ({
   onError: vi.fn<(error: unknown) => void>(),
   initialize: vi.fn<() => Promise<void>>(),
   setModel: vi.fn(),
+  setLuminaires: vi.fn(),
   resize: vi.fn(),
   selectCamera: vi.fn(),
   selectWalk: vi.fn(),
@@ -901,3 +902,43 @@ it.each(["planaxis-design/1.0", "planaxis-design/1.1"] as const)(
     expect(saved[3]?.document).toEqual({ ...saved[2]?.document, name: "Reloaded lighting" });
   },
 );
+
+it("installs resolved design lights, preserves them across views and clears them for older/no designs", async () => {
+  descriptors.set(path, {
+    schema: "planaxis-design/1.1",
+    name: "Lighting",
+    architecture: alternativePath,
+    luminaires: [
+      {
+        id: "pendant",
+        type: "point",
+        position: { x: 150, y: 150, z: 220 },
+        luminousFluxLumens: 800,
+        colorTemperatureKelvin: 2700,
+        enabled: true,
+        dimming: 0.5,
+      },
+    ],
+  });
+  descriptors.set(otherPath, {
+    schema: "planaxis-design/1.0",
+    name: "Earlier",
+    architecture: alternativePath,
+  });
+  await mount();
+  await select();
+  await click("3D");
+  const expected = [
+    { type: "point", positionCm: { x: 150, y: 150, z: 220 }, lumens: 400, kelvin: 2700 },
+  ];
+  expect(renderer.setLuminaires).toHaveBeenLastCalledWith(expected);
+  await click("2D");
+  await click("3D");
+  expect(renderer.setLuminaires).toHaveBeenLastCalledWith(expected);
+  await select(otherPath);
+  await click("3D");
+  expect(renderer.setLuminaires).toHaveBeenLastCalledWith([]);
+  await select("");
+  await click("3D");
+  expect(renderer.setLuminaires).toHaveBeenLastCalledWith([]);
+});

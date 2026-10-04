@@ -27,6 +27,7 @@ const gpu = vi.hoisted(() => ({
   setSize: vi.fn(),
   setPixelRatio: vi.fn(),
   instances: [] as WebGPURenderer[],
+  options: vi.fn(),
   environmentDispose: vi.fn(),
   generatorDispose: vi.fn(),
   fromScene: vi.fn(),
@@ -45,7 +46,8 @@ vi.mock("three/webgpu", async (original) => {
       dispose = gpu.generatorDispose;
     },
     WebGPURenderer: class {
-      constructor() {
+      constructor(options: object) {
+        gpu.options(options);
         gpu.instances.push(this as unknown as WebGPURenderer);
       }
       shadowMap = { enabled: false };
@@ -106,10 +108,16 @@ it("resizes embedded FOV, applies selected DPR, replaces models and releases own
   expect(gpu.setPixelRatio).toHaveBeenCalledWith(4);
   expect(gpu.setSize).toHaveBeenCalledWith(400, 800, false);
   const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
-  const first = scene.children.find((object) => object.type === "Group");
+  const first = scene.children.find(
+    (object) => object.type === "Group" && object.name !== "design-luminaires",
+  );
   renderer.setModel(modelFixture());
   expect(first?.children).toHaveLength(0);
-  expect(scene.children.filter((object) => object.type === "Group")).toHaveLength(1);
+  expect(
+    scene.children.filter(
+      (object) => object.type === "Group" && object.name !== "design-luminaires",
+    ),
+  ).toHaveLength(1);
   renderer.selectCamera(null);
   expect(camera.fov).toBeCloseTo(verticalFov(fullFrameHorizontalFov(50), camera.aspect));
   renderer.dispose();
@@ -561,6 +569,16 @@ it("updates DPR buffers immediately without changing CSS sizing, pose, projectio
   renderer.dispose();
 });
 
+it("retains logarithmic depth precision for the viewing camera", () => {
+  const renderer = createApartmentRenderer(canvas, vi.fn());
+  expect(gpu.options).toHaveBeenCalledWith({
+    canvas,
+    antialias: true,
+    logarithmicDepthBuffer: true,
+  });
+  renderer.dispose();
+});
+
 it("maps every shadow level and rescales bias without replacing lights or geometry", async () => {
   const renderer = createApartmentRenderer(canvas, vi.fn());
   renderer.setModel(modelFixture());
@@ -569,6 +587,12 @@ it("maps every shadow level and rescales bias without replacing lights or geomet
   const light = scene.children.find((object) => object instanceof DirectionalLight);
   if (!(light instanceof DirectionalLight)) throw new Error("Missing key light");
   const mediumBias = light.shadow.normalBias;
+  const mediumDepthBias = light.shadow.bias;
+  const shadowCamera = light.shadow.camera;
+  const texelSize = (shadowCamera.right - shadowCamera.left) / 2048;
+  expect(mediumBias).toBeCloseTo(texelSize * 4);
+  expect(mediumDepthBias).toBeCloseTo((texelSize * 2.5) / (shadowCamera.far - shadowCamera.near));
+  expect(mediumDepthBias).toBeGreaterThan(0);
   const floor = scene.getObjectByName("floor");
   for (const [shadowQuality, size] of [
     ["Off", 0],
@@ -585,6 +609,7 @@ it("maps every shadow level and rescales bias without replacing lights or geomet
     if (size) {
       expect(light.shadow.mapSize.toArray()).toEqual([size, size]);
       expect(light.shadow.normalBias).toBeCloseTo((mediumBias * 2048) / size);
+      expect(light.shadow.bias).toBeCloseTo((mediumDepthBias * 2048) / size);
       expect(light.shadow.needsUpdate).toBe(true);
     }
     expect(scene.getObjectByName("floor")).toBe(floor);
@@ -1030,4 +1055,98 @@ it("updates and releases the Physical background with weaker, cooler, softer Ove
   renderer.dispose();
   expect(skyDispose).toHaveBeenCalledTimes(1);
   expect(scene.backgroundNode).toBeNull();
+});
+
+it("preserves design luminaires through daylight/navigation and disposes replacements and shadows", async () => {
+  const { PointLight, SpotLight, RectAreaLight } = await import("three/webgpu");
+  const renderer = createApartmentRenderer(navigationSurface().canvas, vi.fn());
+  const base = modelFixture();
+  const model = {
+    ...base,
+    metadata: {
+      ...base.metadata,
+      location: {
+        latitude: decimal("47.5"),
+        longitude: decimal("19"),
+        northHeading: decimal("270"),
+      },
+    },
+  };
+  renderer.setModel(model);
+  const common = { positionCm: { x: 150, y: 150, z: 220 }, lumens: 1000, kelvin: 3000 };
+  renderer.setLuminaires([
+    { ...common, type: "point" },
+    {
+      ...common,
+      type: "spot",
+      orientation: { headingDegrees: 0, pitchDegrees: 90, rollDegrees: 0 },
+      beamAngleDegrees: 60,
+    },
+    {
+      ...common,
+      type: "area",
+      orientation: { headingDegrees: 0, pitchDegrees: 90, rollDegrees: 0 },
+      widthCm: 80,
+      heightCm: 40,
+    },
+  ]);
+  await renderer.initialize();
+  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  const group = scene.getObjectByName("design-luminaires");
+  if (!group) throw new Error("Missing luminaire group");
+  const lights = group.children.filter(
+    (item) =>
+      item instanceof PointLight || item instanceof SpotLight || item instanceof RectAreaLight,
+  );
+  expect(lights).toHaveLength(3);
+  const snapshot = lights.map((light) => [
+    light.power,
+    light.position.toArray(),
+    light.quaternion.toArray(),
+  ]);
+  for (const mode of ["physical", "studio", "physical"] as const) {
+    for (const weather of ["sunny", "overcast"] as const) {
+      renderer.setLightingMode(mode, Date.parse("2024-06-21T22:00:00Z"), weather);
+      renderer.selectCamera("camera-1");
+      renderer.selectCamera(null);
+      renderer.selectWalk();
+      expect(scene.getObjectByName("design-luminaires")).toBe(group);
+      expect(
+        lights.map((light) => [light.power, light.position.toArray(), light.quaternion.toArray()]),
+      ).toEqual(snapshot);
+    }
+  }
+  const point = lights.find((item) => item instanceof PointLight);
+  if (!point) throw new Error("Missing point");
+  point.shadow.map = new RenderTarget();
+  const shadowDispose = vi.spyOn(point.shadow.map, "dispose");
+  const disposals = lights.map((light) => vi.spyOn(light, "dispose"));
+  renderer.setQualitySettings({ ...DEFAULT_QUALITY_SETTINGS, shadowQuality: "Off" });
+  expect(shadowDispose).toHaveBeenCalledTimes(1);
+  for (const disposal of disposals) expect(disposal).toHaveBeenCalledTimes(1);
+  const replacement = scene.getObjectByName("design-luminaires");
+  expect(replacement).not.toBe(group);
+  expect(gpu.instances[0]?.shadowMap.enabled).toBe(true);
+  renderer.setModel(model);
+  expect(replacement?.parent).toBeNull();
+  const modelGroup = scene.getObjectByName("design-luminaires");
+  renderer.setLuminaires([{ ...common, type: "point", lumens: 200 }]);
+  expect(modelGroup?.parent).toBeNull();
+  const finalPoint = scene.getObjectByName("design-luminaires")?.children[0];
+  if (!(finalPoint instanceof PointLight)) throw new Error("Missing replacement point");
+  expect(finalPoint.power).toBeCloseTo(200);
+  const finalDispose = vi.spyOn(finalPoint, "dispose");
+  renderer.setLuminaires([]);
+  expect(finalDispose).toHaveBeenCalledTimes(1);
+  expect(scene.getObjectByName("design-luminaires")?.children).toHaveLength(0);
+  renderer.setLuminaires([{ ...common, type: "point" }]);
+  const owned = scene.getObjectByName("design-luminaires")?.children[0];
+  if (!(owned instanceof PointLight)) throw new Error("Missing final point");
+  owned.shadow.map = new RenderTarget();
+  const ownedShadowDispose = vi.spyOn(owned.shadow.map, "dispose");
+  const ownedDispose = vi.spyOn(owned, "dispose");
+  renderer.dispose();
+  renderer.dispose();
+  expect(ownedDispose).toHaveBeenCalledTimes(1);
+  expect(ownedShadowDispose).toHaveBeenCalledTimes(1);
 });

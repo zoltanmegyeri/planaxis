@@ -213,6 +213,7 @@ export function App(): ReactElement {
             selectedLightingMode={lightingMode}
             onLightingModeChange={setLightingMode}
             onFailure={rendererFailure}
+            luminaires={design.luminaires}
             scenarioPresentation={design.presentation}
             materials={design.loaded.materialProblem ? undefined : design.loaded.materials}
             onMaterialFailure={design.materialFailure}

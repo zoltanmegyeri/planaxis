@@ -11,9 +11,13 @@ import {
   Material,
   Mesh,
   MeshStandardMaterial,
+  MeshStandardNodeMaterial,
+  OperatorNode,
   SphereGeometry,
   Vector3,
 } from "three/webgpu";
+import { nodeObject } from "three/tsl";
+import { perspectiveDepth } from "./camera-depth.js";
 import { rendererBox, rendererPoint } from "./coordinates.js";
 import { RuntimeMaterials, windowGlass } from "./runtime-materials.js";
 import type { RuntimeFinishOptions } from "./runtime-materials.js";
@@ -126,6 +130,24 @@ export function buildApartmentScene(
         true,
       );
       boundary.name = kind;
+      if (kind === "floor") {
+        // The overhead directional light cannot be occluded by the level's floor.
+        // Keep local-light casting, but avoid biased wall samples below the floor
+        // producing a false dark contact strip in the directional shadow pass.
+        const floorShadowFinish = (finish: Material): Material => {
+          const clone = materials.own(finish.clone());
+          const alphaMask = clone instanceof MeshStandardNodeMaterial ? clone.maskNode : null;
+          Object.assign(clone, {
+            maskShadowNode: alphaMask
+              ? nodeObject(new OperatorNode("&&", perspectiveDepth, alphaMask))
+              : perspectiveDepth,
+          });
+          return clone;
+        };
+        boundary.material = Array.isArray(boundary.material)
+          ? boundary.material.map(floorShadowFinish)
+          : floorShadowFinish(boundary.material);
+      }
       if (kind === "ceiling") {
         // The inward visual face stays culled from above. A zero-thickness ceiling
         // blocks sunlight on either side, independently of inspection visibility.

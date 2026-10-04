@@ -79,9 +79,19 @@ including empty groups for cameras and door openings.
 Neutral standard PBR materials, built-in environment illumination, a directional light, and bounded
 2048 × 2048 shadow maps are visualization defaults. Opaque surfaces cast front-face
 shadows so the shadow map records light-entry surfaces instead of solid exit surfaces;
-this prevents bright leaks at wall corners and floor contacts. A renderer-only normal
-bias of two shadow texels scales with the apartment bounds to suppress self-shadow
-banding without changing architectural meshes. These settings do not describe source
+this prevents bright leaks at wall corners and floor contacts. The directional shadow projection uses the bounds half-diagonal. A renderer-only normal
+bias of four shadow texels and positive depth bias of 2.5 texels (normalized by depth
+range) balance self-shadowing against wall–ceiling contact leaks without changing
+architectural meshes. Broad Overcast filtering can retain faint contact halos.
+The single-level floor receives directional shadows but casts only in perspective
+local-light passes. It cannot occlude the room above it from the overhead key/Sun;
+excluding that impossible occlusion prevents biased wall samples below the floor
+from creating dark contact strips. Floor shadow masks preserve alpha masks and
+are isolated from shared wall/ceiling materials.
+Logarithmic viewing depth is retained. An explicit material depth node selects the
+depth curve per render camera (logarithmic perspective, linear orthographic), avoiding
+false self-shadowing when Three.js r186 reuses mapped-material shadow shaders across
+directional and perspective luminaire passes. These settings do not describe source
 material or luminaire semantics. Advanced lighting, persistent material assets, and design workflows remain future work.
 
 ### Texture-capable surface refinement (2026-09-13)
@@ -141,6 +151,24 @@ approximation, time-zone/DST policy, and deferred diffuse sky transport.
 The visually inward-facing ceiling casts from both sides using a separate shadow-side setting.
 Cloned ceiling finishes keep shared wall/floor finish policies unchanged. No slab thickness
 or opaque window blocker is invented.
+
+### Persistent luminaire rendering refinement (2026-09-30)
+
+The browser adapts successfully resolved Design 1.1 lights into `RuntimeLuminaire`, excluding
+schema, paths and persistence identity. The renderer maps point/spot to PointLight/SpotLight
+with luminous power, inverse-square attenuation, no range cutoff and architectural shadows.
+Existing shadow quality selects resolution, with Low as the minimum for active design lights.
+Spot full beam angles become half-angles with fixed 0.2 penumbra. Linear emitters use a
+one-sided RectAreaLight of length × 1 cm; area emitters use their declared dimensions. Both
+rectangular types intentionally remain shadowless and use shared reference-counted LTC textures.
+
+Derive the normative Design 1.1 frame before swapping the PlanAxis Y/Z basis; local rectangle
+X/Y follow rolledSide/rolledVertical, and -Z follows forward. Convert centimeters once.
+Effective lumens include enabled state and dimming. Approximate Kelvin white is converted to
+linear RGB without camera white balance. Lights survive daylight and camera changes; replacement,
+quality/model changes and final disposal release owned resources. Rendering remains event-driven.
+Manual JSON edits followed by reload/reselection are supported; luminaire editing UI, fixture
+meshes, IES, GI and rectangular shadows remain deferred. See the architecture runtime contract.
 
 ## Cameras and lifecycle
 

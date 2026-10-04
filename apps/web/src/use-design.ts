@@ -1,3 +1,4 @@
+import { designLuminaires } from "./design-luminaires.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DESIGN_SCHEMA_1_1, validateDesignDescriptor } from "@planaxis/design";
 import type { ValidatedDesignDescriptor } from "@planaxis/design";
@@ -120,6 +121,12 @@ export function useDesign(activeDocument: DocumentState) {
     [selectedPath, loaded.resolution],
   );
 
+  const luminaires = useMemo(
+    () =>
+      designLuminaires(selectedPath && loaded.resolution?.ok ? loaded.resolution.value : undefined),
+    [selectedPath, loaded.resolution],
+  );
+
   async function write(
     descriptor: ValidatedDesignDescriptor,
     method: "POST" | "PUT",
@@ -209,6 +216,7 @@ export function useDesign(activeDocument: DocumentState) {
     document: displayedDocument,
     architecturePath,
     presentation,
+    luminaires,
     rendererFailure,
     materialFailure,
     create,

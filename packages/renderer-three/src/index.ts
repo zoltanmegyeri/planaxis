@@ -25,3 +25,5 @@ export {
   isRendererQualitySettings,
 } from "./quality.js";
 export type { RendererQualitySettings, QualityLevel } from "./quality.js";
+
+export type { RuntimeLuminaire } from "./runtime-luminaires.js";

@@ -1,3 +1,4 @@
+import { cameraDepth } from "./camera-depth.js";
 import { validateRuntimePbrMaterial } from "@planaxis/model-3d";
 import type {
   RuntimeFinishAssignments,
@@ -39,6 +40,8 @@ export class RuntimeMaterials {
   constructor(private readonly resolveTexture: RuntimeFinishOptions["resolveTexture"]) {}
 
   own<T extends Material>(material: T): T {
+    // Also copied into Three's shadow-pass material and standard-to-node adapter.
+    Object.assign(material, { depthNode: cameraDepth });
     this.materials.add(material);
     return material;
   }

@@ -17,6 +17,7 @@ import { QUALITY_STORAGE_KEY, qualityPreset } from "../src/render-quality.js";
 const rendererMocks = vi.hoisted(() => ({
   initialize: vi.fn<() => Promise<void>>(),
   setModel: vi.fn(),
+  setLuminaires: vi.fn(),
   resize: vi.fn(),
   selectCamera: vi.fn(),
   selectWalk: vi.fn(),

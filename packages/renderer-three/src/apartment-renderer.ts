@@ -1,3 +1,5 @@
+import { buildLuminaireSet } from "./runtime-luminaires.js";
+import type { RuntimeLuminaire } from "./runtime-luminaires.js";
 import {
   calculateSolarPosition,
   planaxisSunDirection,
@@ -45,6 +47,7 @@ import type { RendererQualitySettings } from "./quality.js";
 export interface ApartmentRenderer {
   initialize(): Promise<void>;
   setModel(model: ArchitecturalModel3D, finishes?: RuntimeFinishOptions): void;
+  setLuminaires(luminaires: readonly RuntimeLuminaire[]): void;
   resize(width: number, height: number): void;
   selectCamera(sourceId: string | null): void;
   selectWalk(): void;
@@ -73,13 +76,27 @@ export function createApartmentRenderer(
   let simulationInstant = 0;
   let weather: Weather = DEFAULT_WEATHER;
   const sky = createPhysicalSky();
+  let luminaireInputs: readonly RuntimeLuminaire[] = [];
+  let luminaires = buildLuminaireSet([], quality.shadowQuality);
+  scene.add(luminaires.group);
+  const replaceLuminaires = (): void => {
+    const replacement = buildLuminaireSet(
+      luminaireInputs,
+      quality.shadowQuality,
+      apartment?.bounds,
+    );
+    scene.remove(luminaires.group);
+    luminaires.dispose();
+    luminaires = replacement;
+    scene.add(luminaires.group);
+  };
   let width = 1;
   let height = 1;
   let shadowRadius = 0.1;
   let light = new DirectionalLight(0xffffff, 3);
   light.castShadow = true;
   light.shadow.mapSize.set(2048, 2048);
-  light.shadow.bias = -0.0002;
+  light.shadow.bias = 0;
   // Architecture and the key light are static between model/quality updates.
   // Camera movement does not invalidate their shadow map.
   light.shadow.autoUpdate = false;
@@ -239,11 +256,15 @@ export function createApartmentRenderer(
       previous.dispose();
       scene.add(light, light.target);
     }
-    renderer.shadowMap.enabled = mapSize !== 0;
+    renderer.shadowMap.enabled = mapSize !== 0 || luminaires.hasShadows;
     light.castShadow = mapSize !== 0;
     if (mapSize !== 0) {
       light.shadow.mapSize.set(mapSize, mapSize);
-      light.shadow.normalBias = ((2 * shadowRadius) / mapSize) * 2;
+      const texelSize = (light.shadow.camera.right - light.shadow.camera.left) / mapSize;
+      // Favor occlusion at coplanar wall/ceiling contacts. The normal offset keeps
+      // directly lit surfaces clear of self-shadowing; both scale with resolution.
+      light.shadow.normalBias = texelSize * 4;
+      light.shadow.bias = (texelSize * 2.5) / (light.shadow.camera.far - light.shadow.camera.near);
       if (changed) light.shadow.needsUpdate = true;
     }
   };
@@ -286,16 +307,15 @@ export function createApartmentRenderer(
       const center = apartment.bounds.getCenter(new Vector3());
       const radius = Math.max(apartment.bounds.getSize(new Vector3()).length(), 0.1);
       shadowRadius = radius;
-      // Scale the receiver offset with shadow texels so front-face shadows stay acne-free
-      // for both small fixtures and full apartments. This never changes model geometry.
-      light.shadow.normalBias = ((2 * radius) / light.shadow.mapSize.x) * 2;
+      replaceLuminaires();
       light.target.position.copy(center);
       light.position.copy(center).add(new Vector3(radius, radius * 2, radius));
       Object.assign(light.shadow.camera, {
-        left: -radius,
-        right: radius,
-        top: radius,
-        bottom: -radius,
+        // The half-diagonal encloses the bounds from every light direction.
+        left: -radius / 2,
+        right: radius / 2,
+        top: radius / 2,
+        bottom: -radius / 2,
         near: radius / 100,
         far: radius * 5,
       });
@@ -304,6 +324,13 @@ export function createApartmentRenderer(
       applyLighting();
       light.shadow.needsUpdate = true;
       selectCamera(null);
+    },
+    setLuminaires(next) {
+      if (disposed) return;
+      luminaireInputs = next;
+      replaceLuminaires();
+      applyShadows();
+      render();
     },
     resize(nextWidth, nextHeight) {
       if (disposed) return;
@@ -349,7 +376,9 @@ export function createApartmentRenderer(
         renderer.setPixelRatio(settings.pixelRatio);
         renderer.setSize(width, height, false);
       }
+      const shadowChanged = settings.shadowQuality !== quality.shadowQuality;
       quality = { ...settings };
+      if (shadowChanged) replaceLuminaires();
       applyShadows();
       applyLighting();
       render();
@@ -384,6 +413,7 @@ export function createApartmentRenderer(
       controls.dispose();
       apartment?.dispose();
       light.dispose();
+      luminaires.dispose();
       scene.backgroundNode = null;
       sky.dispose();
       scene.clear();
