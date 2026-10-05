@@ -27,3 +27,8 @@ export {
 export type { RendererQualitySettings, QualityLevel } from "./quality.js";
 
 export type { RuntimeLuminaire } from "./runtime-luminaires.js";
+export {
+  DEFAULT_POST_PROCESSING_SETTINGS,
+  isRendererPostProcessingSettings,
+} from "./post-processing.js";
+export type { RendererPostProcessingSettings } from "./post-processing.js";

@@ -482,6 +482,35 @@ After backend initialization, the renderer generates one 256-pixel-face PMREM us
 
 React owns the transient presentation selections and passes full updates to the renderer. The transient Rendering panel controls use intensity 0–4 / step 0.1, yaw 0–360° / step 1°, and exposure −4–4 EV / step 0.1. They are disabled until readiness and outside the fullscreen render element. Settings survive orbit, embedded-camera selection, Walk, focal-length changes, resize, and model replacement in the same renderer instance. Updates neither rebuild architectural models nor start a persistent render loop.
 
+Final viewport images go through a renderer-owned `ApartmentRenderPipeline`, using one
+Three.js `RenderPipeline` per `WebGPURenderer` on native WebGPU and automatic WebGL2 fallback.
+A TSL scene pass retains the existing scene/camera and MSAA policy in a half-float HDR target.
+Its output texture feeds full-scene luminance-threshold `BloomNode`; scene color plus bloom
+forms the HDR output. `RenderPipeline.outputColorTransform` remains enabled, applying the
+renderer tone mapping, exposure and output color conversion after this composition. There is
+no legacy composer, selective/MRT bloom, fixture geometry, or added lighting.
+
+`RendererPostProcessingSettings` is separate from quality and persistent presentation.
+`setPostProcessingSettings` validates the complete update atomically: enabled is boolean;
+strength and threshold are finite and non-negative; radius is finite in [0,1]. Defaults are
+**enabled, strength 0.05, radius 0.1, threshold 5**. The deliberately high threshold and low
+strength favor soft intense highlights over diffuse wall/floor glow. Uniform changes reuse
+the bloom node; enabling/disabling switches the output graph between the additive HDR result
+and scene color alone, with graph invalidation only on toggles. Disabled bloom runs no bloom
+passes. Every accepted edit requests an event-driven frame without rebuilding scene resources
+or resetting navigation. Scene pass and bloom read effective drawing-buffer dimensions each
+frame, following resize, DPR, aspect and fullscreen changes. Disposal releases the pipeline
+output material, bloom targets/materials and scene-pass target, including pending-init cleanup.
+
+React owns bloom at application session scope so model/design/material replacements and
+2D/3D, Studio/Physical and camera changes retain it. Rendering-panel ranges are strength 0–2
+(step 0.01), radius 0–1 (step 0.05), threshold 0–10 (step 0.1); all controls wait for renderer
+readiness and remain editable for every quality preset. Initialization recommends Off for
+restored Performance and On for Balanced, High or Custom. Only explicit named-preset selection
+reapplies Off/On/On. Bloom edits never mark quality Custom; individual quality edits and later
+display/DPR adaptation never overwrite bloom. No bloom state is written to local storage,
+project/design/material descriptors or Apartment SVG.
+
 `RendererQualitySettings` is a separate renderer-owned runtime contract: `pixelRatio`, `shadowQuality`, `environmentLightingEnabled`, and `fillLightLevel`. `setQualitySettings` validates the complete update before mutation and renders immediately. DPR must be finite and positive; changes call the backend's pixel-ratio and buffer-size APIs with retained CSS dimensions, without touching the camera. `resize(width, height)` owns viewport/projection size only and retains the chosen DPR. No hard DPR cap remains in the adapter.
 
 In Studio, shadow levels Off/Low/Medium/High disable shadows or select 1024/2048/4096-square PCF shadow maps. Directional-light casting is disabled for Off; backend shadows remain enabled if active design lights need them; the directional light itself remains. Enabled levels use the bounds half-diagonal to frame the directional shadow map, a four-texel normal bias, and a positive depth bias equivalent to 2.5 world-space texels normalized by the shadow camera depth range. This favors occlusion at wall–ceiling contacts while retaining directly lit surfaces; offsets shrink with increasing resolution. Wide Overcast filtering can still leave faint contact halos. The single-level floor receives directional shadows but is excluded as a caster in the overhead directional pass: it cannot occlude the interior above it, and including it would falsely shadow biased wall samples below floor height. It remains a caster for perspective point/spot passes. Floor-only cloned shadow masks preserve alpha masking and do not change shared ceiling/wall finishes. When an already allocated shadow map changes resolution, the adapter clones the directional-light configuration into a fresh light identity and disposes the previous light/target. This avoids stale depth-texture bindings after in-place shadow resizing in Three.js r185; apartment meshes, materials, cameras, and navigation are retained. The static apartment/key-light shadow map disables automatic updates and is invalidated on lighting-mode/instant changes, model replacement, or a shadow-quality change (including re-enablement), rather than regenerated during navigation. Environment disablement sets `scene.environment` to null, removing IBL/reflections while retaining the generated target and independent intensity/yaw values for re-enablement. Fill levels Off/Low/Medium/High set a white `AmbientLight` to 0/0.5/1/2; it adds non-directional diffuse illumination using the existing PBR materials, textures, and AO behavior. Quality updates do not replace meshes/materials, rebuild domain models, or start an idle render loop, and settings survive model replacement within an instance. Walk input updates the pose immediately but coalesces GPU redraws into one pending animation frame; an immediate settings/view update consumes that pending redraw, and disposal/device loss cancels it. This bounds queued work when pointer input outpaces the display.
@@ -513,7 +542,7 @@ sRGB fit (clamped to 1000–40000 K, then converted to linear RGB) supplies whit
 without camera white balance or persistence changes. This is qualitative lighting, not measured
 photometry. Manual JSON edits take effect on reload/reselection; no luminaire UI is implemented.
 
-The renderer APIs remain runtime-only. The browser currently maps resolved Design 1.0 / 1.1 presentation overrides and effective Material 1.0 / 1.1 finishes to these contracts. Persistent paths never enter the runtime material model. Resolved Design 1.1 luminaires are mapped to renderer-owned runtime light inputs. Luminaire placement/editing, environment assets, material-management UI, and post-processing remain future work.
+The renderer APIs remain runtime-only. The browser currently maps resolved Design 1.0 / 1.1 presentation overrides and effective Material 1.0 / 1.1 finishes to these contracts. Persistent paths never enter the runtime material model. Resolved Design 1.1 luminaires are mapped to renderer-owned runtime light inputs. Luminaire placement/editing, environment assets, material-management UI, realtime GI, IES, and path tracing remain future work.
 
 Responsibilities may include:
 
@@ -675,7 +704,7 @@ existing initialization/replacement/disposal lifecycle on WebGPU and the WebGL2 
 Visible sky is exterior scenery, never an environment-map shortcut through opaque walls.
 Diffuse sky transport/realtime GI remains deferred; dark interiors are expected, particularly
 under Overcast. Design 1.1 persistent luminaire validation and persistence are implemented
-across the package, server, and browser; renderer mapping is implemented. Luminaire placement/editing, bloom, IES photometry, path tracing, and richer atmospheric effects remain
+across the package, server, and browser; renderer mapping is implemented. Luminaire placement/editing, IES photometry, path tracing, and richer atmospheric effects remain
 future work.
 
 ---
@@ -1205,7 +1234,7 @@ The Project Format 1.0 loading and project-filesystem foundation is implemented 
 
 Phase 1 includes exact designable surfaces with shared physical mapping frames, renderer UV generation, transient texture-capable metallic/roughness PBR finish assignments with non-overlapping coverage, and zero-thickness transmissive glass (sections 5.8–5.9). Built-in environment lighting and transient intensity, yaw, tone-mapping, and EV exposure controls complete the Phase 1 presentation foundation. Phase 2 is complete: Design Format 1.0, shared validation/resolution, server persistence, and browser scenario discovery/selection/creation/editing are implemented. Phase 3 is complete for Material 1.0 and 1.1: the pure `@planaxis/material` format package, controlled server descriptor/texture reads, browser material resolution, renderer-owned texture decoding, and persistent PBR rendering with physical scale are implemented. Material 1.1 ambient-occlusion map/strength support is implemented throughout validation, browser/runtime translation, and Three.js adaptation, preserving Material 1.0 compatibility.
 
-Phase 4 has implemented the physical-daylight foundation and daylight controls described in section 7.1. Design Format 1.1 is now the accepted persistent luminaire contract; its `@planaxis/design`, server, and browser validation/persistence integration is implemented. Luminaire placement/editing, realtime GI, bloom, IES photometry, path tracing, environment assets, and richer atmospheric effects remain future Phase 4 work before Phase 5 asset importing and placement.
+Phase 4 has implemented the RenderPipeline/HDR bloom foundation, physical daylight and daylight controls described in section 7.1. Design Format 1.1 is now the accepted persistent luminaire contract; its `@planaxis/design`, server, and browser validation/persistence integration is implemented. Luminaire placement/editing, realtime GI, IES photometry, path tracing, environment assets, and richer atmospheric effects remain future Phase 4 work before Phase 5 asset importing and placement.
 
 The intended implementation order is now broadly:
 

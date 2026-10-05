@@ -41,7 +41,14 @@ visually culled from above. PlanAxis Design Format 1.1 is the accepted persisten
 contract; validation, persistence, and rendering are implemented. Point/spot cast shadows;
 linear (length × 1 cm) and area use one-sided shadowless rectangular emitters in both modes. New scenarios
 use Design 1.1; existing scenarios retain their schema and luminaires during name/presentation edits.
-Luminaire placement/editing, realtime GI, bloom, IES, path tracing, and richer atmospheric
+Final viewport rendering uses one renderer-owned Three.js RenderPipeline and full-scene HDR
+BloomNode before tone mapping/output conversion on WebGPU and automatic WebGL2 fallback.
+Runtime bloom defaults are enabled, strength 0.05, radius 0.1, threshold 5. Disabled bloom bypasses
+the effect graph. Browser bloom state is transient and separate from persisted quality:
+initial/restored Performance and explicit Performance selection recommend Off; Balanced/High
+recommend On; restored Custom starts On. Later manual bloom and DPR/quality-field changes
+remain independent. See the architecture overview for lifecycle and controls.
+Luminaire placement/editing, realtime GI, IES, path tracing, and richer atmospheric
 effects remain future work; 3D asset importing/placement follows in Phase 5.
 
 AI-assisted design and photorealistic rendering are downstream features. They must not replace or weaken the deterministic geometry and validation pipeline.

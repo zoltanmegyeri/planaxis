@@ -21,6 +21,7 @@ const renderer = vi.hoisted(() => ({
   setFocalLengthOverride: vi.fn(),
   setPresentationSettings: vi.fn(),
   setQualitySettings: vi.fn(),
+  setPostProcessingSettings: vi.fn(),
   setLightingMode: vi.fn(),
   dispose: vi.fn(),
 }));
@@ -941,4 +942,51 @@ it("installs resolved design lights, preserves them across views and clears them
   await select("");
   await click("3D");
   expect(renderer.setLuminaires).toHaveBeenLastCalledWith([]);
+});
+
+it("retains transient bloom through design/material replacement and lighting/camera changes", async () => {
+  const located = alternativeSource.replace(
+    '"level":',
+    '"location": { "latitude": 47.5, "longitude": 19, "northHeading": 270 }, "level":',
+  );
+  sources.set(alternativePath, located);
+  descriptors.set(path, {
+    schema: "planaxis-design/1.1",
+    name: "Lights",
+    architecture: alternativePath,
+    luminaires: [
+      {
+        id: "point",
+        type: "point",
+        position: { x: 50, y: 50, z: 200 },
+        luminousFluxLumens: 1000,
+        colorTemperatureKelvin: 3000,
+        enabled: true,
+        dimming: 1,
+      },
+    ],
+  });
+  await mount();
+  await select();
+  await click("3D");
+  await change("Bloom strength", "0.4");
+  await change("Bloom radius", "0.6");
+  await change("Bloom threshold", "3");
+  await act(async () => control("Bloom enabled").click());
+  const settings = { bloomEnabled: false, bloomStrength: 0.4, bloomRadius: 0.6, bloomThreshold: 3 };
+  expect(renderer.setPostProcessingSettings).toHaveBeenLastCalledWith(settings);
+  const updates = renderer.setPostProcessingSettings.mock.calls.length;
+  await change("3D lighting mode", "physical");
+  await change("3D lighting mode", "studio");
+  await change("3D camera", "camera-1");
+  expect(renderer.setPostProcessingSettings).toHaveBeenCalledTimes(updates);
+  await select(otherPath);
+  await click("3D");
+  expect(renderer.setPostProcessingSettings).toHaveBeenCalledTimes(updates + 1);
+  expect(renderer.setPostProcessingSettings).toHaveBeenLastCalledWith(settings);
+  await select(path);
+  await click("3D");
+  expect(renderer.setPostProcessingSettings).toHaveBeenCalledTimes(updates + 2);
+  expect(renderer.setPostProcessingSettings).toHaveBeenLastCalledWith(settings);
+  expect(saved).toEqual([]);
 });

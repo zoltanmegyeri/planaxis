@@ -170,6 +170,32 @@ quality/model changes and final disposal release owned resources. Rendering rema
 Manual JSON edits followed by reload/reselection are supported; luminaire editing UI, fixture
 meshes, IES, GI and rectangular shadows remain deferred. See the architecture runtime contract.
 
+### RenderPipeline and HDR bloom refinement (2026-10-04)
+
+Final viewport rendering uses one `RenderPipeline` per existing `WebGPURenderer`. A TSL scene
+pass supplies half-float HDR color to full-scene `BloomNode`; the additive scene/bloom result
+precedes RenderPipeline's renderer-driven tone mapping/exposure and output color conversion.
+The same node graph serves native WebGPU and automatic WebGL2 fallback. Backend/pipeline
+failures retain the application failure path; no `EffectComposer` or alternate renderer exists.
+
+Full-scene threshold bloom is deliberate because Design 1.1 luminaires describe idealized
+emitters without visible fixture meshes. Do not invent emissive geometry or MRT extraction.
+Defaults are enabled, strength 0.05, radius 0.1, threshold 5, favoring soft HDR highlights while
+suppressing diffuse surface glow. Bloom supplies neither lighting nor GI.
+
+The renderer owns a separately validated runtime post-processing contract. Uniform edits reuse
+the effect; toggles invalidate the output graph and bypass all bloom work when disabled.
+The scene/camera, architecture, finishes and lights are retained. Both passes follow effective
+drawing-buffer size during event-driven frames; no idle loop is added. Explicit disposal owns
+the output material, scene-pass target and BloomNode resources, including in-flight-init cleanup.
+
+React owns session bloom controls independently of quality persistence. Startup maps restored
+Performance to Off and Balanced/High/Custom to On. Explicit Performance/Balanced/High selection
+recommends Off/On/On, after which manual bloom overrides leave quality unchanged. Quality-field
+edits and display/DPR adaptation leave bloom unchanged. State survives design and view changes
+but is never written to local storage or any persistent format. Luminaire placement/editing,
+realtime GI, IES and path tracing remain deferred.
+
 ## Cameras and lifecycle
 
 OrbitControls supplies orbit, pan, and dolly with mouse and touch input. Initial framing

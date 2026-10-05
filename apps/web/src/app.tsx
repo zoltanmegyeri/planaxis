@@ -1,3 +1,5 @@
+import { DEFAULT_POST_PROCESSING_SETTINGS } from "@planaxis/renderer-three";
+import { nativePixelRatio, restoreQuality } from "./render-quality.js";
 import { DEFAULT_WEATHER } from "@planaxis/simulation";
 import type { LightingMode, PhysicalSimulation } from "@planaxis/simulation";
 import { useEffect, useState } from "react";
@@ -25,6 +27,11 @@ export function App(): ReactElement {
   const [simulation, setSimulation] = useState<PhysicalSimulation>(() => ({
     instant: sessionInstant,
     weather: DEFAULT_WEATHER,
+  }));
+  const [postProcessing, setPostProcessing] = useState(() => ({
+    ...DEFAULT_POST_PROCESSING_SETTINGS,
+    bloomEnabled:
+      restoreQuality(nativePixelRatio(window.devicePixelRatio)).preset !== "Performance",
   }));
   const [lightingMode, setLightingMode] = useState<LightingMode>("studio");
   const active = useDocument();
@@ -206,6 +213,8 @@ export function App(): ReactElement {
         ) : is3D && current.status === "valid" ? (
           <ThreeViewport
             key={design.selectedPath}
+            postProcessing={postProcessing}
+            onPostProcessingChange={setPostProcessing}
             model={current.architecturalModel}
             simulation={simulation}
             sessionInstant={sessionInstant}

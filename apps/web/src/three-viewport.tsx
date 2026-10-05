@@ -1,4 +1,5 @@
 import { DaylightControls } from "./daylight-controls.js";
+import { BloomControls } from "./bloom-controls.js";
 import type { LightingMode, PhysicalSimulation } from "@planaxis/simulation";
 import { createPortal } from "react-dom";
 import { isWorkspaceShortcut, NavigationHelp, TransientPanel } from "./transient-panel.js";
@@ -19,6 +20,7 @@ import type {
   FullFrameFocalLength,
   RendererPresentationSettings,
   RendererQualitySettings,
+  RendererPostProcessingSettings,
 } from "@planaxis/renderer-three";
 import { useEffect, useRef, useState } from "react";
 import type { ReactElement } from "react";
@@ -61,6 +63,8 @@ export function ThreeViewport({
   onSimulationChange,
   selectedLightingMode,
   onLightingModeChange,
+  postProcessing,
+  onPostProcessingChange,
 }: {
   model: ArchitecturalModel3D;
   luminaires?: readonly RuntimeLuminaire[];
@@ -69,6 +73,8 @@ export function ThreeViewport({
   onSimulationChange: (next: PhysicalSimulation) => void;
   selectedLightingMode: LightingMode;
   onLightingModeChange: (mode: LightingMode) => void;
+  postProcessing: RendererPostProcessingSettings;
+  onPostProcessingChange: (settings: RendererPostProcessingSettings) => void;
   onFailure: (error: unknown) => void;
   toolbar: HTMLDivElement | null;
   panel: WorkspacePanel;
@@ -97,6 +103,18 @@ export function ThreeViewport({
   lightingRef.current = { mode: lightingMode, ...simulation };
   const [nativeDpr, setNativeDpr] = useState(() => nativePixelRatio(window.devicePixelRatio));
   const [quality, setQuality] = useState(() => restoreQuality(nativeDpr));
+  const postProcessingRef = useRef(postProcessing);
+  postProcessingRef.current = postProcessing;
+  const updatePostProcessing = (update: Partial<RendererPostProcessingSettings>): void => {
+    const next = { ...postProcessingRef.current, ...update };
+    try {
+      renderer.current?.setPostProcessingSettings(next);
+      postProcessingRef.current = next;
+      onPostProcessingChange(next);
+    } catch (error) {
+      onFailure(error);
+    }
+  };
   const qualityRef = useRef(quality);
   qualityRef.current = quality;
   const updateQuality = (next: QualityPreference): void => {
@@ -188,6 +206,7 @@ export function ThreeViewport({
       renderer.current = instance;
       instance.setPresentationSettings(presentationRef.current);
       instance.setQualitySettings(qualityRef.current.settings);
+      instance.setPostProcessingSettings(postProcessingRef.current);
       const resize = (): void => {
         try {
           const rect = area.getBoundingClientRect();
@@ -451,9 +470,13 @@ export function ThreeViewport({
           preference={quality}
           nativeDpr={nativeDpr}
           ready={ready}
-          onPreset={(preset) => updateQuality(qualityPreset(preset, nativeDpr))}
+          onPreset={(preset) => {
+            updateQuality(qualityPreset(preset, nativeDpr));
+            updatePostProcessing({ bloomEnabled: preset !== "Performance" });
+          }}
           onEdit={editQualitySettings}
         />
+        <BloomControls settings={postProcessing} ready={ready} onEdit={updatePostProcessing} />
         <label>
           Tone mapping{" "}
           <select

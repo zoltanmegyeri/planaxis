@@ -24,6 +24,7 @@ const rendererMocks = vi.hoisted(() => ({
   setFocalLengthOverride: vi.fn(),
   setPresentationSettings: vi.fn(),
   setQualitySettings: vi.fn(),
+  setPostProcessingSettings: vi.fn(),
   setLightingMode: vi.fn(),
   render: vi.fn(),
   dispose: vi.fn(),
@@ -1000,7 +1001,7 @@ it("exposes primary actions in one toolbar and keeps secondary settings transien
   await clickControl("Rendering");
   const rendering = host.querySelector<HTMLElement>("#rendering-panel");
   expect(rendering?.hidden).toBe(false);
-  expect(rendering?.querySelectorAll("input, select")).toHaveLength(10);
+  expect(rendering?.querySelectorAll("input, select")).toHaveLength(14);
   await clickControl("Camera settings");
   expect(rendering?.hidden).toBe(true);
   expect(host.querySelector<HTMLElement>("#camera-panel")?.hidden).toBe(false);
@@ -1326,4 +1327,111 @@ it("explains DST gaps without changing the instant and reports repeated minutes"
     Date.parse("2024-10-27T00:30:00Z"),
     "sunny",
   );
+});
+
+function bloomControl(label: string): HTMLInputElement {
+  const control = host.querySelector<HTMLInputElement>(`[aria-label="${label}"]`);
+  if (!control) throw new Error(`Missing ${label}`);
+  return control;
+}
+
+it.each(["Performance", "Balanced", "High", "Custom"] as const)(
+  "initializes transient bloom from restored %s",
+  async (preset) => {
+    window.localStorage.setItem(
+      QUALITY_STORAGE_KEY,
+      JSON.stringify({ version: 1, ...qualityPreset("Balanced", 1), preset }),
+    );
+    const startup = deferred<void>();
+    rendererMocks.initialize.mockReturnValueOnce(startup.promise);
+    await mountProject();
+    await clickView("3D");
+    for (const label of ["Bloom enabled", "Bloom strength", "Bloom radius", "Bloom threshold"]) {
+      expect(bloomControl(label).disabled).toBe(true);
+    }
+    expect(bloomControl("Bloom enabled").checked).toBe(preset !== "Performance");
+    expect(rendererMocks.setPostProcessingSettings).toHaveBeenLastCalledWith({
+      bloomEnabled: preset !== "Performance",
+      bloomStrength: 0.05,
+      bloomRadius: 0.1,
+      bloomThreshold: 5,
+    });
+    await act(async () => startup.resolve());
+    for (const label of ["Bloom enabled", "Bloom strength", "Bloom radius", "Bloom threshold"]) {
+      expect(bloomControl(label).disabled).toBe(false);
+    }
+  },
+);
+
+it("keeps bloom overrides independent of named presets, manual quality and display adaptation", async () => {
+  const dpr = vi.spyOn(window, "devicePixelRatio", "get").mockReturnValue(3);
+  await mountProject(fixture("valid/minimal-semantic-schema.svg"));
+  await clickView("3D");
+  for (const preset of ["Performance", "Balanced", "High"] as const) {
+    await selectQuality("3D quality preset", preset);
+    expect(bloomControl("Bloom enabled").checked).toBe(preset !== "Performance");
+    const storage = window.localStorage.getItem(QUALITY_STORAGE_KEY);
+    await act(async () => bloomControl("Bloom enabled").click());
+    expect(bloomControl("Bloom enabled").checked).toBe(preset === "Performance");
+    for (const [label, value] of [
+      ["Bloom strength", "0.5"],
+      ["Bloom radius", "0.8"],
+      ["Bloom threshold", "4"],
+    ]) {
+      await act(async () => {
+        const input = bloomControl(label!);
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(
+          input,
+          value,
+        );
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+    }
+    expect(qualityControl("3D quality preset").value).toBe(preset);
+    expect(window.localStorage.getItem(QUALITY_STORAGE_KEY)).toBe(storage);
+    expect(rendererMocks.setPostProcessingSettings).toHaveBeenLastCalledWith({
+      bloomEnabled: preset === "Performance",
+      bloomStrength: 0.5,
+      bloomRadius: 0.8,
+      bloomThreshold: 4,
+    });
+    const updates = rendererMocks.setPostProcessingSettings.mock.calls.length;
+    dpr.mockReturnValue(preset === "High" ? 2 : 1.5);
+    await act(async () => window.dispatchEvent(new Event("resize")));
+    expect(rendererMocks.setPostProcessingSettings).toHaveBeenCalledTimes(updates);
+  }
+  const updates = rendererMocks.setPostProcessingSettings.mock.calls.length;
+  await selectQuality("3D shadow quality", "Low");
+  await selectQuality("3D fill light", "High");
+  await selectQuality("3D pixel ratio", "1");
+  await act(async () =>
+    host.querySelector<HTMLInputElement>('[aria-label="3D environment lighting"]')?.click(),
+  );
+  expect(qualityControl("3D quality preset").value).toBe("Custom");
+  await selectQuality("3D camera", "@walk");
+  await selectQuality("3D focal length", "35");
+  await selectQuality("3D render aspect ratio", "1:1");
+  await clickControl("Full screen");
+  await browserExit();
+  expect(rendererMocks.setPostProcessingSettings).toHaveBeenCalledTimes(updates);
+  expect(rendererMocks.setModel).toHaveBeenCalledTimes(1);
+  expect(rendererMocks.dispose).not.toHaveBeenCalled();
+  await clickView("2D");
+  await clickView("3D");
+  expect(rendererMocks.setPostProcessingSettings).toHaveBeenLastCalledWith({
+    bloomEnabled: false,
+    bloomStrength: 0.5,
+    bloomRadius: 0.8,
+    bloomThreshold: 4,
+  });
+  expect(window.localStorage.length).toBe(1);
+  await remountProject();
+  await clickView("3D");
+  expect(rendererMocks.setPostProcessingSettings).toHaveBeenLastCalledWith({
+    bloomEnabled: true,
+    bloomStrength: 0.05,
+    bloomRadius: 0.1,
+    bloomThreshold: 5,
+  });
 });

@@ -22,7 +22,11 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
 const gpu = vi.hoisted(() => ({
   init: vi.fn<() => Promise<void>>(),
-  render: vi.fn(),
+  pipelineRender: vi.fn(),
+  directRender: vi.fn(),
+  pipelines: [] as import("three/webgpu").RenderPipeline[],
+  passes: [] as ReturnType<typeof import("three/tsl").pass>[],
+  blooms: [] as ReturnType<typeof import("three/addons/tsl/display/BloomNode.js").bloom>[],
   dispose: vi.fn(),
   setSize: vi.fn(),
   setPixelRatio: vi.fn(),
@@ -41,6 +45,16 @@ vi.mock("three/webgpu", async (original) => {
   const actual = await original<typeof import("three/webgpu")>();
   return {
     ...actual,
+    RenderPipeline: class extends actual.RenderPipeline {
+      constructor(...args: ConstructorParameters<typeof actual.RenderPipeline>) {
+        super(...args);
+        gpu.pipelines.push(this);
+      }
+      override render(): void {
+        const scenePass = gpu.passes.at(-1);
+        gpu.pipelineRender(scenePass?.scene, scenePass?.camera);
+      }
+    },
     PMREMGenerator: class {
       fromScene = gpu.fromScene;
       dispose = gpu.generatorDispose;
@@ -52,10 +66,32 @@ vi.mock("three/webgpu", async (original) => {
       }
       shadowMap = { enabled: false };
       init = gpu.init;
-      render = gpu.render;
+      render = gpu.directRender;
       dispose = gpu.dispose;
       setSize = gpu.setSize;
       setPixelRatio = gpu.setPixelRatio;
+    },
+  };
+});
+vi.mock("three/tsl", async (original) => {
+  const actual = await original<typeof import("three/tsl")>();
+  return {
+    ...actual,
+    pass: (...args: Parameters<typeof actual.pass>) => {
+      const result = actual.pass(...args);
+      gpu.passes.push(result);
+      return result;
+    },
+  };
+});
+vi.mock("three/addons/tsl/display/BloomNode.js", async (original) => {
+  const actual = await original<typeof import("three/addons/tsl/display/BloomNode.js")>();
+  return {
+    ...actual,
+    bloom: (...args: Parameters<typeof actual.bloom>) => {
+      const result = actual.bloom(...args);
+      gpu.blooms.push(result);
+      return result;
     },
   };
 });
@@ -76,6 +112,7 @@ import {
   createApartmentRenderer,
   DEFAULT_PRESENTATION_SETTINGS,
   DEFAULT_QUALITY_SETTINGS,
+  DEFAULT_POST_PROCESSING_SETTINGS,
 } from "../src/index.js";
 import type { RendererPresentationSettings } from "../src/index.js";
 import { fullFrameHorizontalFov, verticalFov } from "../src/cameras.js";
@@ -85,6 +122,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   gpu.init.mockResolvedValue();
   gpu.instances.length = 0;
+  gpu.pipelines.length = 0;
+  gpu.passes.length = 0;
+  gpu.blooms.length = 0;
   gpu.fromScene.mockImplementation(
     (_room, _sigma, _near, _far, options: { renderTarget: RenderTarget }) => {
       options.renderTarget.addEventListener("dispose", gpu.environmentDispose);
@@ -100,14 +140,14 @@ it("resizes embedded FOV, applies selected DPR, replaces models and releases own
   renderer.setModel(modelFixture());
   await renderer.initialize();
   renderer.selectCamera("camera-1");
-  const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+  const camera = gpu.pipelineRender.mock.calls.at(-1)?.[1] as PerspectiveCamera;
   const fov = camera.fov;
   renderer.resize(400, 800);
   expect(camera.aspect).toBe(0.5);
   expect(camera.fov).toBeGreaterThan(fov);
   expect(gpu.setPixelRatio).toHaveBeenCalledWith(4);
   expect(gpu.setSize).toHaveBeenCalledWith(400, 800, false);
-  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  const scene = gpu.pipelineRender.mock.calls.at(-1)?.[0] as Scene;
   const first = scene.children.find(
     (object) => object.type === "Group" && object.name !== "design-luminaires",
   );
@@ -122,9 +162,9 @@ it("resizes embedded FOV, applies selected DPR, replaces models and releases own
   expect(camera.fov).toBeCloseTo(verticalFov(fullFrameHorizontalFov(50), camera.aspect));
   renderer.dispose();
   renderer.dispose();
-  const count = gpu.render.mock.calls.length;
+  const count = gpu.pipelineRender.mock.calls.length;
   renderer.render();
-  expect(gpu.render).toHaveBeenCalledTimes(count);
+  expect(gpu.pipelineRender).toHaveBeenCalledTimes(count);
   expect(gpu.dispose).toHaveBeenCalledTimes(1);
   expect(orbit.dispose).toHaveBeenCalledTimes(1);
   expect(scene.children).toHaveLength(0);
@@ -139,12 +179,19 @@ it("defers backend disposal until pending initialization settles and never rende
   const renderer = createApartmentRenderer(canvas, vi.fn());
   renderer.setModel(modelFixture());
   const pending = renderer.initialize();
+  const pipelineDispose = vi.spyOn(gpu.pipelines[0]!, "dispose");
+  const bloomDispose = vi.spyOn(gpu.blooms[0]!, "dispose");
+  const passDispose = vi.spyOn(gpu.passes[0]!, "dispose");
   renderer.dispose();
   expect(gpu.dispose).not.toHaveBeenCalled();
+  expect(pipelineDispose).not.toHaveBeenCalled();
   finish();
   await pending;
   expect(gpu.dispose).toHaveBeenCalledTimes(1);
-  expect(gpu.render).not.toHaveBeenCalled();
+  expect(pipelineDispose).toHaveBeenCalledTimes(1);
+  expect(bloomDispose).toHaveBeenCalledTimes(1);
+  expect(passDispose).toHaveBeenCalledTimes(1);
+  expect(gpu.pipelineRender).not.toHaveBeenCalled();
   expect(gpu.fromScene).not.toHaveBeenCalled();
 });
 it("reports initialization and draw failures", async () => {
@@ -156,7 +203,7 @@ it("reports initialization and draw failures", async () => {
   const renderer = createApartmentRenderer(canvas, onError);
   await renderer.initialize();
   renderer.setModel(modelFixture());
-  gpu.render.mockImplementationOnce(() => {
+  gpu.pipelineRender.mockImplementationOnce(() => {
     throw new Error("Draw failed");
   });
   renderer.render();
@@ -175,7 +222,7 @@ it("keeps distant valid embedded cameras within the scene clipping range", async
   });
   await renderer.initialize();
   renderer.selectCamera(source.id);
-  const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+  const camera = gpu.pipelineRender.mock.calls.at(-1)?.[1] as PerspectiveCamera;
   expect(camera.far).toBeGreaterThan(10000);
   renderer.dispose();
 });
@@ -185,17 +232,17 @@ it("replaces manual focal overrides on camera selection and preserves them on re
   renderer.resize(800, 400);
   renderer.setModel(modelFixture());
   await renderer.initialize();
-  let camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+  let camera = gpu.pipelineRender.mock.calls.at(-1)?.[1] as PerspectiveCamera;
   expect(camera.fov).toBeCloseTo(verticalFov(fullFrameHorizontalFov(50), camera.aspect));
 
   const inspectionPosition = camera.position.clone();
   renderer.setFocalLengthOverride(35);
-  camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+  camera = gpu.pipelineRender.mock.calls.at(-1)?.[1] as PerspectiveCamera;
   expect(camera.fov).toBeCloseTo(verticalFov(fullFrameHorizontalFov(35), 2));
   expect(camera.position).toEqual(inspectionPosition);
 
   renderer.selectCamera("camera-1");
-  camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+  camera = gpu.pipelineRender.mock.calls.at(-1)?.[1] as PerspectiveCamera;
   expect(camera.fov).toBeCloseTo(verticalFov(70, 2));
   const embeddedPosition = camera.position.clone();
   renderer.setFocalLengthOverride(35);
@@ -222,7 +269,7 @@ it.each([16, 24, 35, 50, 70, 85] as const)(
     await renderer.initialize();
     renderer.selectCamera("camera-1");
     renderer.setFocalLengthOverride(focalLength);
-    const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+    const camera = gpu.pipelineRender.mock.calls.at(-1)?.[1] as PerspectiveCamera;
     expect(camera.fov).toBeCloseTo(verticalFov(fullFrameHorizontalFov(focalLength), 1.5));
     renderer.dispose();
   },
@@ -252,7 +299,7 @@ it("anchors Walk to the first camera in document order at floor + 165 cm with ne
   });
   await renderer.initialize();
   renderer.selectWalk();
-  const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+  const camera = gpu.pipelineRender.mock.calls.at(-1)?.[1] as PerspectiveCamera;
   expect(camera.position.toArray()).toEqual([1.25, 4.65, 0.75]);
   expect(camera.getWorldDirection(new Vector3()).toArray()).toEqual([
     expect.closeTo(0),
@@ -272,7 +319,7 @@ it("retains Walk pose and independent projection through view changes and resize
   await renderer.initialize();
   renderer.selectWalk();
   renderer.setFocalLengthOverride(35);
-  const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+  const camera = gpu.pipelineRender.mock.calls.at(-1)?.[1] as PerspectiveCamera;
   surface.key("keydown", "KeyW");
   surface.pointer("pointerdown");
   surface.pointer("pointermove", 100, 100);
@@ -321,19 +368,19 @@ it("retains Walk pose and independent projection through view changes and resize
   expect(camera.position.z).toBeCloseTo(-1);
   renderer.dispose();
   expect(surface.frames.size).toBe(0);
-  const renders = gpu.render.mock.calls.length;
+  const renders = gpu.pipelineRender.mock.calls.length;
   surface.key("keydown", "KeyW");
   surface.pointer("pointerdown");
   surface.pointer("pointermove", 500, 500);
   surface.frame(1000);
-  expect(gpu.render).toHaveBeenCalledTimes(renders);
+  expect(gpu.pipelineRender).toHaveBeenCalledTimes(renders);
 });
 
 it("rejects Walk without an embedded camera and keeps inspection available", async () => {
   const renderer = createApartmentRenderer(navigationSurface().canvas, vi.fn());
   renderer.setModel({ ...modelFixture(), cameras: [] });
   await renderer.initialize();
-  const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+  const camera = gpu.pipelineRender.mock.calls.at(-1)?.[1] as PerspectiveCamera;
   const inspection = camera.position.clone();
   expect(() => renderer.selectWalk()).toThrow("Free walk requires at least one camera");
   renderer.resize(800, 400);
@@ -363,7 +410,7 @@ it("replaces transient finishes, disposes their textures, and retains the scene 
   };
   renderer.setModel(model, finishes);
   await renderer.initialize();
-  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  const scene = gpu.pipelineRender.mock.calls.at(-1)?.[0] as Scene;
   const floor = scene.getObjectByName("floor");
   if (
     !(floor instanceof Mesh) ||
@@ -404,7 +451,7 @@ it("creates IBL once while keeping the neutral background and deterministic shad
   expect(gpu.fromScene).not.toHaveBeenCalled();
   await renderer.initialize();
   await renderer.initialize();
-  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  const scene = gpu.pipelineRender.mock.calls.at(-1)?.[0] as Scene;
   expect(scene.environment).toBe(gpu.fromScene.mock.results[0]?.value.texture);
   expect(scene.background).toEqual(new Color(0xe8ecec));
   expect(scene.environmentIntensity).toBe(1);
@@ -442,16 +489,16 @@ it("applies presentation in one frame without rebuilding or starting an idle loo
     exposureEv: 2,
   };
   renderer.setPresentationSettings(settings);
-  expect(gpu.render).not.toHaveBeenCalled();
+  expect(gpu.pipelineRender).not.toHaveBeenCalled();
   await renderer.initialize();
-  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  const scene = gpu.pipelineRender.mock.calls.at(-1)?.[0] as Scene;
   const environment = scene.environment;
   const floor = scene.getObjectByName("floor");
-  const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+  const camera = gpu.pipelineRender.mock.calls.at(-1)?.[1] as PerspectiveCamera;
   const position = camera.position.clone();
-  const renders = gpu.render.mock.calls.length;
+  const renders = gpu.pipelineRender.mock.calls.length;
   renderer.setPresentationSettings({ ...settings, toneMapping: "Neutral" });
-  expect(gpu.render).toHaveBeenCalledTimes(renders + 1);
+  expect(gpu.pipelineRender).toHaveBeenCalledTimes(renders + 1);
   expect(gpu.instances[0]?.toneMapping).toBe(NeutralToneMapping);
   expect(scene.getObjectByName("floor")).toBe(floor);
   expect(camera.position).toEqual(position);
@@ -497,8 +544,8 @@ it.each([
   const renderer = createApartmentRenderer(canvas, vi.fn());
   renderer.setModel(modelFixture());
   await renderer.initialize();
-  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
-  const renders = gpu.render.mock.calls.length;
+  const scene = gpu.pipelineRender.mock.calls.at(-1)?.[0] as Scene;
+  const renders = gpu.pipelineRender.mock.calls.length;
   expect(() =>
     renderer.setPresentationSettings({
       ...DEFAULT_PRESENTATION_SETTINGS,
@@ -510,16 +557,19 @@ it.each([
   expect(scene.environmentRotation.y).toBe(0);
   expect(gpu.instances[0]?.toneMapping).toBe(AgXToneMapping);
   expect(gpu.instances[0]?.toneMappingExposure).toBe(1);
-  expect(gpu.render).toHaveBeenCalledTimes(renders);
+  expect(gpu.pipelineRender).toHaveBeenCalledTimes(renders);
   renderer.dispose();
 });
 
 it("releases generation resources and the backend if environment generation fails", async () => {
-  const targetDispose = vi.spyOn(RenderTarget.prototype, "dispose");
+  const targetDispose = vi.fn();
   const roomDispose = vi.spyOn(RoomEnvironment.prototype, "dispose");
-  gpu.fromScene.mockImplementationOnce(() => {
-    throw new Error("Environment generation failed");
-  });
+  gpu.fromScene.mockImplementationOnce(
+    (_room, _sigma, _near, _far, options: { renderTarget: RenderTarget }) => {
+      options.renderTarget.addEventListener("dispose", targetDispose);
+      throw new Error("Environment generation failed");
+    },
+  );
   const renderer = createApartmentRenderer(canvas, vi.fn());
   renderer.setModel(modelFixture());
   await expect(renderer.initialize()).rejects.toThrow("Environment generation failed");
@@ -527,11 +577,10 @@ it("releases generation resources and the backend if environment generation fail
   expect(roomDispose).toHaveBeenCalledTimes(1);
   expect(gpu.dispose).toHaveBeenCalledTimes(1);
   expect(targetDispose).toHaveBeenCalledTimes(1);
-  expect(gpu.render).not.toHaveBeenCalled();
+  expect(gpu.pipelineRender).not.toHaveBeenCalled();
   renderer.dispose();
   expect(gpu.dispose).toHaveBeenCalledTimes(1);
   roomDispose.mockRestore();
-  targetDispose.mockRestore();
 });
 
 it("updates DPR buffers immediately without changing CSS sizing, pose, projection, or scene", async () => {
@@ -547,18 +596,18 @@ it("updates DPR buffers immediately without changing CSS sizing, pose, projectio
   ]) {
     mode();
     renderer.setFocalLengthOverride(35);
-    const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
-    const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+    const scene = gpu.pipelineRender.mock.calls.at(-1)?.[0] as Scene;
+    const camera = gpu.pipelineRender.mock.calls.at(-1)?.[1] as PerspectiveCamera;
     const position = camera.position.clone();
     const orientation = camera.quaternion.clone();
     const projection = camera.projectionMatrix.clone();
     const floor = scene.getObjectByName("floor");
     for (const pixelRatio of [1.25, 2.5, 3, 1]) {
-      const count = gpu.render.mock.calls.length;
+      const count = gpu.pipelineRender.mock.calls.length;
       renderer.setQualitySettings({ ...DEFAULT_QUALITY_SETTINGS, pixelRatio });
       expect(gpu.setPixelRatio).toHaveBeenLastCalledWith(pixelRatio);
       expect(gpu.setSize).toHaveBeenLastCalledWith(800, 400, false);
-      expect(gpu.render).toHaveBeenCalledTimes(count + 1);
+      expect(gpu.pipelineRender).toHaveBeenCalledTimes(count + 1);
       expect(camera.position).toEqual(position);
       expect(camera.quaternion.toArray()).toEqual(orientation.toArray());
       expect(camera.projectionMatrix).toEqual(projection);
@@ -583,7 +632,7 @@ it("maps every shadow level and rescales bias without replacing lights or geomet
   const renderer = createApartmentRenderer(canvas, vi.fn());
   renderer.setModel(modelFixture());
   await renderer.initialize();
-  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  const scene = gpu.pipelineRender.mock.calls.at(-1)?.[0] as Scene;
   const light = scene.children.find((object) => object instanceof DirectionalLight);
   if (!(light instanceof DirectionalLight)) throw new Error("Missing key light");
   const mediumBias = light.shadow.normalBias;
@@ -625,7 +674,7 @@ it("disables IBL before initialization and restores the same environment with cu
   renderer.setModel(modelFixture());
   renderer.setQualitySettings({ ...DEFAULT_QUALITY_SETTINGS, environmentLightingEnabled: false });
   await renderer.initialize();
-  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  const scene = gpu.pipelineRender.mock.calls.at(-1)?.[0] as Scene;
   expect(scene.environment).toBeNull();
   renderer.setPresentationSettings({
     ...DEFAULT_PRESENTATION_SETTINGS,
@@ -670,7 +719,7 @@ it("provides neutral fill at all levels while retaining PBR materials and textur
     resolveTexture: () => source,
   });
   await renderer.initialize();
-  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  const scene = gpu.pipelineRender.mock.calls.at(-1)?.[0] as Scene;
   const floor = scene.getObjectByName("floor");
   if (!(floor instanceof Mesh) || !(floor.material instanceof MeshStandardMaterial))
     throw new Error("Missing PBR floor");
@@ -713,9 +762,9 @@ it.each([
   const renderer = createApartmentRenderer(canvas, vi.fn());
   renderer.setModel(modelFixture());
   await renderer.initialize();
-  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  const scene = gpu.pipelineRender.mock.calls.at(-1)?.[0] as Scene;
   const environment = scene.environment;
-  const calls = gpu.render.mock.calls.length;
+  const calls = gpu.pipelineRender.mock.calls.length;
   expect(() =>
     renderer.setQualitySettings({
       ...DEFAULT_QUALITY_SETTINGS,
@@ -725,7 +774,7 @@ it.each([
   expect(scene.environment).toBe(environment);
   expect(gpu.setPixelRatio).not.toHaveBeenCalled();
   expect(gpu.instances[0]?.shadowMap.enabled).toBe(true);
-  expect(gpu.render).toHaveBeenCalledTimes(calls);
+  expect(gpu.pipelineRender).toHaveBeenCalledTimes(calls);
   renderer.dispose();
 });
 
@@ -735,7 +784,7 @@ it("bounds Walk rendering to one pending frame through repeated quality changes"
   renderer.setModel(modelFixture());
   await renderer.initialize();
   renderer.selectWalk();
-  const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+  const camera = gpu.pipelineRender.mock.calls.at(-1)?.[1] as PerspectiveCamera;
   for (let cycle = 0; cycle < 3; cycle++) {
     for (const shadowQuality of ["Off", "Medium", "High"] as const) {
       renderer.setQualitySettings({
@@ -743,15 +792,15 @@ it("bounds Walk rendering to one pending frame through repeated quality changes"
         shadowQuality,
         environmentLightingEnabled: shadowQuality !== "Off",
       });
-      const draws = gpu.render.mock.calls.length;
+      const draws = gpu.pipelineRender.mock.calls.length;
       const before = camera.quaternion.clone();
       surface.pointer("pointerdown");
       for (let move = 1; move <= 20; move++) surface.pointer("pointermove", move, move);
       expect(camera.quaternion.toArray()).not.toEqual(before.toArray());
-      expect(gpu.render).toHaveBeenCalledTimes(draws);
+      expect(gpu.pipelineRender).toHaveBeenCalledTimes(draws);
       expect(surface.frames.size).toBe(1);
       surface.frame(16);
-      expect(gpu.render).toHaveBeenCalledTimes(draws + 1);
+      expect(gpu.pipelineRender).toHaveBeenCalledTimes(draws + 1);
       expect(surface.frames.size).toBe(0);
       surface.pointer("pointerup");
     }
@@ -761,9 +810,9 @@ it("bounds Walk rendering to one pending frame through repeated quality changes"
   surface.elapse(8);
   surface.pointer("pointermove", 100, 100);
   // Movement and look share a pending draw rather than rendering separately per event.
-  const draws = gpu.render.mock.calls.length;
+  const draws = gpu.pipelineRender.mock.calls.length;
   renderer.setQualitySettings(DEFAULT_QUALITY_SETTINGS);
-  expect(gpu.render).toHaveBeenCalledTimes(draws + 1);
+  expect(gpu.pipelineRender).toHaveBeenCalledTimes(draws + 1);
   renderer.selectCamera(null);
   expect(surface.frames.size).toBe(0);
   renderer.selectWalk();
@@ -779,7 +828,7 @@ it("refreshes static shadows only for model replacement and shadow-quality chang
   const renderer = createApartmentRenderer(surface.canvas, vi.fn());
   renderer.setModel(modelFixture());
   await renderer.initialize();
-  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  const scene = gpu.pipelineRender.mock.calls.at(-1)?.[0] as Scene;
   const light = scene.children.find((object) => object instanceof DirectionalLight);
   if (!(light instanceof DirectionalLight)) throw new Error("Missing key light");
   expect(light.shadow.autoUpdate).toBe(false);
@@ -828,8 +877,8 @@ it.each(["studio", "physical"] as const)(
     renderer.setLightingMode(mode, Date.parse("2024-06-21T08:00:00Z"));
     await renderer.initialize();
     renderer.selectWalk();
-    const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
-    const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+    const scene = gpu.pipelineRender.mock.calls.at(-1)?.[0] as Scene;
+    const camera = gpu.pipelineRender.mock.calls.at(-1)?.[1] as PerspectiveCamera;
     const floor = scene.getObjectByName("floor");
     const position = camera.position.clone();
     const orientation = camera.quaternion.toArray();
@@ -848,7 +897,7 @@ it.each(["studio", "physical"] as const)(
       target.addEventListener("dispose", disposed);
       const lightDisposed = vi.fn();
       previous.addEventListener("dispose", lightDisposed);
-      gpu.render.mockImplementationOnce(() => {
+      gpu.pipelineRender.mockImplementationOnce(() => {
         expect(getLight()).not.toBe(previous);
         expect(getLight().shadow.map).toBeNull();
         expect(lightDisposed).toHaveBeenCalledTimes(1);
@@ -899,7 +948,7 @@ it("switches Studio and Physical lighting without resetting navigation or rebuil
   };
   renderer.setModel(model);
   await renderer.initialize();
-  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  const scene = gpu.pipelineRender.mock.calls.at(-1)?.[0] as Scene;
   const environment = scene.environment;
   const floor = scene.getObjectByName("floor");
   const getLight = () => {
@@ -915,7 +964,7 @@ it("switches Studio and Physical lighting without resetting navigation or rebuil
     () => renderer.selectWalk(),
   ]) {
     select();
-    const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+    const camera = gpu.pipelineRender.mock.calls.at(-1)?.[1] as PerspectiveCamera;
     const pose = camera.matrixWorld.clone();
     const position = camera.position.clone();
     renderer.setLightingMode("physical", instant);
@@ -981,7 +1030,7 @@ it.each([0, -0.001, -30])("disables direct Sun at elevation %s", async (elevatio
   try {
     renderer.setLightingMode("physical", Date.parse("2024-06-21T08:00:00Z"));
     await renderer.initialize();
-    const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+    const scene = gpu.pipelineRender.mock.calls.at(-1)?.[0] as Scene;
     expect(scene.children.find((object) => object instanceof DirectionalLight)?.intensity).toBe(0);
     expect(scene.environment).toBeNull();
   } finally {
@@ -1008,8 +1057,8 @@ it("updates and releases the Physical background with weaker, cooler, softer Ove
   renderer.setModel(model);
   await renderer.initialize();
   renderer.selectWalk();
-  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
-  const camera = gpu.render.mock.calls.at(-1)?.[1] as PerspectiveCamera;
+  const scene = gpu.pipelineRender.mock.calls.at(-1)?.[0] as Scene;
+  const camera = gpu.pipelineRender.mock.calls.at(-1)?.[1] as PerspectiveCamera;
   const pose = camera.position.clone();
   const floor = scene.getObjectByName("floor");
   const light = scene.children.find((item) => item instanceof DirectionalLight);
@@ -1091,7 +1140,7 @@ it("preserves design luminaires through daylight/navigation and disposes replace
     },
   ]);
   await renderer.initialize();
-  const scene = gpu.render.mock.calls.at(-1)?.[0] as Scene;
+  const scene = gpu.pipelineRender.mock.calls.at(-1)?.[0] as Scene;
   const group = scene.getObjectByName("design-luminaires");
   if (!group) throw new Error("Missing luminaire group");
   const lights = group.children.filter(
@@ -1149,4 +1198,103 @@ it("preserves design luminaires through daylight/navigation and disposes replace
   renderer.dispose();
   expect(ownedDispose).toHaveBeenCalledTimes(1);
   expect(ownedShadowDispose).toHaveBeenCalledTimes(1);
+});
+
+it("owns one HDR pipeline, bypasses disabled bloom and updates uniforms without rebuilding", async () => {
+  const surface = navigationSurface();
+  const renderer = createApartmentRenderer(surface.canvas, vi.fn());
+  renderer.setModel(modelFixture());
+  await renderer.initialize();
+  const pipeline = gpu.pipelines[0]!;
+  const scenePass = gpu.passes[0]!;
+  const bloomNode = gpu.blooms[0]!;
+  const composite = pipeline.outputNode;
+  const color = scenePass.getTextureNode("output");
+  expect(bloomNode.inputNode).toBe(color);
+  expect(pipeline.outputColorTransform).toBe(true);
+  expect(composite).toMatchObject({ node: { op: "+", aNode: color, bNode: bloomNode } });
+  expect(gpu.options).toHaveBeenCalledWith({
+    canvas: surface.canvas,
+    antialias: true,
+    logarithmicDepthBuffer: true,
+  });
+  expect(gpu.directRender).not.toHaveBeenCalled();
+  const scene = scenePass.scene;
+  const floor = scene.getObjectByName("floor");
+  renderer.selectWalk();
+  const camera = scenePass.camera;
+  const pose = camera.position.clone();
+  const defaults = DEFAULT_POST_PROCESSING_SETTINGS;
+  for (const bloomEnabled of [false, true, false, true]) {
+    pipeline.needsUpdate = false;
+    const draws = gpu.pipelineRender.mock.calls.length;
+    renderer.setPostProcessingSettings({
+      ...defaults,
+      bloomEnabled,
+      bloomStrength: 0.35,
+      bloomRadius: 0.6,
+      bloomThreshold: 4,
+    });
+    expect(pipeline.outputNode).toBe(bloomEnabled ? composite : color);
+    expect(pipeline.needsUpdate).toBe(true);
+    expect(bloomNode.strength.value).toBe(0.35);
+    expect(bloomNode.radius.value).toBe(0.6);
+    expect(bloomNode.threshold.value).toBe(4);
+    expect(gpu.pipelineRender).toHaveBeenCalledTimes(draws + 1);
+    expect(scene.getObjectByName("floor")).toBe(floor);
+    expect(camera.position).toEqual(pose);
+    expect(surface.frames.size).toBe(0);
+  }
+  pipeline.needsUpdate = false;
+  renderer.setPostProcessingSettings({ ...defaults, bloomThreshold: 3 });
+  expect(pipeline.needsUpdate).toBe(false); // Uniform edits need no graph rebuild.
+  renderer.resize(960, 540);
+  renderer.setQualitySettings({ ...DEFAULT_QUALITY_SETTINGS, pixelRatio: 2 });
+  renderer.setPresentationSettings({
+    ...DEFAULT_PRESENTATION_SETTINGS,
+    toneMapping: "Neutral",
+    exposureEv: 2,
+  });
+  expect(gpu.instances[0]?.toneMapping).toBe(NeutralToneMapping);
+  expect(gpu.instances[0]?.toneMappingExposure).toBe(4);
+  expect(gpu.setSize).toHaveBeenLastCalledWith(960, 540, false);
+  expect(gpu.setPixelRatio).toHaveBeenLastCalledWith(2);
+  renderer.setModel(modelFixture());
+  renderer.setLuminaires([
+    { type: "point", positionCm: { x: 100, y: 100, z: 200 }, lumens: 1000, kelvin: 3000 },
+  ]);
+  renderer.selectCamera("camera-1");
+  expect(gpu.pipelines).toHaveLength(1);
+  expect(gpu.passes).toHaveLength(1);
+  expect(gpu.blooms).toHaveLength(1);
+  expect(bloomNode.threshold.value).toBe(3);
+  const pipelineDispose = vi.spyOn(pipeline, "dispose");
+  const bloomDispose = vi.spyOn(bloomNode, "dispose");
+  const targetDispose = vi.spyOn(scenePass.renderTarget, "dispose");
+  renderer.dispose();
+  renderer.dispose();
+  expect(pipelineDispose).toHaveBeenCalledTimes(1);
+  expect(bloomDispose).toHaveBeenCalledTimes(1);
+  expect(targetDispose).toHaveBeenCalledTimes(1);
+});
+
+it("rejects invalid post-processing atomically and releases uninitialized pipeline resources", () => {
+  const renderer = createApartmentRenderer(canvas, vi.fn());
+  const pipeline = gpu.pipelines[0]!;
+  const bloomNode = gpu.blooms[0]!;
+  const output = pipeline.outputNode;
+  expect(() =>
+    renderer.setPostProcessingSettings({
+      ...DEFAULT_POST_PROCESSING_SETTINGS,
+      bloomEnabled: false,
+      bloomStrength: 5,
+      bloomRadius: NaN,
+    }),
+  ).toThrow("Invalid renderer post-processing");
+  expect(pipeline.outputNode).toBe(output);
+  expect(bloomNode.strength.value).toBe(DEFAULT_POST_PROCESSING_SETTINGS.bloomStrength);
+  expect(gpu.pipelineRender).not.toHaveBeenCalled();
+  const effectDispose = vi.spyOn(bloomNode, "dispose");
+  renderer.dispose();
+  expect(effectDispose).toHaveBeenCalledTimes(1);
 });

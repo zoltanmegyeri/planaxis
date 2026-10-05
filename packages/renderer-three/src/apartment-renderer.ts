@@ -43,6 +43,8 @@ import {
   SHADOW_MAP_SIZES,
 } from "./quality.js";
 import type { RendererQualitySettings } from "./quality.js";
+import { ApartmentRenderPipeline } from "./render-pipeline.js";
+import type { RendererPostProcessingSettings } from "./post-processing.js";
 
 export interface ApartmentRenderer {
   initialize(): Promise<void>;
@@ -54,6 +56,7 @@ export interface ApartmentRenderer {
   setFocalLengthOverride(focalLengthMm: FullFrameFocalLength | null): void;
   setPresentationSettings(settings: RendererPresentationSettings): void;
   setQualitySettings(settings: RendererQualitySettings): void;
+  setPostProcessingSettings(settings: RendererPostProcessingSettings): void;
   setLightingMode(mode: LightingMode, instant: number, weather?: Weather): void;
   render(): void;
   dispose(): void;
@@ -103,6 +106,7 @@ export function createApartmentRenderer(
   const fillLight = new AmbientLight(0xffffff, 0);
   scene.add(light, light.target, fillLight);
   const camera = new PerspectiveCamera();
+  const pipeline = new ApartmentRenderPipeline(renderer, scene, camera);
   const controls = new OrbitControls(camera, canvas);
   controls.enabled = false;
   let apartment: ApartmentScene | undefined;
@@ -127,6 +131,7 @@ export function createApartmentRenderer(
     resourcesReleased = true;
     scene.environment = null;
     environment?.dispose();
+    pipeline.dispose();
     renderer.dispose();
   };
   const render = (): void => {
@@ -134,7 +139,7 @@ export function createApartmentRenderer(
     cancelWalkRender();
     if (!initialized || disposed || !apartment) return;
     try {
-      renderer.render(scene, camera);
+      pipeline.render();
     } catch (error) {
       walk?.deactivate();
       onError(error);
@@ -381,6 +386,11 @@ export function createApartmentRenderer(
       if (shadowChanged) replaceLuminaires();
       applyShadows();
       applyLighting();
+      render();
+    },
+    setPostProcessingSettings(settings) {
+      if (disposed) return;
+      pipeline.setSettings(settings);
       render();
     },
     setLightingMode(mode, instant, nextWeather = weather) {

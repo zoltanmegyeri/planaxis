@@ -305,7 +305,7 @@ Enabled state and dimming scale luminous power; Kelvin controls approximate warm
 Point/spot shadows use existing quality resolution (minimum Low when Off), without a finite
 light-range cutoff. Linear/area illumination can pass through walls because these emitters
 intentionally have no shadows. There are no fixture meshes or luminaire markers. Placement,
-editing, IES, GI and bloom remain deferred. Nighttime Physical mode isolates artificial lighting.
+editing, IES and GI remain deferred. Nighttime Physical mode isolates artificial lighting.
 
 The shared `@planaxis/simulation` package owns approximate solar position, daylight/weather
 weights, and civil-time conversion independently of React and Three.js. The browser captures
@@ -322,7 +322,21 @@ Studio preferences on return.
 
 The **Rendering** panel offers **Tone mapping** (AgX by default, ACES Filmic, or Neutral), **Exposure** (−4 to +4 EV in 0.1-stop increments), **Environment intensity** (0–4 in 0.1 increments), and **Environment rotation** (0–360° in 1° increments). Defaults are 0 EV, intensity 1, and rotation 0°. Exposure converts to the renderer multiplier as `2 ** EV`; positive environment yaw turns architectural +X toward +Y. Controls update the next frame immediately and remain disabled until initialization completes. Camera, Walk, lens, resize, and fullscreen changes preserve presentation selections for the viewport lifetime. Fullscreen hides every control except its exit button.
 
-With **No design** selected, presentation controls remain transient. A resolved Design 1.0 or 1.1 scenario applies its saved tone mapping and exposure; edit these in the design editor rather than the Rendering panel. Environment intensity and rotation always remain transient. Resolved designs also apply Material 1.0 and 1.1 persistent finishes, including packed ORM textures shared across ambient-occlusion, roughness, and metalness roles. Design 1.1 luminaire validation and persistence are implemented. Luminaires survive name/presentation edits unchanged, and illuminate the scene in both lighting modes. Luminaire placement/editing UI, material-management UI, environment assets, and post-processing remain deferred.
+Final 3D output uses one Three.js **RenderPipeline** on both WebGPU and its automatic
+WebGL2 fallback. Full-scene HDR bloom is added before the existing tone mapping and color
+conversion. **Rendering** exposes **Bloom enabled**, **Bloom strength**, **Bloom radius**, and
+**Bloom threshold**. Defaults are enabled, strength **0.05**, radius **0.1**, threshold **5**:
+a high luminance threshold and low strength keep ordinary diffuse surfaces clear while intense
+highlights soften. Bloom has no fixture geometry and supplies no illumination or GI.
+Disabling it bypasses the bloom passes completely.
+
+Explicit **Performance** selection recommends bloom Off; **Balanced** and **High** recommend On.
+You can then override bloom without changing the quality preset, and individual quality edits
+or display/DPR changes leave bloom alone. At startup, restored Performance starts Off and
+Balanced/High/Custom start On. Bloom values are session-only, survive design, lighting, camera,
+and 2D/3D switches, and never enter local storage or project/design files.
+
+With **No design** selected, presentation controls remain transient. A resolved Design 1.0 or 1.1 scenario applies its saved tone mapping and exposure; edit these in the design editor rather than the Rendering panel. Environment intensity and rotation always remain transient. Resolved designs also apply Material 1.0 and 1.1 persistent finishes, including packed ORM textures shared across ambient-occlusion, roughness, and metalness roles. Design 1.1 luminaire validation and persistence are implemented. Luminaires survive name/presentation edits unchanged, and illuminate the scene in both lighting modes. Luminaire placement/editing UI, material-management UI, environment assets, realtime GI, IES, and path tracing remain deferred.
 
 The same **Rendering** panel also offers **Quality**, **Pixel ratio**, **Shadows**, **Environment lighting**, and **Fill light**. Quality changes apply immediately without rebuilding the apartment or resetting navigation. Walk redraws are coalesced to display frames, and unchanged architectural shadows are reused during navigation. In Studio, all individual settings stay editable; changing a preset's settings selects **Custom**. Selecting a named preset reapplies every setting below:
 
@@ -501,7 +515,7 @@ PlanAxis Design Format 1.1 is the latest accepted normative persistence contract
 
 Materials may be authored manually under `assets/materials/` and referenced from a design. Re-select the design (choose **No design**, then the scenario) to reread external edits. No catalog, material editor, file watching, or global cache is provided. Shared textures are fetched and decoded once per selected load, including packed map roles. Selection changes cancel obsolete requests and release prepared images, textures, and scene resources.
 
-Phase 4 has implemented the physical-daylight foundation: transient date/time controls, Sunny/Overcast weather, a procedural day/twilight/night sky, elevation-dependent Sun color/strength, and architectural direct-light occlusion. Design Format 1.1 luminaire validation and persistence are also implemented across the package, server, and browser. Luminaire placement/editing, realtime GI, bloom, IES photometry, path tracing, and richer atmospheric effects remain future Phase 4 work. 3D asset importing and placement follow in Phase 5.
+Phase 4 has implemented the RenderPipeline/HDR bloom foundation and physical daylight: transient date/time controls, Sunny/Overcast weather, a procedural day/twilight/night sky, elevation-dependent Sun color/strength, and architectural direct-light occlusion. Design Format 1.1 luminaire validation and persistence are also implemented across the package, server, and browser. Luminaire placement/editing, realtime GI, IES photometry, path tracing, and richer atmospheric effects remain future Phase 4 work. 3D asset importing and placement follow in Phase 5.
 
 Each implementation phase should have explicit acceptance criteria and automated tests.
 
