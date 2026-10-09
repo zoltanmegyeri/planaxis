@@ -32,3 +32,12 @@ export {
   isRendererPostProcessingSettings,
 } from "./post-processing.js";
 export type { RendererPostProcessingSettings } from "./post-processing.js";
+
+export {
+  DEFAULT_GLOBAL_ILLUMINATION_SETTINGS,
+  isRendererGlobalIlluminationSettings,
+} from "./global-illumination.js";
+export type {
+  RendererGlobalIlluminationSettings,
+  GlobalIlluminationCapability,
+} from "./global-illumination.js";

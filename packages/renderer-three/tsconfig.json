@@ -4,5 +4,5 @@
     "noEmit": true,
     "lib": ["ES2024", "DOM", "DOM.Iterable"]
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "vitest.config.ts"]
+  "include": ["src/**/*.ts", "test/**/*.ts", "evaluation/**/*.ts", "vitest.config.ts"]
 }

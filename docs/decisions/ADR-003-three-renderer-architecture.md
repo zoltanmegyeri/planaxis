@@ -88,8 +88,9 @@ local-light passes. It cannot occlude the room above it from the overhead key/Su
 excluding that impossible occlusion prevents biased wall samples below the floor
 from creating dark contact strips. Floor shadow masks preserve alpha masks and
 are isolated from shared wall/ceiling materials.
-Logarithmic viewing depth is retained. An explicit material depth node selects the
-depth curve per render camera (logarithmic perspective, linear orthographic), avoiding
+Reversed viewing depth replaces logarithmic depth for VXGI-compatible shadow injection.
+An explicit material depth node selects the initialized backend's forward/reversed
+perspective or orthographic curve per render camera, avoiding
 false self-shadowing when Three.js r186 reuses mapped-material shadow shaders across
 directional and perspective luminaire passes. These settings do not describe source
 material or luminaire semantics. Advanced lighting, persistent material assets, and design workflows remain future work.
@@ -168,7 +169,8 @@ Effective lumens include enabled state and dimming. Approximate Kelvin white is 
 linear RGB without camera white balance. Lights survive daylight and camera changes; replacement,
 quality/model changes and final disposal release owned resources. Rendering remains event-driven.
 Manual JSON edits followed by reload/reselection are supported; luminaire editing UI, fixture
-meshes, IES, GI and rectangular shadows remain deferred. See the architecture runtime contract.
+meshes, IES and rectangular shadows remain deferred. Point/spot VXGI integration is described
+below; linear/area GI remains unsupported. See the architecture runtime contract.
 
 ### RenderPipeline and HDR bloom refinement (2026-10-04)
 
@@ -194,7 +196,56 @@ Performance to Off and Balanced/High/Custom to On. Explicit Performance/Balanced
 recommends Off/On/On, after which manual bloom overrides leave quality unchanged. Quality-field
 edits and display/DPR adaptation leave bloom unchanged. State survives design and view changes
 but is never written to local storage or any persistent format. Luminaire placement/editing,
-realtime GI, IES and path tracing remain deferred.
+IES and path tracing remain deferred.
+
+### Native-WebGPU VXGI integration refinement (2026-10-08)
+
+Keep GI inside the existing renderer and final RenderPipeline. The native-WebGPU graph is
+geometry-only depth/packed view normals/velocity → VXGI → neutral geometric AO plus GI context
+→ HDR scene → TRAA → optional HDR bloom → output transform. Material AO remains intact.
+The prepass excludes renderer light layers and transparency; both GI passes disable MSAA.
+WebGL2 retains the existing HDR/bloom graph, with GI unavailable. No persistent format changes.
+
+Architecture-only borrowed meshes define bounds plus 0.25 m; markers, transparent window panes
+and light targets are excluded. Model/material replacement re-voxelizes; lighting reinjects;
+camera movement changes only screen-space/temporal data. Reset history on discontinuities and
+finish an immediate frame plus 32 bounded refinement draws. No GI idle animation loop is added.
+Four fixed shadow-aware sky directions derive cool Overcast/weak Sunny/twilight/night strengths
+from existing daylight state, separately from the visible sky and Studio environment/fill.
+
+The evaluated integration defaults retain resolution 256 and directional radiance, with one
+25° cone, zero additional cached bounces (one screen-space indirect bounce), intensity 8,
+step scale 0.5, normal offset 0.5 voxels, unbounded tracing and temporal filtering. Preferred
+light budget is 32; native device texture/sampler limits can reduce it. Sun precedes four sky
+sources, followed by stable design-local IDs. Provision r186's fixed eight-slot arrays before
+building the injection kernel. Request only advertised texture/sampler capacity; the M1's
+16-sampler stage limit still excludes large collections of shadow maps.
+
+Review found unity GI intensity too weak. The indirect-only gain is now 8 after comparing
+1/4/8/16 in the fixed-buffer harness; direct light power and output exposure are unchanged.
+This is qualitative renderer tuning, not photometric calibration. Strong luminaires and
+existing voxel leakage become brighter as well; the evaluation records those limitations.
+
+Reversed depth preserves native viewing precision while matching stock VXGI local-light shadow
+comparisons. WebGL2 can use forward depth when reversed depth is unsupported. Use per-render
+projection/backend uniforms, metric local-light normal bias and zero local depth bias. Floors
+cast two-sided local shadows; their existing overhead-directional exclusion remains in place.
+Before injection after geometry/light invalidation, warm the exact HDR lighting context offscreen
+through the same pipeline, then reinject using completed shadow maps. Advance Three's node frame
+for each explicit GI draw; its housekeeping RAF alone cannot guarantee fresh FRAME effects.
+Keep these r186 bridges isolated and re-evaluate them when upgrading Three.js.
+
+The [evaluation report](../architecture/realtime-global-illumination.md) records 1080p timings,
+matrix results and remaining failures. Strong local lights still leak through thin partitions,
+and large shadow-light collections exceed the reference device's sampler limit. Bounded rectangular spot proxies changed
+direct appearance and exceeded that limit in the stress case; retain existing direct RectAreaLight
+rendering without their GI.
+
+On 2026-10-08, the human maintainer declared TASK-043 completed with these known limitations
+and set aside further VXGI work in favor of a separate path-tracing evaluation. The implemented
+integration is retained, and the original visual acceptance failures remain documented.
+This closes the task without selecting or implementing a replacement rendering architecture.
+Placement/editing, IES, path tracing and richer atmosphere remain Phase 4 work.
 
 ## Cameras and lifecycle
 

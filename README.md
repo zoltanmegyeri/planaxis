@@ -288,7 +288,9 @@ the earlier occurrence.
 shadows. **Overcast** shows a cooler, low-contrast sky with very weak direct Sun and softer,
 faint shadows. The procedural exterior transitions through sunset and twilight to near-black
 night; direct Sun is zero at/below the geometric horizon. Visible sky is scenery, not realtime
-GI: diffuse sky transport is deferred and interiors may remain dark.
+GI. Four shadow-aware Physical sky sources now approximate diffuse daylight; interiors can
+still remain dark. The native-WebGPU GI integration and its known limitations are
+documented in the [GI evaluation](docs/architecture/realtime-global-illumination.md).
 
 Selected Design 1.1 luminaires now illuminate the apartment in both Studio and Physical modes,
 independently of date/time/weather. Author lights directly in the design JSON, then reload or
@@ -305,7 +307,8 @@ Enabled state and dimming scale luminous power; Kelvin controls approximate warm
 Point/spot shadows use existing quality resolution (minimum Low when Off), without a finite
 light-range cutoff. Linear/area illumination can pass through walls because these emitters
 intentionally have no shadows. There are no fixture meshes or luminaire markers. Placement,
-editing, IES and GI remain deferred. Nighttime Physical mode isolates artificial lighting.
+editing and IES remain deferred. Native-WebGPU VXGI injects point/spot lighting; linear/area
+lights retain direct rendering only. Nighttime Physical mode isolates artificial lighting.
 
 The shared `@planaxis/simulation` package owns approximate solar position, daylight/weather
 weights, and civil-time conversion independently of React and Three.js. The browser captures
@@ -336,7 +339,18 @@ or display/DPR changes leave bloom alone. At startup, restored Performance start
 Balanced/High/Custom start On. Bloom values are session-only, survive design, lighting, camera,
 and 2D/3D switches, and never enter local storage or project/design files.
 
-With **No design** selected, presentation controls remain transient. A resolved Design 1.0 or 1.1 scenario applies its saved tone mapping and exposure; edit these in the design editor rather than the Rendering panel. Environment intensity and rotation always remain transient. Resolved designs also apply Material 1.0 and 1.1 persistent finishes, including packed ORM textures shared across ambient-occlusion, roughness, and metalness roles. Design 1.1 luminaire validation and persistence are implemented. Luminaires survive name/presentation edits unchanged, and illuminate the scene in both lighting modes. Luminaire placement/editing UI, material-management UI, environment assets, realtime GI, IES, and path tracing remain deferred.
+**Global illumination → On / Off** is a separate session control. Explicit Performance and
+Balanced selection recommend Off; High recommends On on native WebGPU. Startup restores
+High as On when supported and Performance/Balanced/Custom as Off. Manual GI changes leave
+quality and bloom unchanged; later DPR edits retain GI. WebGL2 disables this control with an
+explanation while keeping the existing rendering features. GI draws an immediate frame and
+32 finite refinement frames, then returns idle. The renderer applies an indirect-only gain
+of 8 for a clearly visible bounce contribution. TASK-043 is completed by human acceptance
+with unresolved thin-partition leakage and hardware limits recorded in the linked evaluation.
+Further VXGI work is set aside in favor of a separate path-tracing evaluation; the existing
+integration is retained.
+
+With **No design** selected, presentation controls remain transient. A resolved Design 1.0 or 1.1 scenario applies its saved tone mapping and exposure; edit these in the design editor rather than the Rendering panel. Environment intensity and rotation always remain transient. Resolved designs also apply Material 1.0 and 1.1 persistent finishes, including packed ORM textures shared across ambient-occlusion, roughness, and metalness roles. Design 1.1 luminaire validation and persistence are implemented. Luminaires survive name/presentation edits unchanged, and illuminate the scene in both lighting modes. Luminaire placement/editing UI, material-management UI, environment assets, IES, and path tracing remain deferred.
 
 The same **Rendering** panel also offers **Quality**, **Pixel ratio**, **Shadows**, **Environment lighting**, and **Fill light**. Quality changes apply immediately without rebuilding the apartment or resetting navigation. Walk redraws are coalesced to display frames, and unchanged architectural shadows are reused during navigation. In Studio, all individual settings stay editable; changing a preset's settings selects **Custom**. Selecting a named preset reapplies every setting below:
 
@@ -360,7 +374,7 @@ Saved tone mapping maps `agx`, `aces-filmic`, and `neutral` to AgX, ACES Filmic,
 
 Design Format problems, resource/API failures, Apartment SVG diagnostics, stale finish targets, and renderer failures remain distinct. An unresolved design is not applied; its readable architecture remains inspectable with default appearance. After successful design/architecture resolution, the browser loads each distinct material descriptor and texture through the controlled APIs. Material JSON validation, resource failures, unsupported/mismatched image content, decode failures, and renderer failures have separate safe diagnostics. Any material failure leaves all finishes neutral while preserving valid architecture and design presentation.
 
-The dedicated `@planaxis/renderer-three` adapter provides WebGPU-first Three.js rendering with its supported WebGL2 fallback. It converts exact centimeters to meters only at the renderer boundary, mapping PlanAxis `(X, Y, Z)` to Three.js `(X, Z, Y)`. Valid documents support 2D/3D switching, orbit inspection, embedded-camera viewing, and free-walk navigation; invalid documents retain the 2D diagnostic workflow. Material Format 1.0 and 1.1 are integrated into project resource loading and rendering. Physical daylight and Design 1.1 luminaire persistence are implemented; luminaire placement/editing, realtime GI, and later AI-assisted features remain future work.
+The dedicated `@planaxis/renderer-three` adapter provides WebGPU-first Three.js rendering with its supported WebGL2 fallback. It converts exact centimeters to meters only at the renderer boundary, mapping PlanAxis `(X, Y, Z)` to Three.js `(X, Z, Y)`. Valid documents support 2D/3D switching, orbit inspection, embedded-camera viewing, and free-walk navigation; invalid documents retain the 2D diagnostic workflow. Material Format 1.0 and 1.1 are integrated into project resource loading and rendering. Physical daylight, Design 1.1 luminaire persistence, and the native-WebGPU VXGI integration are implemented; luminaire placement/editing, and later AI-assisted features remain future work.
 
 ## Adopted Project-Based Workflow
 
@@ -515,7 +529,7 @@ PlanAxis Design Format 1.1 is the latest accepted normative persistence contract
 
 Materials may be authored manually under `assets/materials/` and referenced from a design. Re-select the design (choose **No design**, then the scenario) to reread external edits. No catalog, material editor, file watching, or global cache is provided. Shared textures are fetched and decoded once per selected load, including packed map roles. Selection changes cancel obsolete requests and release prepared images, textures, and scene resources.
 
-Phase 4 has implemented the RenderPipeline/HDR bloom foundation and physical daylight: transient date/time controls, Sunny/Overcast weather, a procedural day/twilight/night sky, elevation-dependent Sun color/strength, and architectural direct-light occlusion. Design Format 1.1 luminaire validation and persistence are also implemented across the package, server, and browser. Luminaire placement/editing, realtime GI, IES photometry, path tracing, and richer atmospheric effects remain future Phase 4 work. 3D asset importing and placement follow in Phase 5.
+Phase 4 has implemented RenderPipeline/HDR bloom, physical daylight, persistent Design 1.1 luminaires, and native-WebGPU VXGI integration with finite convergence. TASK-043 is completed by human acceptance with unresolved leakage and large shadow-light limits; further VXGI work, including rectangular GI proxies, is set aside. Path tracing will be evaluated separately. Luminaire placement/editing, IES photometry, path tracing, and richer atmospheric effects remain future Phase 4 work. 3D asset importing and placement follow in Phase 5.
 
 Each implementation phase should have explicit acceptance criteria and automated tests.
 

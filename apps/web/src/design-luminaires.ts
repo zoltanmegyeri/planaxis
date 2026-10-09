@@ -6,6 +6,7 @@ export function designLuminaires(design?: ValidatedDesignDescriptor): readonly R
   if (design?.document.schema !== "planaxis-design/1.1") return [];
   return (design.document.luminaires ?? []).map((light): RuntimeLuminaire => {
     const common = {
+      id: light.id,
       positionCm: { ...light.position },
       lumens: light.enabled ? light.luminousFluxLumens * light.dimming : 0,
       kelvin: light.colorTemperatureKelvin,

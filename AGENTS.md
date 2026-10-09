@@ -26,7 +26,7 @@ Apartment SVG
     -> interactive visualization / later design workflows
 ```
 
-The React application in `apps/web` is the first official user-facing entry point. `pnpm start -- --project <path>` builds the server, browser, and required workspace dependencies, then starts one Fastify process serving the production browser application and APIs at `http://127.0.0.1:3000/`. The browser loads the server-selected project’s active Apartment SVG for browser-side validation with a safe read-only 2D SVG pan/zoom viewer and the implemented 3D workflow. React and browser APIs remain application-layer concerns under ADR-002. The dedicated `@planaxis/renderer-three` adapter provides WebGPU-first Three.js rendering with its supported WebGL2 fallback. It converts exact centimeters to meters only at the renderer boundary, mapping PlanAxis `(X, Y, Z)` to Three.js `(X, Z, Y)`. Valid documents support 2D/3D switching, orbit inspection, embedded-camera viewing, and free-walk navigation; invalid documents retain the 2D diagnostic workflow. Persistent materials, Design 1.1 luminaire validation/persistence/rendering, and physical daylight simulation are implemented; luminaire placement/editing, realtime GI, 3D asset placement, and AI-assisted features remain later stages.
+The React application in `apps/web` is the first official user-facing entry point. `pnpm start -- --project <path>` builds the server, browser, and required workspace dependencies, then starts one Fastify process serving the production browser application and APIs at `http://127.0.0.1:3000/`. The browser loads the server-selected project’s active Apartment SVG for browser-side validation with a safe read-only 2D SVG pan/zoom viewer and the implemented 3D workflow. React and browser APIs remain application-layer concerns under ADR-002. The dedicated `@planaxis/renderer-three` adapter provides WebGPU-first Three.js rendering with its supported WebGL2 fallback. It converts exact centimeters to meters only at the renderer boundary, mapping PlanAxis `(X, Y, Z)` to Three.js `(X, Z, Y)`. Valid documents support 2D/3D switching, orbit inspection, embedded-camera viewing, and free-walk navigation; invalid documents retain the 2D diagnostic workflow. Persistent materials, Design 1.1 luminaire validation/persistence/rendering, and physical daylight simulation are implemented; luminaire placement/editing, 3D asset placement, and AI-assisted features remain later stages.
 
 ADR-004 and PlanAxis Project Format 1.0 adopt a filesystem-backed project as the top-level application container. The server-side loading foundation in `apps/server/src/project/` validates manifests and required structure and provides a read-only filesystem boundary for one canonical root. Apartment SVG contents remain independently validated downstream. The server requires one `--project <path>` at startup, loads it before listening on `127.0.0.1:3000`, and exposes controlled project metadata and active-architecture HTTP APIs. Phase 0 browser integration is implemented: the browser validates project metadata and fetches active architecture through relative APIs, from the same Fastify origin during normal operation. For optional Vite HMR, start the backend with `--project <path> --api-only` and run `pnpm dev:web`; the narrow development-only proxy forwards supported APIs to the loopback server. API-only mode requires no production browser build. Normal startup validates the browser entry and referenced assets before listening and reports the browser URL only after successful listening. Static serving is confined to `apps/web/dist`, with no SPA fallback or project-root mount. Local SVG picker and drag/drop loading are removed.
 
@@ -36,7 +36,7 @@ The browser owns transient Studio/Physical, date/time, and Sunny/Overcast state,
 mode and 2D/3D changes. Physical requires validated SVG location/orientation; missing time zones
 use labeled UTC. The renderer owns a procedural day/twilight/night sky, elevation-dependent
 Sun color/strength, and softer Overcast shadows. Physical disables Studio environment/fill;
-visible sky is not GI and interiors may remain dark. Ceilings cast two-sided shadows while
+visible sky stays separate from diffuse-sky helpers and interiors may remain dark. Ceilings cast two-sided shadows while
 visually culled from above. PlanAxis Design Format 1.1 is the accepted persistent luminaire
 contract; validation, persistence, and rendering are implemented. Point/spot cast shadows;
 linear (length × 1 cm) and area use one-sided shadowless rectangular emitters in both modes. New scenarios
@@ -48,7 +48,17 @@ the effect graph. Browser bloom state is transient and separate from persisted q
 initial/restored Performance and explicit Performance selection recommend Off; Balanced/High
 recommend On; restored Custom starts On. Later manual bloom and DPR/quality-field changes
 remain independent. See the architecture overview for lifecycle and controls.
-Luminaire placement/editing, realtime GI, IES, path tracing, and richer atmospheric
+TASK-043's native-WebGPU VXGI integration is completed by human acceptance with known limitations.
+It uses architecture-only bounds, deterministic device-bounded light selection, a depth/normal/
+velocity prepass, GI lighting context, HDR scene, TRAA, then bloom/output in the existing pipeline.
+GI is session-only: Performance/Balanced/Custom restore Off, High restores On when supported;
+explicit named presets recommend Off/Off/On, while later manual GI and DPR edits are independent.
+WebGL2 retains existing rendering with GI unavailable. Finite 32-frame refinement returns idle.
+Four shadow-aware Physical sky sources approximate diffuse daylight. Linear/area GI remains
+unsupported after the bounded proxy experiment. Defaults, hardware limits and unresolved thin-wall
+leakage are recorded in `docs/architecture/realtime-global-illumination.md`. Further VXGI work
+is set aside in favor of a separate path-tracing evaluation.
+Luminaire placement/editing, IES, path tracing, and richer atmospheric
 effects remain future work; 3D asset importing/placement follows in Phase 5.
 
 AI-assisted design and photorealistic rendering are downstream features. They must not replace or weaken the deterministic geometry and validation pipeline.

@@ -1,3 +1,20 @@
+import {
+  configureGiTextureLimit,
+  DEFAULT_GLOBAL_ILLUMINATION_SETTINGS,
+  GiScene,
+  giLightBudget,
+  globalIlluminationCapability,
+  isRendererGlobalIlluminationSettings,
+  RENDER_LIGHT_LAYER,
+  selectGiLights,
+  VXGI_CONFIGURATION,
+} from "./global-illumination.js";
+import type {
+  GlobalIlluminationCapability,
+  RendererGlobalIlluminationSettings,
+} from "./global-illumination.js";
+import { TemporalConvergence } from "./temporal-convergence.js";
+import { SkyLights } from "./sky-lights.js";
 import { buildLuminaireSet } from "./runtime-luminaires.js";
 import type { RuntimeLuminaire } from "./runtime-luminaires.js";
 import {
@@ -57,17 +74,26 @@ export interface ApartmentRenderer {
   setPresentationSettings(settings: RendererPresentationSettings): void;
   setQualitySettings(settings: RendererQualitySettings): void;
   setPostProcessingSettings(settings: RendererPostProcessingSettings): void;
+  getGlobalIlluminationCapability(): GlobalIlluminationCapability;
+  setGlobalIlluminationSettings(settings: RendererGlobalIlluminationSettings): void;
   setLightingMode(mode: LightingMode, instant: number, weather?: Weather): void;
   render(): void;
   dispose(): void;
 }
 
-/** Owns GPU resources and input listeners. Continuous rendering runs only while walking. */
+/** Owns GPU resources and input listeners. Rendering follows interaction plus finite GI refinement bursts. */
 export function createApartmentRenderer(
   canvas: HTMLCanvasElement,
   onError: (error: unknown) => void,
 ): ApartmentRenderer {
-  const renderer = new WebGPURenderer({ canvas, antialias: true, logarithmicDepthBuffer: true });
+  const requiredLimits: Record<string, number> = {};
+  const renderer = new WebGPURenderer({
+    canvas,
+    antialias: true,
+    reversedDepthBuffer: true,
+    logarithmicDepthBuffer: false,
+    requiredLimits,
+  });
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = PCFShadowMap;
   const scene = new Scene();
@@ -79,6 +105,10 @@ export function createApartmentRenderer(
   let simulationInstant = 0;
   let weather: Weather = DEFAULT_WEATHER;
   const sky = createPhysicalSky();
+  const skyLights = new SkyLights();
+  scene.add(skyLights.group);
+  const giScene = new GiScene();
+  let giSettings = DEFAULT_GLOBAL_ILLUMINATION_SETTINGS;
   let luminaireInputs: readonly RuntimeLuminaire[] = [];
   let luminaires = buildLuminaireSet([], quality.shadowQuality);
   scene.add(luminaires.group);
@@ -97,6 +127,7 @@ export function createApartmentRenderer(
   let height = 1;
   let shadowRadius = 0.1;
   let light = new DirectionalLight(0xffffff, 3);
+  light.layers.set(RENDER_LIGHT_LAYER);
   light.castShadow = true;
   light.shadow.mapSize.set(2048, 2048);
   light.shadow.bias = 0;
@@ -104,8 +135,10 @@ export function createApartmentRenderer(
   // Camera movement does not invalidate their shadow map.
   light.shadow.autoUpdate = false;
   const fillLight = new AmbientLight(0xffffff, 0);
+  fillLight.layers.set(RENDER_LIGHT_LAYER);
   scene.add(light, light.target, fillLight);
   const camera = new PerspectiveCamera();
+  camera.layers.enable(RENDER_LIGHT_LAYER);
   const pipeline = new ApartmentRenderPipeline(renderer, scene, camera);
   const controls = new OrbitControls(camera, canvas);
   controls.enabled = false;
@@ -119,6 +152,7 @@ export function createApartmentRenderer(
   let initialized = false;
   let disposed = false;
   let initialization: Promise<void> | undefined;
+  let gpuDevice: GPUDevice | undefined;
   let resourcesReleased = false;
   let walkRenderFrame: number | undefined;
   const cancelWalkRender = (): void => {
@@ -126,31 +160,67 @@ export function createApartmentRenderer(
     canvas.ownerDocument.defaultView?.cancelAnimationFrame(walkRenderFrame);
     walkRenderFrame = undefined;
   };
+  const convergence = new TemporalConvergence(canvas.ownerDocument?.defaultView, () => draw());
+  const updateGiLights = (): void => {
+    scene.updateMatrixWorld(true);
+    giScene.lights = selectGiLights(
+      [
+        { key: "sun-or-studio-key", priority: 0, light },
+        ...skyLights.candidates(),
+        ...luminaires.giCandidates,
+      ],
+      giLightBudget(renderer),
+    );
+  };
+  const applyGi = (): void => {
+    if (!initialized || !apartment) return;
+    updateGiLights();
+    pipeline.setGiEnabled(
+      giSettings.enabled && globalIlluminationCapability(renderer).available,
+      giScene,
+      giScene.architectureBounds(),
+    );
+    if (!pipeline.giEnabled) convergence.cancel();
+  };
   const releaseRenderer = (): void => {
     if (resourcesReleased) return;
     resourcesReleased = true;
+    convergence.cancel();
+    gpuDevice?.removeEventListener("uncapturederror", onGpuError);
     scene.environment = null;
     environment?.dispose();
     pipeline.dispose();
     renderer.dispose();
   };
-  const render = (): void => {
-    // An immediate settings/view update also satisfies any pending Walk redraw.
+  let renderFailed = false;
+  const failRendering = (error: unknown): void => {
+    if (disposed || renderFailed) return;
+    renderFailed = true;
+    convergence.cancel();
     cancelWalkRender();
-    if (!initialized || disposed || !apartment) return;
+    walk?.deactivate();
+    onError(error);
+  };
+  const onGpuError = (event: GPUUncapturedErrorEvent): void => {
+    failRendering(new Error(`GPU rendering failed: ${event.error.message}`));
+  };
+  const draw = (): boolean => {
+    if (!initialized || disposed || !apartment || renderFailed) return false;
     try {
       pipeline.render();
+      return true;
     } catch (error) {
-      walk?.deactivate();
-      onError(error);
+      failRendering(error);
+      return false;
     }
   };
+  const render = (): void => {
+    cancelWalkRender();
+    convergence.cancel();
+    if (draw() && pipeline.giEnabled) convergence.restart(VXGI_CONFIGURATION.convergenceFrames);
+  };
   renderer.onDeviceLost = (info): void => {
-    if (!disposed) {
-      cancelWalkRender();
-      walk?.deactivate();
-      onError(new Error(`Rendering device lost: ${info.message}`));
-    }
+    failRendering(new Error(`Rendering device lost: ${info.message}`));
   };
   const applyEffectiveProjection = (): void => {
     camera.aspect = aspect;
@@ -175,7 +245,8 @@ export function createApartmentRenderer(
     camera.updateProjectionMatrix();
   };
   const requestWalkRender = (): void => {
-    if (disposed || walkRenderFrame !== undefined) return;
+    if (disposed || renderFailed || walkRenderFrame !== undefined) return;
+    convergence.cancel();
     const view = canvas.ownerDocument.defaultView;
     if (!view) return;
     // Pointer events (and movement synchronized by those events) can outpace the
@@ -204,6 +275,7 @@ export function createApartmentRenderer(
     }
     cameraId = id;
     applyEffectiveProjection();
+    pipeline.resetHistory();
     render();
   };
   const applyLighting = (): void => {
@@ -216,6 +288,7 @@ export function createApartmentRenderer(
     light.intensity = 3; // Qualitative direct light, not authoritative irradiance.
     light.color.set(0xffffff);
     scene.backgroundNode = lightingMode === "physical" ? sky.node : null;
+    if (lightingMode === "studio") skyLights.update();
     // r186 PCF uses radius on both WebGPU and WebGL2. Scale the wider weather
     // filter with resolution, retaining full occlusion away from shadow edges.
     light.shadow.radius =
@@ -241,6 +314,7 @@ export function createApartmentRenderer(
         light.intensity = 3 * daylight.directStrength;
         light.color.copy(daylightSunColor(daylight));
         sky.update(daylight, direction);
+        skyLights.update(daylight);
       } else {
         light.position.copy(center).add(new Vector3(shadowRadius, shadowRadius * 2, shadowRadius));
       }
@@ -277,16 +351,22 @@ export function createApartmentRenderer(
   return {
     initialize() {
       if (disposed) return Promise.reject(new Error("Renderer is disposed."));
-      initialization ??= renderer
-        .init()
+      initialization ??= configureGiTextureLimit(requiredLimits)
+        .then(() => renderer.init())
         .then(() => {
           if (disposed) {
             releaseRenderer();
             return;
           }
+          if (globalIlluminationCapability(renderer).available) {
+            gpuDevice = (renderer.backend as WebGPURenderer["backend"] & { device: GPUDevice })
+              .device;
+            gpuDevice?.addEventListener("uncapturederror", onGpuError);
+          }
           environment = createStudioEnvironment(renderer);
           applyLighting();
           initialized = true;
+          applyGi();
           render();
         })
         .catch((error: unknown) => {
@@ -306,6 +386,8 @@ export function createApartmentRenderer(
         apartment.dispose();
       }
       apartment = replacement;
+      giScene.architecture = apartment.group;
+      skyLights.setBounds(giScene.architectureBounds());
       model = next;
       if (!model.metadata.location) lightingMode = "studio";
       scene.add(apartment.group);
@@ -328,6 +410,8 @@ export function createApartmentRenderer(
       applyShadows();
       applyLighting();
       light.shadow.needsUpdate = true;
+      applyGi();
+      pipeline.invalidateGeometry(giScene.architectureBounds());
       selectCamera(null);
     },
     setLuminaires(next) {
@@ -335,6 +419,8 @@ export function createApartmentRenderer(
       luminaireInputs = next;
       replaceLuminaires();
       applyShadows();
+      updateGiLights();
+      pipeline.invalidateLighting();
       render();
     },
     resize(nextWidth, nextHeight) {
@@ -344,6 +430,7 @@ export function createApartmentRenderer(
       aspect = width / height;
       renderer.setSize(width, height, false);
       applyEffectiveProjection();
+      pipeline.resetHistory();
       render();
     },
     selectCamera,
@@ -356,6 +443,7 @@ export function createApartmentRenderer(
       walk.activate();
       extendClippingRange();
       applyEffectiveProjection();
+      pipeline.resetHistory();
       render();
     },
     setFocalLengthOverride(focalLengthMm) {
@@ -365,11 +453,13 @@ export function createApartmentRenderer(
       }
       focalLengthOverride = focalLengthMm;
       applyEffectiveProjection();
+      pipeline.resetHistory();
       render();
     },
     setPresentationSettings(settings) {
       if (disposed) return;
       applyPresentationSettings(renderer, scene, settings);
+      pipeline.resetHistory();
       render();
     },
     setQualitySettings(settings) {
@@ -380,17 +470,37 @@ export function createApartmentRenderer(
       if (settings.pixelRatio !== quality.pixelRatio) {
         renderer.setPixelRatio(settings.pixelRatio);
         renderer.setSize(width, height, false);
+        pipeline.resetHistory();
       }
       const shadowChanged = settings.shadowQuality !== quality.shadowQuality;
       quality = { ...settings };
       if (shadowChanged) replaceLuminaires();
       applyShadows();
       applyLighting();
+      updateGiLights();
+      if (shadowChanged) pipeline.invalidateLighting();
+      else pipeline.resetHistory();
       render();
     },
     setPostProcessingSettings(settings) {
       if (disposed) return;
       pipeline.setSettings(settings);
+      render();
+    },
+    getGlobalIlluminationCapability() {
+      return initialized
+        ? globalIlluminationCapability(renderer)
+        : {
+            available: false,
+            reason: "Global illumination is available after renderer initialization.",
+          };
+    },
+    setGlobalIlluminationSettings(settings) {
+      if (disposed) return;
+      if (!isRendererGlobalIlluminationSettings(settings))
+        throw new Error("Invalid renderer global illumination settings.");
+      giSettings = { ...settings };
+      applyGi();
       render();
     },
     setLightingMode(mode, instant, nextWeather = weather) {
@@ -411,6 +521,8 @@ export function createApartmentRenderer(
       applyShadows();
       applyLighting();
       light.shadow.needsUpdate = true;
+      updateGiLights();
+      pipeline.invalidateLighting();
       render();
     },
     render,
@@ -418,12 +530,16 @@ export function createApartmentRenderer(
       if (disposed) return;
       disposed = true;
       cancelWalkRender();
+      convergence.cancel();
       walk?.dispose();
       controls.removeEventListener("change", render);
       controls.dispose();
       apartment?.dispose();
       light.dispose();
       luminaires.dispose();
+      skyLights.dispose();
+      giScene.architecture = undefined;
+      giScene.lights = [];
       scene.backgroundNode = null;
       sky.dispose();
       scene.clear();

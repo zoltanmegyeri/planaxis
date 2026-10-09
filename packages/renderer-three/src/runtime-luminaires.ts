@@ -11,6 +11,8 @@ import {
   Vector3,
 } from "three/webgpu";
 import { RectAreaLightTexturesLib } from "three/addons/lights/RectAreaLightTexturesLib.js";
+import type { GiLightCandidate } from "./global-illumination.js";
+import { RENDER_LIGHT_LAYER } from "./global-illumination.js";
 import { SHADOW_MAP_SIZES } from "./quality.js";
 import type { QualityLevel } from "./quality.js";
 
@@ -19,8 +21,9 @@ interface RuntimeOrientation {
   readonly pitchDegrees: number;
   readonly rollDegrees: number;
 }
-/** Application-adapted semantic values; no descriptor, paths, or persistence identity. */
+/** Application-adapted values; optional design-local ID gives stable GI budget ordering. */
 export type RuntimeLuminaire = {
+  readonly id?: string;
   readonly positionCm: { readonly x: number; readonly y: number; readonly z: number };
   readonly lumens: number;
   readonly kelvin: number;
@@ -72,7 +75,7 @@ export function kelvinColor(kelvin: number): Color {
   return new Color().setRGB(clamp(red), clamp(green), clamp(blue), SRGBColorSpace);
 }
 
-function frame(orientation: RuntimeOrientation) {
+export function luminaireFrame(orientation: RuntimeOrientation) {
   const h = (orientation.headingDegrees * Math.PI) / 180;
   const p = (orientation.pitchDegrees * Math.PI) / 180;
   const r = (orientation.rollDegrees * Math.PI) / 180;
@@ -94,6 +97,7 @@ function frame(orientation: RuntimeOrientation) {
 interface LuminaireSet {
   readonly group: Group;
   readonly hasShadows: boolean;
+  readonly giCandidates: readonly GiLightCandidate[];
   dispose(): void;
 }
 
@@ -127,7 +131,7 @@ export function buildLuminaireSet(
     );
     light.power = input.lumens;
     if (input.type !== "point") {
-      const axes = frame(input.orientation);
+      const axes = luminaireFrame(input.orientation);
       if (light instanceof SpotLight && input.type === "spot") {
         light.target.position.copy(light.position).add(axes.forward);
         light.angle = (input.beamAngleDegrees * Math.PI) / 360;
@@ -157,11 +161,14 @@ export function buildLuminaireSet(
         );
       }
       light.shadow.camera.updateProjectionMatrix();
-      light.shadow.bias = -0.0002;
+      // A logarithmic-depth bias becomes a large distance offset with reversed
+      // perspective depth and can cross thin walls. Use metric normal bias only.
+      light.shadow.bias = 0;
       light.shadow.normalBias = 0.002;
       light.shadow.autoUpdate = false;
       light.shadow.needsUpdate = true;
     }
+    light.layers.set(RENDER_LIGHT_LAYER);
     group.add(light);
     return light;
   });
@@ -169,6 +176,11 @@ export function buildLuminaireSet(
   return {
     group,
     hasShadows: lights.some((light) => light.castShadow),
+    giCandidates: lights.flatMap((light, index) => {
+      if (!(light instanceof PointLight || light instanceof SpotLight)) return [];
+      const input = inputs[index]!;
+      return [{ key: input.id ?? JSON.stringify(input), priority: 2, light }];
+    }),
     dispose(): void {
       if (disposed) return;
       disposed = true;

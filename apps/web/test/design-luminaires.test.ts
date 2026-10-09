@@ -28,11 +28,12 @@ it("explicitly adapts all four types without persistence fields or shared object
   if (!descriptor.ok) throw new Error("Invalid fixture");
   const result = designLuminaires(descriptor.value);
   expect(result).toEqual([
-    { positionCm: common.position, lumens: 500, kelvin: 2700, type: "point" },
+    { id: "p", positionCm: common.position, lumens: 500, kelvin: 2700, type: "point" },
     {
       positionCm: common.position,
       lumens: 500,
       kelvin: 2700,
+      id: "s",
       type: "spot",
       orientation,
       beamAngleDegrees: 50,
@@ -41,6 +42,7 @@ it("explicitly adapts all four types without persistence fields or shared object
       positionCm: common.position,
       lumens: 500,
       kelvin: 2700,
+      id: "l",
       type: "linear",
       orientation,
       lengthCm: 150,
@@ -49,6 +51,7 @@ it("explicitly adapts all four types without persistence fields or shared object
       positionCm: common.position,
       lumens: 500,
       kelvin: 2700,
+      id: "a",
       type: "area",
       orientation,
       widthCm: 80,

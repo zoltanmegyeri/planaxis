@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>PlanAxis GI evaluation</title>
+  </head>
+  <body style="margin: 0; background: #20252b; color: white; font: 14px system-ui">
+    <h1>PlanAxis GI evaluation</h1>
+    <p>Engineering harness · fixed 1920 × 1080 drawing buffer · no persisted settings</p>
+    <label
+      >Case
+      <select id="case">
+        <option>Sunny window bounce</option>
+        <option>Studio</option>
+        <option>Connected rooms</option>
+        <option>Overcast window</option>
+        <option>Overcast sealed</option>
+        <option>Thin partition</option>
+        <option>Thin spot partition</option>
+        <option>Partition contact stress</option>
+        <option>Point</option>
+        <option>Hidden spot</option>
+        <option>Many lights</option>
+        <option>Many-light overflow</option>
+        <option>Above ceiling</option>
+        <option>Below floor</option>
+        <option>Area direct</option>
+        <option>Area proxies</option>
+        <option>Linear direct</option>
+        <option>Linear proxies</option>
+        <option>Proxy stress</option>
+      </select></label
+    >
+    <label
+      >GI
+      <select id="gi">
+        <option>On</option>
+        <option>Off</option>
+      </select></label
+    >
+    <label
+      >GI intensity
+      <select id="intensity">
+        <option>1</option>
+        <option>2</option>
+        <option>4</option>
+        <option selected>8</option>
+        <option>16</option>
+      </select></label
+    >
+    <label
+      >Directional radiance
+      <select id="directional">
+        <option>On</option>
+        <option>Off</option>
+      </select></label
+    >
+    <label
+      >Cached bounces
+      <select id="bounces">
+        <option selected>0</option>
+        <option>1</option>
+        <option>2</option>
+      </select></label
+    >
+    <label
+      >Cone angle
+      <select id="angle">
+        <option>1</option>
+        <option>5</option>
+        <option>10</option>
+        <option>20</option>
+        <option selected>25</option>
+        <option>30</option>
+        <option>40</option>
+      </select></label
+    >
+    <label
+      >Refinement frames
+      <select id="frames">
+        <option>8</option>
+        <option>16</option>
+        <option selected>32</option>
+      </select></label
+    >
+    <button id="render">Render case</button><button id="benchmark">Measure variants</button
+    ><button id="intensity-benchmark">Compare intensity performance</button
+    ><button id="lifecycle">Exercise lifecycle</button><button id="fallback">Verify WebGL2</button
+    ><button id="fullscreen">Exercise fullscreen</button>
+    <pre id="status">Starting…</pre>
+    <pre id="measurements"></pre>
+    <canvas id="canvas" style="width: 960px; height: 540px; max-width: 100%"></canvas>
+    <script type="module" src="./evaluation.ts"></script>
+  </body>
+</html>

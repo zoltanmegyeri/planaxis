@@ -119,3 +119,11 @@ export function persistQuality(preference: QualityPreference): void {
     return;
   }
 }
+
+/** Recommendations run only at restoration or an explicit named-preset selection. */
+export function recommendGlobalIllumination(
+  preset: QualityPreference["preset"],
+  available: boolean,
+): boolean {
+  return preset === "High" && available;
+}

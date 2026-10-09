@@ -21,6 +21,8 @@ import type {
   RendererPresentationSettings,
   RendererQualitySettings,
   RendererPostProcessingSettings,
+  RendererGlobalIlluminationSettings,
+  GlobalIlluminationCapability,
 } from "@planaxis/renderer-three";
 import { useEffect, useRef, useState } from "react";
 import type { ReactElement } from "react";
@@ -41,6 +43,7 @@ import {
   persistQuality,
   qualityPreset,
   restoreQuality,
+  recommendGlobalIllumination,
 } from "./render-quality.js";
 import type { QualityPreference } from "./render-quality.js";
 
@@ -65,6 +68,8 @@ export function ThreeViewport({
   onLightingModeChange,
   postProcessing,
   onPostProcessingChange,
+  globalIllumination,
+  onGlobalIlluminationChange,
 }: {
   model: ArchitecturalModel3D;
   luminaires?: readonly RuntimeLuminaire[];
@@ -75,6 +80,8 @@ export function ThreeViewport({
   onLightingModeChange: (mode: LightingMode) => void;
   postProcessing: RendererPostProcessingSettings;
   onPostProcessingChange: (settings: RendererPostProcessingSettings) => void;
+  globalIllumination: RendererGlobalIlluminationSettings;
+  onGlobalIlluminationChange: (settings: RendererGlobalIlluminationSettings) => void;
   onFailure: (error: unknown) => void;
   toolbar: HTMLDivElement | null;
   panel: WorkspacePanel;
@@ -103,6 +110,21 @@ export function ThreeViewport({
   lightingRef.current = { mode: lightingMode, ...simulation };
   const [nativeDpr, setNativeDpr] = useState(() => nativePixelRatio(window.devicePixelRatio));
   const [quality, setQuality] = useState(() => restoreQuality(nativeDpr));
+  const [giCapability, setGiCapability] = useState<GlobalIlluminationCapability>({
+    available: false,
+  });
+  const giRef = useRef(globalIllumination);
+  giRef.current = globalIllumination;
+  const updateGi = (enabled: boolean): void => {
+    const next = { enabled: enabled && giCapability.available };
+    try {
+      renderer.current?.setGlobalIlluminationSettings(next);
+      giRef.current = next;
+      onGlobalIlluminationChange(next);
+    } catch (error) {
+      onFailure(error);
+    }
+  };
   const postProcessingRef = useRef(postProcessing);
   postProcessingRef.current = postProcessing;
   const updatePostProcessing = (update: Partial<RendererPostProcessingSettings>): void => {
@@ -207,6 +229,7 @@ export function ThreeViewport({
       instance.setPresentationSettings(presentationRef.current);
       instance.setQualitySettings(qualityRef.current.settings);
       instance.setPostProcessingSettings(postProcessingRef.current);
+      instance.setGlobalIlluminationSettings(giRef.current);
       const resize = (): void => {
         try {
           const rect = area.getBoundingClientRect();
@@ -241,7 +264,10 @@ export function ThreeViewport({
       void instance
         .initialize()
         .then(() => {
-          if (active) setReady(true);
+          if (active && instance) {
+            setGiCapability(instance.getGlobalIlluminationCapability());
+            setReady(true);
+          }
         })
         .catch((error: unknown) => {
           // Backend/environment initialization cannot recover by replacing finishes.
@@ -473,9 +499,23 @@ export function ThreeViewport({
           onPreset={(preset) => {
             updateQuality(qualityPreset(preset, nativeDpr));
             updatePostProcessing({ bloomEnabled: preset !== "Performance" });
+            updateGi(recommendGlobalIllumination(preset, giCapability.available));
           }}
           onEdit={editQualitySettings}
         />
+        <label>
+          Global illumination{" "}
+          <select
+            aria-label="Global illumination"
+            value={globalIllumination.enabled && giCapability.available ? "on" : "off"}
+            disabled={!ready || !giCapability.available}
+            onChange={(event) => updateGi(event.target.value === "on")}
+          >
+            <option value="on">On</option>
+            <option value="off">Off</option>
+          </select>
+        </label>
+        {ready && !giCapability.available && <p>{giCapability.reason}</p>}
         <BloomControls settings={postProcessing} ready={ready} onEdit={updatePostProcessing} />
         <label>
           Tone mapping{" "}

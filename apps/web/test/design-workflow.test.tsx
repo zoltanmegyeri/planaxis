@@ -22,6 +22,10 @@ const renderer = vi.hoisted(() => ({
   setPresentationSettings: vi.fn(),
   setQualitySettings: vi.fn(),
   setPostProcessingSettings: vi.fn(),
+  setGlobalIlluminationSettings: vi.fn(),
+  getGlobalIlluminationCapability: vi.fn<
+    () => import("@planaxis/renderer-three").GlobalIlluminationCapability
+  >(() => ({ available: true })),
   setLightingMode: vi.fn(),
   dispose: vi.fn(),
 }));
@@ -930,7 +934,13 @@ it("installs resolved design lights, preserves them across views and clears them
   await select();
   await click("3D");
   const expected = [
-    { type: "point", positionCm: { x: 150, y: 150, z: 220 }, lumens: 400, kelvin: 2700 },
+    {
+      id: "pendant",
+      type: "point",
+      positionCm: { x: 150, y: 150, z: 220 },
+      lumens: 400,
+      kelvin: 2700,
+    },
   ];
   expect(renderer.setLuminaires).toHaveBeenLastCalledWith(expected);
   await click("2D");

@@ -7,6 +7,7 @@ import {
   qualityPreset,
   QUALITY_STORAGE_KEY,
   restoreQuality,
+  recommendGlobalIllumination,
 } from "../src/render-quality.js";
 
 beforeEach(() => window.localStorage.clear());
@@ -146,3 +147,11 @@ it("tolerates denied storage access and failed reads/writes", () => {
   expect(restoreQuality(3)).toEqual(qualityPreset("Balanced", 3));
   expect(() => persistQuality(qualityPreset("High", 3))).not.toThrow();
 });
+
+it.each(["Performance", "Balanced", "High", "Custom"] as const)(
+  "recommends GI only for supported High, including restored %s",
+  (preset) => {
+    expect(recommendGlobalIllumination(preset, true)).toBe(preset === "High");
+    expect(recommendGlobalIllumination(preset, false)).toBe(false);
+  },
+);

@@ -25,6 +25,10 @@ const rendererMocks = vi.hoisted(() => ({
   setPresentationSettings: vi.fn(),
   setQualitySettings: vi.fn(),
   setPostProcessingSettings: vi.fn(),
+  setGlobalIlluminationSettings: vi.fn(),
+  getGlobalIlluminationCapability: vi.fn<
+    () => import("@planaxis/renderer-three").GlobalIlluminationCapability
+  >(() => ({ available: true })),
   setLightingMode: vi.fn(),
   render: vi.fn(),
   dispose: vi.fn(),
@@ -1001,7 +1005,7 @@ it("exposes primary actions in one toolbar and keeps secondary settings transien
   await clickControl("Rendering");
   const rendering = host.querySelector<HTMLElement>("#rendering-panel");
   expect(rendering?.hidden).toBe(false);
-  expect(rendering?.querySelectorAll("input, select")).toHaveLength(14);
+  expect(rendering?.querySelectorAll("input, select")).toHaveLength(15);
   await clickControl("Camera settings");
   expect(rendering?.hidden).toBe(true);
   expect(host.querySelector<HTMLElement>("#camera-panel")?.hidden).toBe(false);
@@ -1434,4 +1438,78 @@ it("keeps bloom overrides independent of named presets, manual quality and displ
     bloomRadius: 0.1,
     bloomThreshold: 5,
   });
+});
+
+it.each(["Performance", "Balanced", "High", "Custom"] as const)(
+  "restores %s with transient GI recommendation and no separate persistence",
+  async (preset) => {
+    window.localStorage.setItem(
+      QUALITY_STORAGE_KEY,
+      JSON.stringify({ version: 1, ...qualityPreset("Balanced", 1), preset }),
+    );
+    const startup = deferred<void>();
+    rendererMocks.initialize.mockReturnValueOnce(startup.promise);
+    await mountProject();
+    await clickView("3D");
+    expect(qualityControl("Global illumination").disabled).toBe(true);
+    expect(rendererMocks.setGlobalIlluminationSettings).toHaveBeenLastCalledWith({
+      enabled: preset === "High",
+    });
+    await act(async () => startup.resolve());
+    expect(qualityControl("Global illumination").value).toBe(preset === "High" ? "on" : "off");
+    expect(qualityControl("Global illumination").disabled).toBe(false);
+    expect(window.localStorage.length).toBe(1);
+    expect(window.localStorage.getItem(QUALITY_STORAGE_KEY)).not.toContain("illumination");
+  },
+);
+
+it("keeps manual GI independent of High/Balanced, DPR, bloom, views and fullscreen", async () => {
+  vi.spyOn(window, "devicePixelRatio", "get").mockReturnValue(2);
+  await mountProject(fixture("valid/minimal-semantic-schema.svg"));
+  await clickView("3D");
+  await selectQuality("3D quality preset", "High");
+  expect(qualityControl("Global illumination").value).toBe("on");
+  const stored = window.localStorage.getItem(QUALITY_STORAGE_KEY);
+  await selectQuality("Global illumination", "off");
+  expect(qualityControl("3D quality preset").value).toBe("High");
+  expect(window.localStorage.getItem(QUALITY_STORAGE_KEY)).toBe(stored);
+  await selectQuality("3D quality preset", "Balanced");
+  await selectQuality("Global illumination", "on");
+  expect(qualityControl("3D quality preset").value).toBe("Balanced");
+  await selectQuality("3D quality preset", "High");
+  await selectQuality("3D pixel ratio", "1");
+  expect(qualityControl("3D quality preset").value).toBe("Custom");
+  expect(qualityControl("Global illumination").value).toBe("on");
+  const calls = rendererMocks.setGlobalIlluminationSettings.mock.calls.length;
+  await act(async () => bloomControl("Bloom enabled").click());
+  await selectQuality("3D camera", "@walk");
+  await selectQuality("3D render aspect ratio", "1:1");
+  await clickControl("Full screen");
+  await browserExit();
+  expect(rendererMocks.setGlobalIlluminationSettings).toHaveBeenCalledTimes(calls);
+  expect(rendererMocks.setModel).toHaveBeenCalledTimes(1);
+  await clickView("2D");
+  await clickView("3D");
+  expect(qualityControl("Global illumination").value).toBe("on");
+  expect(rendererMocks.setGlobalIlluminationSettings).toHaveBeenLastCalledWith({ enabled: true });
+  await remountProject();
+  await clickView("3D");
+  expect(qualityControl("Global illumination").value).toBe("off");
+});
+
+it("explains unavailable WebGL2 GI without preventing High selection or bloom", async () => {
+  rendererMocks.getGlobalIlluminationCapability.mockReturnValueOnce({
+    available: false,
+    reason: "Global illumination requires native WebGPU; unavailable on WebGL2.",
+  });
+  await mountProject();
+  await clickView("3D");
+  await clickControl("Rendering");
+  expect(qualityControl("Global illumination").disabled).toBe(true);
+  expect(host.textContent).toContain("unavailable on WebGL2");
+  await selectQuality("3D quality preset", "High");
+  expect(qualityControl("3D quality preset").value).toBe("High");
+  expect(qualityControl("Global illumination").value).toBe("off");
+  expect(bloomControl("Bloom enabled").disabled).toBe(false);
+  expect(rendererMocks.setGlobalIlluminationSettings).toHaveBeenLastCalledWith({ enabled: false });
 });

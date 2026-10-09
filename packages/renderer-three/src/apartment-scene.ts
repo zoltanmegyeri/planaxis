@@ -35,6 +35,7 @@ export function buildApartmentScene(
   finishes: RuntimeFinishOptions = {},
 ): ApartmentScene {
   const group = new Group();
+  group.name = "apartment-architecture";
   const objectsBySourceId = new Map<string, Group>();
   const geometries = new Set<BufferGeometry>();
   const materials = new RuntimeMaterials(finishes.resolveTexture);
@@ -138,6 +139,7 @@ export function buildApartmentScene(
           const clone = materials.own(finish.clone());
           const alphaMask = clone instanceof MeshStandardNodeMaterial ? clone.maskNode : null;
           Object.assign(clone, {
+            shadowSide: DoubleSide,
             maskShadowNode: alphaMask
               ? nodeObject(new OperatorNode("&&", perspectiveDepth, alphaMask))
               : perspectiveDepth,

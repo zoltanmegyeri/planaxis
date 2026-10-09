@@ -15,12 +15,17 @@ import {
   ACESFilmicToneMapping,
   NeutralToneMapping,
   RenderTarget,
+  FloatType,
   AmbientLight,
   PCFShadowMap,
 } from "three/webgpu";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
 const gpu = vi.hoisted(() => ({
+  nativeWebgpu: false,
+  device: undefined as GPUDevice | undefined,
+  vxgis: [] as ReturnType<typeof import("three/addons/lighting/vxgi/VXGINode.js").vxgi>[],
+  temporals: [] as ReturnType<typeof import("three/addons/tsl/display/TRAANode.js").traa>[],
   init: vi.fn<() => Promise<void>>(),
   pipelineRender: vi.fn(),
   directRender: vi.fn(),
@@ -52,7 +57,7 @@ vi.mock("three/webgpu", async (original) => {
       }
       override render(): void {
         const scenePass = gpu.passes.at(-1);
-        gpu.pipelineRender(scenePass?.scene, scenePass?.camera);
+        gpu.pipelineRender(scenePass?.scene, scenePass?.camera, this.renderer.getRenderTarget());
       }
     },
     PMREMGenerator: class {
@@ -64,12 +69,22 @@ vi.mock("three/webgpu", async (original) => {
         gpu.options(options);
         gpu.instances.push(this as unknown as WebGPURenderer);
       }
+      backend = { isWebGPUBackend: gpu.nativeWebgpu, device: gpu.device };
+      _nodes = { nodeFrame: { update: vi.fn() } };
+      samples = 4;
       shadowMap = { enabled: false };
       init = gpu.init;
       render = gpu.directRender;
       dispose = gpu.dispose;
       setSize = gpu.setSize;
       setPixelRatio = gpu.setPixelRatio;
+      target: RenderTarget | null = null;
+      getRenderTarget(): RenderTarget | null {
+        return this.target;
+      }
+      setRenderTarget(target: RenderTarget | null): void {
+        this.target = target;
+      }
     },
   };
 });
@@ -108,6 +123,28 @@ vi.mock("three/addons/controls/OrbitControls.js", async () => {
     },
   };
 });
+vi.mock("three/addons/lighting/vxgi/VXGINode.js", async (original) => {
+  const actual = await original<typeof import("three/addons/lighting/vxgi/VXGINode.js")>();
+  return {
+    ...actual,
+    vxgi: (...args: Parameters<typeof actual.vxgi>) => {
+      const result = actual.vxgi(...args);
+      gpu.vxgis.push(result);
+      return result;
+    },
+  };
+});
+vi.mock("three/addons/tsl/display/TRAANode.js", async (original) => {
+  const actual = await original<typeof import("three/addons/tsl/display/TRAANode.js")>();
+  return {
+    ...actual,
+    traa: (...args: Parameters<typeof actual.traa>) => {
+      const result = actual.traa(...args);
+      gpu.temporals.push(result);
+      return result;
+    },
+  };
+});
 import {
   createApartmentRenderer,
   DEFAULT_PRESENTATION_SETTINGS,
@@ -121,6 +158,10 @@ import type { RendererQualitySettings } from "../src/index.js";
 beforeEach(() => {
   vi.clearAllMocks();
   gpu.init.mockResolvedValue();
+  gpu.nativeWebgpu = false;
+  gpu.device = undefined;
+  gpu.vxgis.length = 0;
+  gpu.temporals.length = 0;
   gpu.instances.length = 0;
   gpu.pipelines.length = 0;
   gpu.passes.length = 0;
@@ -148,16 +189,12 @@ it("resizes embedded FOV, applies selected DPR, replaces models and releases own
   expect(gpu.setPixelRatio).toHaveBeenCalledWith(4);
   expect(gpu.setSize).toHaveBeenCalledWith(400, 800, false);
   const scene = gpu.pipelineRender.mock.calls.at(-1)?.[0] as Scene;
-  const first = scene.children.find(
-    (object) => object.type === "Group" && object.name !== "design-luminaires",
-  );
+  const first = scene.children.find((object) => object.name === "apartment-architecture");
   renderer.setModel(modelFixture());
   expect(first?.children).toHaveLength(0);
-  expect(
-    scene.children.filter(
-      (object) => object.type === "Group" && object.name !== "design-luminaires",
-    ),
-  ).toHaveLength(1);
+  expect(scene.children.filter((object) => object.name === "apartment-architecture")).toHaveLength(
+    1,
+  );
   renderer.selectCamera(null);
   expect(camera.fov).toBeCloseTo(verticalFov(fullFrameHorizontalFov(50), camera.aspect));
   renderer.dispose();
@@ -618,12 +655,14 @@ it("updates DPR buffers immediately without changing CSS sizing, pose, projectio
   renderer.dispose();
 });
 
-it("retains logarithmic depth precision for the viewing camera", () => {
+it("requests reversed depth precision for the viewing camera", () => {
   const renderer = createApartmentRenderer(canvas, vi.fn());
   expect(gpu.options).toHaveBeenCalledWith({
     canvas,
     antialias: true,
-    logarithmicDepthBuffer: true,
+    logarithmicDepthBuffer: false,
+    requiredLimits: {},
+    reversedDepthBuffer: true,
   });
   renderer.dispose();
 });
@@ -1216,7 +1255,9 @@ it("owns one HDR pipeline, bypasses disabled bloom and updates uniforms without 
   expect(gpu.options).toHaveBeenCalledWith({
     canvas: surface.canvas,
     antialias: true,
-    logarithmicDepthBuffer: true,
+    logarithmicDepthBuffer: false,
+    requiredLimits: {},
+    reversedDepthBuffer: true,
   });
   expect(gpu.directRender).not.toHaveBeenCalled();
   const scene = scenePass.scene;
@@ -1297,4 +1338,161 @@ it("rejects invalid post-processing atomically and releases uninitialized pipeli
   const effectDispose = vi.spyOn(bloomNode, "dispose");
   renderer.dispose();
   expect(effectDispose).toHaveBeenCalledTimes(1);
+});
+
+it("keeps GI unavailable on WebGL2 while High, bloom and existing rendering remain usable", async () => {
+  const renderer = createApartmentRenderer(canvas, vi.fn());
+  renderer.setModel(modelFixture());
+  renderer.setGlobalIlluminationSettings({ enabled: true });
+  renderer.setQualitySettings({ ...DEFAULT_QUALITY_SETTINGS, shadowQuality: "High" });
+  await renderer.initialize();
+  expect(renderer.getGlobalIlluminationCapability()).toMatchObject({
+    available: false,
+    reason: expect.stringContaining("WebGL2"),
+  });
+  expect(gpu.vxgis).toHaveLength(0);
+  expect(gpu.pipelineRender).toHaveBeenCalled();
+  expect(gpu.blooms).toHaveLength(1);
+  const renders = gpu.pipelineRender.mock.calls.length;
+  expect(() =>
+    renderer.setGlobalIlluminationSettings({ enabled: 1 } as unknown as { enabled: boolean }),
+  ).toThrow("Invalid renderer global illumination");
+  expect(gpu.pipelineRender).toHaveBeenCalledTimes(renders);
+  renderer.dispose();
+});
+
+it("injects GI before HDR temporal resolve and bloom, preserving geometry through camera and lighting edits", async () => {
+  gpu.nativeWebgpu = true;
+  const surface = navigationSurface();
+  const renderer = createApartmentRenderer(surface.canvas, vi.fn());
+  renderer.setModel(modelFixture());
+  renderer.setPresentationSettings(DEFAULT_PRESENTATION_SETTINGS);
+  renderer.setGlobalIlluminationSettings({ enabled: true });
+  await renderer.initialize();
+  const node = gpu.vxgis[0]!;
+  const temporal = gpu.temporals.at(-1)!;
+  const prePass = gpu.passes[1]!;
+  const scenePass = gpu.passes[0]!;
+  const pipeline = gpu.pipelines[0]!;
+  const bloomNode = gpu.blooms.at(-1)!;
+  expect(renderer.getGlobalIlluminationCapability()).toEqual({ available: true });
+  expect(prePass.transparent).toBe(false);
+  expect(prePass.options.samples).toBe(0);
+  expect(prePass.getLayers()?.mask).toBe(1);
+  expect(prePass.getTexture("depth").type).toBe(FloatType);
+  expect(scenePass.renderTarget.samples).toBe(0);
+  expect(gpu.pipelineRender.mock.calls[0]?.[2]).toMatchObject({ width: 1, height: 1 });
+  expect(gpu.pipelineRender.mock.calls[1]?.[2]).toBeNull();
+  expect(temporal.depthNode).toBe(prePass.getTextureNode("depth"));
+  expect(temporal.velocityNode).toBe(prePass.getTextureNode("velocity"));
+  expect(scenePass.contextNode).not.toBeNull();
+  expect(temporal.beautyNode).toBe(scenePass.getTextureNode("output"));
+  expect(bloomNode.inputNode).toBe(temporal);
+  expect(pipeline.outputNode).toMatchObject({
+    node: { op: "+", aNode: temporal, bNode: bloomNode },
+  });
+  expect(pipeline.outputColorTransform).toBe(true);
+  expect(node.volume).toMatchObject({
+    resolution: 256,
+    maxLights: 32,
+    directionalRadiance: true,
+    bounces: 0,
+  });
+  expect(node.giIntensity.value).toBe(8);
+  expect(gpu.instances[0]!.toneMappingExposure).toBe(1);
+  expect(
+    scenePass.scene.children.find((object) => object instanceof DirectionalLight),
+  ).toMatchObject({
+    intensity: 3,
+  });
+  expect(surface.frames.size).toBe(1);
+  const start = gpu.pipelineRender.mock.calls.length;
+  for (let i = 0; i < 32; i++) surface.frame(16);
+  expect(gpu.pipelineRender).toHaveBeenCalledTimes(start + 32);
+  expect(surface.frames.size).toBe(0);
+  // Simulate flags consumed by the upstream GPU update, then test invalidation boundaries.
+  node.needsUpdate = false;
+  node.lightingNeedsUpdate = false;
+  renderer.selectCamera("camera-1");
+  renderer.selectWalk();
+  renderer.resize(1920, 1080);
+  renderer.setFocalLengthOverride(24);
+  expect(node.needsUpdate).toBe(false);
+  expect(node.lightingNeedsUpdate).toBe(false);
+  renderer.setLuminaires([
+    {
+      id: "point",
+      type: "point",
+      positionCm: { x: 100, y: 100, z: 150 },
+      lumens: 500,
+      kelvin: 3000,
+    },
+  ]);
+  expect(node.needsUpdate).toBe(false);
+  expect(node.lightingNeedsUpdate).toBe(true);
+  node.lightingNeedsUpdate = false;
+  renderer.setLightingMode("studio", 0);
+  expect(node.needsUpdate).toBe(false);
+  expect(node.lightingNeedsUpdate).toBe(true);
+  const history = gpu.temporals.at(-1)!;
+  const historyReset = vi.spyOn(
+    history as typeof history & { setSize(width: number, height: number): void },
+    "setSize",
+  );
+  renderer.setModel(modelFixture());
+  expect(node.needsUpdate).toBe(true);
+  expect(historyReset).toHaveBeenCalledWith(1, 1);
+  expect(gpu.vxgis).toHaveLength(1);
+  const giDispose = vi.spyOn(node, "dispose");
+  renderer.setGlobalIlluminationSettings({ enabled: false });
+  expect(surface.frames.size).toBe(0);
+  expect(scenePass.contextNode).toBeNull();
+  expect(giDispose).toHaveBeenCalledOnce();
+  renderer.setGlobalIlluminationSettings({ enabled: true });
+  const newNode = gpu.vxgis.at(-1)!;
+  const newDispose = vi.spyOn(newNode, "dispose");
+  renderer.dispose();
+  expect(newDispose).toHaveBeenCalledOnce();
+  expect(surface.frames.size).toBe(0);
+  expect(gpu.dispose).toHaveBeenCalledOnce();
+});
+
+it("cancels GI convergence after a rendering failure or device loss", async () => {
+  gpu.nativeWebgpu = true;
+  const surface = navigationSurface();
+  const failure = vi.fn();
+  const renderer = createApartmentRenderer(surface.canvas, failure);
+  renderer.setModel(modelFixture());
+  renderer.setGlobalIlluminationSettings({ enabled: true });
+  await renderer.initialize();
+  gpu.pipelineRender.mockImplementationOnce(() => {
+    throw new Error("GPU failed");
+  });
+  surface.frame(16);
+  expect(failure).toHaveBeenCalledOnce();
+  expect(surface.frames.size).toBe(0);
+  renderer.dispose();
+});
+
+it("reports uncaptured native GPU validation errors once and releases the listener", async () => {
+  gpu.nativeWebgpu = true;
+  const device = Object.assign(new EventTarget(), {
+    limits: { maxSampledTexturesPerShaderStage: 16, maxSamplersPerShaderStage: 16 },
+  });
+  gpu.device = device as unknown as GPUDevice;
+  const surface = navigationSurface();
+  const failure = vi.fn();
+  const renderer = createApartmentRenderer(surface.canvas, failure);
+  renderer.setModel(modelFixture());
+  renderer.setGlobalIlluminationSettings({ enabled: true });
+  await renderer.initialize();
+  const error = () =>
+    Object.assign(new Event("uncapturederror"), { error: { message: "Invalid texture" } });
+  device.dispatchEvent(error());
+  device.dispatchEvent(error());
+  expect(failure).toHaveBeenCalledOnce();
+  expect(surface.frames.size).toBe(0);
+  renderer.dispose();
+  device.dispatchEvent(error());
+  expect(failure).toHaveBeenCalledOnce();
 });

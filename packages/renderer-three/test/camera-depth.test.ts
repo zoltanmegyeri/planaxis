@@ -6,9 +6,11 @@ import {
   Mesh,
   Texture,
   MeshStandardNodeMaterial,
+  DoubleSide,
 } from "three/webgpu";
 import { createDecimal as decimal } from "@planaxis/geometry";
-import { cameraDepth, perspectiveDepth } from "../src/camera-depth.js";
+import { cameraDepth, perspectiveDepth, reversedDepth } from "../src/camera-depth.js";
+import type { WebGPURenderer } from "three/webgpu";
 import { buildApartmentScene } from "../src/apartment-scene.js";
 import { modelFixture } from "./model-fixture.js";
 
@@ -54,6 +56,7 @@ it("gives mapped surfaces and cloned ceiling finishes the same projection-aware 
     for (const material of [surface.material].flat()) {
       expect(material).toHaveProperty("depthNode", cameraDepth);
       expect(material.map).not.toBeNull();
+      expect(material.shadowSide).toBe(DoubleSide);
       if (name === "floor") expect(material).toHaveProperty("maskShadowNode", perspectiveDepth);
       else expect(material).not.toHaveProperty("maskShadowNode", perspectiveDepth);
     }
@@ -62,6 +65,16 @@ it("gives mapped surfaces and cloned ceiling finishes the same projection-aware 
   }
   scene.dispose();
   source.dispose();
+});
+
+it("follows the initialized backend depth convention for viewing and shadow passes", () => {
+  const frame = new NodeFrame();
+  expect(reversedDepth.updateType).toBe("render");
+  for (const enabled of [true, false, true]) {
+    frame.renderer = { reversedDepthBuffer: enabled } as WebGPURenderer;
+    reversedDepth.update(frame);
+    expect(reversedDepth.value).toBe(enabled);
+  }
 });
 
 it("keeps floor alpha masking and does not give a shared ceiling the floor shadow mask", () => {

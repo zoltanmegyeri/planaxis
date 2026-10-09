@@ -1,5 +1,5 @@
 import { DEFAULT_POST_PROCESSING_SETTINGS } from "@planaxis/renderer-three";
-import { nativePixelRatio, restoreQuality } from "./render-quality.js";
+import { nativePixelRatio, restoreQuality, recommendGlobalIllumination } from "./render-quality.js";
 import { DEFAULT_WEATHER } from "@planaxis/simulation";
 import type { LightingMode, PhysicalSimulation } from "@planaxis/simulation";
 import { useEffect, useState } from "react";
@@ -32,6 +32,12 @@ export function App(): ReactElement {
     ...DEFAULT_POST_PROCESSING_SETTINGS,
     bloomEnabled:
       restoreQuality(nativePixelRatio(window.devicePixelRatio)).preset !== "Performance",
+  }));
+  const [globalIllumination, setGlobalIllumination] = useState(() => ({
+    enabled: recommendGlobalIllumination(
+      restoreQuality(nativePixelRatio(window.devicePixelRatio)).preset,
+      true,
+    ),
   }));
   const [lightingMode, setLightingMode] = useState<LightingMode>("studio");
   const active = useDocument();
@@ -215,6 +221,8 @@ export function App(): ReactElement {
             key={design.selectedPath}
             postProcessing={postProcessing}
             onPostProcessingChange={setPostProcessing}
+            globalIllumination={globalIllumination}
+            onGlobalIlluminationChange={setGlobalIllumination}
             model={current.architecturalModel}
             simulation={simulation}
             sessionInstant={sessionInstant}
