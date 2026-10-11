@@ -2,11 +2,11 @@
 
 ## Task Metadata
 
-- **Status:** Ready
+- **Status:** In Progress
 - **Created:** 2026-10-11
-- **Issued:** —
+- **Issued:** 2026-10-11
 - **Completed:** —
-- **Agent:** —
+- **Agent:** Codex
 - **Repository:** PlanAxis
 - **Description:** `TASK-045-description.md`
 - **Related tasks:** TASK-043, TASK-044
@@ -84,6 +84,6 @@ Intended repository directory:
 docs/tasks/TASK-045-path-traced-design-luminaires/
 ```
 
-The task is prepared but has not been issued. Execution and human acceptance remain pending.
+The task was issued to Codex on 2026-10-11. Execution and human acceptance remain pending; the issued task description is immutable.
 
 The accepted scope retains the current Physical Sunny, matte-finish, and thin-clear-pane subset. Luminaire editing, fixture models, broader material support, and performance benchmarking remain outside this task.
