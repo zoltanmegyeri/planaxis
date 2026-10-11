@@ -46,6 +46,35 @@ const orbit = vi.hoisted(() => ({
   addEventListener: vi.fn(),
   removeEventListener: vi.fn(),
 }));
+const tracingGpu = vi.hoisted(() => ({
+  failInitialization: false,
+  trace: vi.fn(),
+  setScene: vi.fn(),
+  setDaylight: vi.fn(),
+  setPresentation: vi.fn(),
+  display: vi.fn(),
+  clear: vi.fn(),
+  dispose: vi.fn(),
+}));
+vi.mock("../src/path-tracing/backend.js", () => ({
+  PathTracingBackend: class {
+    constructor() {
+      if (tracingGpu.failInitialization) throw new Error("Floating-point framebuffer unavailable");
+    }
+    canvas = { style: { display: "none" }, width: 1, height: 1 };
+    resize(width: number, height: number): void {
+      this.canvas.width = Math.floor(width);
+      this.canvas.height = Math.floor(height);
+    }
+    trace = tracingGpu.trace;
+    setScene = tracingGpu.setScene;
+    setDaylight = tracingGpu.setDaylight;
+    setPresentation = tracingGpu.setPresentation;
+    display = tracingGpu.display;
+    clear = tracingGpu.clear;
+    dispose = tracingGpu.dispose;
+  },
+}));
 vi.mock("three/webgpu", async (original) => {
   const actual = await original<typeof import("three/webgpu")>();
   return {
@@ -157,6 +186,8 @@ import type { RendererQualitySettings } from "../src/index.js";
 
 beforeEach(() => {
   vi.clearAllMocks();
+  tracingGpu.failInitialization = false;
+  tracingGpu.trace.mockReset();
   gpu.init.mockResolvedValue();
   gpu.nativeWebgpu = false;
   gpu.device = undefined;
@@ -1495,4 +1526,195 @@ it("reports uncaptured native GPU validation errors once and releases the listen
   renderer.dispose();
   device.dispatchEvent(error());
   expect(failure).toHaveBeenCalledOnce();
+});
+
+it("switches camera-preserving outputs, retains presentation/GI/bloom and resumes unchanged accumulation", async () => {
+  gpu.nativeWebgpu = true;
+  const surface = navigationSurface();
+  const changed = vi.fn(),
+    failure = vi.fn();
+  const instance = createApartmentRenderer(surface.canvas, failure, changed);
+  instance.setModel(
+    modelFixture("../projects/daylight-path-tracing-windowed/architecture/apartment.svg"),
+  );
+  instance.resize(640, 360);
+  instance.setLightingMode("physical", Date.parse("2026-10-09T10:00:00Z"), "sunny");
+  instance.setGlobalIlluminationSettings({ enabled: true });
+  instance.setPostProcessingSettings({ ...DEFAULT_POST_PROCESSING_SETTINGS, bloomEnabled: false });
+  await instance.initialize();
+  instance.selectCamera("interior");
+  const camera = gpu.passes.at(-1)!.camera as PerspectiveCamera;
+  camera.updateMatrixWorld(true);
+  const pose = camera.matrixWorld.clone(),
+    projection = camera.projectionMatrix.clone();
+  expect(instance.getPathTracingStatus().available).toBe(true);
+  gpu.pipelineRender.mockClear();
+  instance.setRenderingView("path-tracing");
+  surface.frame(16);
+  surface.frame(16);
+  expect(tracingGpu.trace).toHaveBeenLastCalledWith(camera, 1);
+  expect(gpu.pipelineRender).not.toHaveBeenCalled();
+  expect(camera.matrixWorld).toEqual(pose);
+  expect(camera.projectionMatrix).toEqual(projection);
+  instance.setPathTracingPaused(true);
+  expect(surface.frames.size).toBe(0);
+  instance.setPresentationSettings({
+    ...DEFAULT_PRESENTATION_SETTINGS,
+    toneMapping: "ACES Filmic",
+    exposureEv: 1,
+  });
+  expect(instance.getPathTracingStatus().samples).toBe(2);
+  expect(tracingGpu.setScene).toHaveBeenCalledTimes(1);
+  expect(tracingGpu.setPresentation).toHaveBeenLastCalledWith(ACESFilmicToneMapping, 2);
+  instance.setPathTracingPaused(false);
+  surface.frame(16);
+  expect(tracingGpu.trace).toHaveBeenLastCalledWith(camera, 2);
+  instance.setRenderingView("interactive");
+  expect(gpu.pipelineRender).toHaveBeenCalled();
+  expect(gpu.pipelines.at(-1)!.outputNode).toBe(gpu.temporals.at(-1));
+  expect(surface.frames.size).toBe(1); // only the finite VXGI refinement burst
+  instance.setRenderingView("path-tracing");
+  surface.frame(16);
+  expect(tracingGpu.trace).toHaveBeenLastCalledWith(camera, 3);
+  instance.dispose();
+  expect(surface.frames.size).toBe(0);
+  expect(tracingGpu.dispose).toHaveBeenCalledTimes(1);
+  expect(failure).not.toHaveBeenCalled();
+});
+
+it("invalidates camera, daylight, buffer and geometry inputs and cancels hidden/unavailable tracing", async () => {
+  const surface = navigationSurface();
+  const instance = createApartmentRenderer(surface.canvas, vi.fn());
+  const model = modelFixture(
+    "../projects/daylight-path-tracing-windowed/architecture/apartment.svg",
+  );
+  instance.setModel(model);
+  instance.setLightingMode("physical", Date.parse("2026-10-09T10:00:00Z"), "sunny");
+  await instance.initialize();
+  instance.setRenderingView("path-tracing");
+  surface.frame(16);
+  surface.frame(16);
+  instance.selectCamera("interior");
+  expect(instance.getPathTracingStatus().samples).toBe(0);
+  surface.frame(16);
+  instance.setFocalLengthOverride(24);
+  expect(instance.getPathTracingStatus().samples).toBe(0);
+  surface.frame(16);
+  instance.resize(640, 360);
+  expect(instance.getPathTracingStatus().samples).toBe(0);
+  surface.frame(16);
+  instance.setQualitySettings({ ...DEFAULT_QUALITY_SETTINGS, pixelRatio: 2 });
+  expect(instance.getPathTracingStatus().samples).toBe(0);
+  surface.frame(16);
+  instance.setLightingMode("physical", Date.parse("2026-10-09T11:00:00Z"), "sunny");
+  expect(instance.getPathTracingStatus().samples).toBe(0);
+  surface.frame(16);
+  surface.document.visibilityState = "hidden";
+  surface.dispatch(surface.document, "visibilitychange");
+  expect(surface.frames.size).toBe(0);
+  const samples = instance.getPathTracingStatus().samples;
+  surface.document.visibilityState = "visible";
+  surface.dispatch(surface.document, "visibilitychange");
+  surface.frame(16);
+  expect(instance.getPathTracingStatus().samples).toBe(samples + 1);
+  instance.setLightingMode("physical", Date.parse("2026-10-09T11:00:00Z"), "overcast");
+  expect(instance.getPathTracingStatus().reason).toContain("Sunny");
+  expect(surface.frames.size).toBe(0);
+  instance.setLightingMode("physical", Date.parse("2026-10-09T11:00:00Z"), "sunny");
+  instance.setModel(model);
+  expect(instance.getPathTracingStatus().samples).toBe(0);
+  expect(tracingGpu.setScene).toHaveBeenCalledTimes(2);
+  instance.dispose();
+});
+
+it("maps the existing simulation's Sun and sky only, ignoring raster fill, helpers and luminaires", async () => {
+  const surface = navigationSurface();
+  const instance = createApartmentRenderer(surface.canvas, vi.fn());
+  instance.setModel(
+    modelFixture("../projects/daylight-path-tracing-windowed/architecture/apartment.svg"),
+  );
+  const instant = Date.parse("2026-10-09T10:00:00Z");
+  instance.setLightingMode("physical", instant, "sunny");
+  await instance.initialize();
+  const sun = simulation.calculateSolarPosition(47.4979, 19.0402, instant);
+  const direction = simulation.planaxisSunDirection(270, sun);
+  const [tracedDirection, radiance] = tracingGpu.setDaylight.mock.calls.at(-1)! as [Vector3, Color];
+  expect(tracedDirection.toArray()).toEqual([direction.x, direction.z, direction.y]);
+  expect(radiance.r).toBeGreaterThan(0);
+  instance.setRenderingView("path-tracing");
+  const calls = tracingGpu.setDaylight.mock.calls.length;
+  instance.setLuminaires([
+    {
+      id: "ignored",
+      type: "point",
+      positionCm: { x: 100, y: 100, z: 200 },
+      lumens: 10000,
+      kelvin: 3000,
+    },
+  ]);
+  expect(tracingGpu.setDaylight).toHaveBeenCalledTimes(calls);
+  expect(instance.getPathTracingStatus().samples).toBe(0);
+  instance.dispose();
+});
+
+it("keeps valid architecture usable after tracing capability or shader failures", async () => {
+  const surface = navigationSurface();
+  const model = modelFixture(
+    "../projects/daylight-path-tracing-windowed/architecture/apartment.svg",
+  );
+  tracingGpu.failInitialization = true;
+  const failure = vi.fn();
+  const unsupported = createApartmentRenderer(surface.canvas, failure);
+  unsupported.setModel(model);
+  unsupported.setLightingMode("physical", 0, "sunny");
+  await unsupported.initialize();
+  expect(unsupported.getPathTracingStatus().reason).toContain("framebuffer");
+  expect(failure).not.toHaveBeenCalled();
+  unsupported.dispose();
+  tracingGpu.failInitialization = false;
+  const instance = createApartmentRenderer(surface.canvas, failure);
+  instance.setModel(model);
+  instance.setLightingMode("physical", 0, "sunny");
+  await instance.initialize();
+  instance.setRenderingView("path-tracing");
+  tracingGpu.trace.mockImplementationOnce(() => {
+    throw new Error("Shader compilation failed");
+  });
+  surface.frame(16);
+  expect(instance.getPathTracingStatus().error).toContain("Shader compilation");
+  expect(surface.frames.size).toBe(0);
+  gpu.pipelineRender.mockClear();
+  instance.setRenderingView("interactive");
+  expect(gpu.pipelineRender).toHaveBeenCalled();
+  expect(failure).not.toHaveBeenCalled();
+  instance.dispose();
+});
+
+it("cannot restart tracing after a shared rendering device failure", async () => {
+  const surface = navigationSurface();
+  const failure = vi.fn();
+  const instance = createApartmentRenderer(surface.canvas, failure);
+  instance.setModel(
+    modelFixture("../projects/daylight-path-tracing-windowed/architecture/apartment.svg"),
+  );
+  instance.setLightingMode("physical", 0, "sunny");
+  await instance.initialize();
+  instance.setRenderingView("path-tracing");
+  surface.frame(16);
+  const draws = tracingGpu.trace.mock.calls.length;
+  gpu.instances.at(-1)!.onDeviceLost({
+    api: "WebGPU",
+    reason: "unknown",
+    message: "Test device loss",
+    originalEvent: undefined,
+  });
+  expect(failure).toHaveBeenCalledOnce();
+  expect(surface.frames.size).toBe(0);
+  instance.setRenderingView("path-tracing");
+  instance.setPathTracingPaused(false);
+  instance.render();
+  surface.frame(16);
+  expect(tracingGpu.trace).toHaveBeenCalledTimes(draws);
+  expect(instance.getPathTracingStatus().available).toBe(false);
+  instance.dispose();
 });

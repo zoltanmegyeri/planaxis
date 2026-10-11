@@ -58,7 +58,13 @@ Four shadow-aware Physical sky sources approximate diffuse daylight. Linear/area
 unsupported after the bounded proxy experiment. Defaults, hardware limits and unresolved thin-wall
 leakage are recorded in `docs/architecture/realtime-global-illumination.md`. Further VXGI work
 is set aside in favor of a separate path-tracing evaluation.
-Luminaire placement/editing, IES, path tracing, and richer atmospheric
+A separate experimental WebGL2 daylight path-tracing view reuses physical architectural
+meshes and navigation, supporting Physical Sunny, opaque matte finishes and thin clear panes.
+It progressively accumulates linear HDR with pause/resume and input invalidation; current
+tone mapping/exposure applies once, and raster GI/fill, luminaires and bloom are excluded.
+Selection/pause/samples are session-only. The default interactive renderer is retained. See
+`docs/architecture/daylight-path-tracing.md` for the bounded subset and review evidence.
+Luminaire placement/editing, IES, broader path tracing, and richer atmospheric
 effects remain future work; 3D asset importing/placement follows in Phase 5.
 
 AI-assisted design and photorealistic rendering are downstream features. They must not replace or weaken the deterministic geometry and validation pipeline.

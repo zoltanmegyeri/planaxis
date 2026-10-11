@@ -15,6 +15,8 @@ import * as processing from "../src/process-document.js";
 import { QUALITY_STORAGE_KEY, qualityPreset } from "../src/render-quality.js";
 
 const rendererMocks = vi.hoisted(() => ({
+  onTracing: undefined as
+    ((status: import("@planaxis/renderer-three").PathTracingStatus) => void) | undefined,
   initialize: vi.fn<() => Promise<void>>(),
   setModel: vi.fn(),
   setLuminaires: vi.fn(),
@@ -30,12 +32,27 @@ const rendererMocks = vi.hoisted(() => ({
     () => import("@planaxis/renderer-three").GlobalIlluminationCapability
   >(() => ({ available: true })),
   setLightingMode: vi.fn(),
+  setRenderingView: vi.fn(),
+  setPathTracingPaused: vi.fn(),
+  getPathTracingStatus: vi.fn<() => import("@planaxis/renderer-three").PathTracingStatus>(() => ({
+    available: true,
+    samples: 0,
+    paused: false,
+    active: false,
+  })),
   render: vi.fn(),
   dispose: vi.fn(),
 }));
 vi.mock("@planaxis/renderer-three", async (original) => ({
   ...(await original<typeof import("@planaxis/renderer-three")>()),
-  createApartmentRenderer: () => rendererMocks,
+  createApartmentRenderer: (
+    _canvas: HTMLCanvasElement,
+    _error: (error: unknown) => void,
+    onTracing: (status: import("@planaxis/renderer-three").PathTracingStatus) => void,
+  ) => {
+    rendererMocks.onTracing = onTracing;
+    return rendererMocks;
+  },
   FULL_FRAME_FOCAL_LENGTHS: [16, 24, 35, 50, 70, 85],
   isFullFrameFocalLength: (value: number) => [16, 24, 35, 50, 70, 85].includes(value),
 }));
@@ -112,6 +129,12 @@ beforeEach(() => {
   });
   window.localStorage.clear();
   rendererMocks.initialize.mockResolvedValue();
+  rendererMocks.getPathTracingStatus.mockReturnValue({
+    available: true,
+    samples: 0,
+    paused: false,
+    active: false,
+  });
   fetchMock.mockReset();
   serveProject();
   vi.stubGlobal("fetch", fetchMock);
@@ -1005,7 +1028,7 @@ it("exposes primary actions in one toolbar and keeps secondary settings transien
   await clickControl("Rendering");
   const rendering = host.querySelector<HTMLElement>("#rendering-panel");
   expect(rendering?.hidden).toBe(false);
-  expect(rendering?.querySelectorAll("input, select")).toHaveLength(15);
+  expect(rendering?.querySelectorAll("input, select")).toHaveLength(16);
   await clickControl("Camera settings");
   expect(rendering?.hidden).toBe(true);
   expect(host.querySelector<HTMLElement>("#camera-panel")?.hidden).toBe(false);
@@ -1512,4 +1535,88 @@ it("explains unavailable WebGL2 GI without preventing High selection or bloom", 
   expect(qualityControl("Global illumination").value).toBe("off");
   expect(bloomControl("Bloom enabled").disabled).toBe(false);
   expect(rendererMocks.setGlobalIlluminationSettings).toHaveBeenLastCalledWith({ enabled: false });
+});
+
+it("selects experimental tracing explicitly, retains camera/daylight/presentation and leaves quality/GI/bloom intent independent", async () => {
+  await mountProject(fixture("projects/daylight-path-tracing-windowed/architecture/apartment.svg"));
+  await clickView("3D");
+  expect(qualityControl("Rendering view").value).toBe("interactive");
+  await selectQuality("3D camera", "interior");
+  await selectQuality("3D lighting mode", "physical");
+  await selectQuality("Global illumination", "on");
+  const calls = {
+    camera: rendererMocks.selectCamera.mock.calls.length,
+    daylight: rendererMocks.setLightingMode.mock.calls.length,
+    presentation: rendererMocks.setPresentationSettings.mock.calls.length,
+    models: rendererMocks.setModel.mock.calls.length,
+  };
+  await selectQuality("Rendering view", "path-tracing");
+  expect(rendererMocks.setRenderingView).toHaveBeenLastCalledWith("path-tracing");
+  expect(host.textContent).toContain("Design luminaires are omitted");
+  await act(async () =>
+    rendererMocks.onTracing?.({ available: true, samples: 1024, paused: false, active: true }),
+  );
+  expect(host.querySelector('[aria-label="Path tracing samples"]')?.textContent).toBe(
+    "1024 samples",
+  );
+  await clickControl("Pause path tracing");
+  expect(rendererMocks.setPathTracingPaused).toHaveBeenLastCalledWith(true);
+  await clickControl("Resume path tracing");
+  expect(rendererMocks.setPathTracingPaused).toHaveBeenLastCalledWith(false);
+  expect(rendererMocks.selectCamera).toHaveBeenCalledTimes(calls.camera);
+  expect(rendererMocks.setLightingMode).toHaveBeenCalledTimes(calls.daylight);
+  expect(rendererMocks.setPresentationSettings).toHaveBeenCalledTimes(calls.presentation);
+  expect(rendererMocks.setModel).toHaveBeenCalledTimes(calls.models);
+  await selectQuality("3D quality preset", "Performance");
+  expect(qualityControl("Rendering view").value).toBe("path-tracing");
+  await clickView("2D");
+  await clickView("3D");
+  expect(rendererMocks.setRenderingView).toHaveBeenLastCalledWith("path-tracing");
+  expect(qualityControl("Rendering view").value).toBe("path-tracing");
+  await selectQuality("Rendering view", "interactive");
+  expect(qualityControl("3D camera").value).toBe(""); // new viewport after the separate 2D switch
+  expect(qualityControl("3D lighting mode").value).toBe("physical");
+  expect(
+    Object.values(JSON.parse(window.localStorage.getItem(QUALITY_STORAGE_KEY) ?? "{}")),
+  ).not.toContain("path-tracing");
+});
+
+it("explains tracing unavailability and keeps return to Interactive usable after a backend failure", async () => {
+  rendererMocks.getPathTracingStatus.mockReturnValueOnce({
+    available: false,
+    samples: 0,
+    paused: false,
+    active: false,
+    reason: "WebGL2 float rendering unavailable",
+  });
+  await mountProject();
+  await clickView("3D");
+  expect(
+    qualityControl("Rendering view").querySelector<HTMLOptionElement>('[value="path-tracing"]')
+      ?.disabled,
+  ).toBe(true);
+  expect(host.textContent).toContain("WebGL2 float rendering unavailable");
+  await act(async () =>
+    rendererMocks.onTracing?.({ available: true, samples: 0, paused: false, active: false }),
+  );
+  await selectQuality("Rendering view", "path-tracing");
+  await act(async () =>
+    rendererMocks.onTracing?.({
+      available: false,
+      samples: 0,
+      paused: false,
+      active: false,
+      reason: "Path tracing shader failed",
+      error: "Path tracing shader failed",
+    }),
+  );
+  expect(host.textContent).toContain("Path tracing shader failed");
+  expect(host.querySelector('[aria-label="Pause path tracing"]')).toBeNull();
+  const button = [...host.querySelectorAll("button")].find(
+    (b) => b.textContent === "Return to Interactive",
+  );
+  await act(async () => button?.click());
+  expect(rendererMocks.setRenderingView).toHaveBeenLastCalledWith("interactive");
+  expect(qualityControl("Rendering view").value).toBe("interactive");
+  expect(host.querySelector('[aria-label="3D camera"]')).not.toBeNull();
 });

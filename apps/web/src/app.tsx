@@ -1,4 +1,5 @@
 import { DEFAULT_POST_PROCESSING_SETTINGS } from "@planaxis/renderer-three";
+import type { RenderingView } from "@planaxis/renderer-three";
 import { nativePixelRatio, restoreQuality, recommendGlobalIllumination } from "./render-quality.js";
 import { DEFAULT_WEATHER } from "@planaxis/simulation";
 import type { LightingMode, PhysicalSimulation } from "@planaxis/simulation";
@@ -40,6 +41,8 @@ export function App(): ReactElement {
     ),
   }));
   const [lightingMode, setLightingMode] = useState<LightingMode>("studio");
+  const [renderingView, setRenderingView] = useState<RenderingView>("interactive");
+  const [tracingPaused, setTracingPaused] = useState(false);
   const active = useDocument();
   const design = useDesign(active.document);
   const project = "project" in active.document ? active.document.project : undefined;
@@ -219,6 +222,10 @@ export function App(): ReactElement {
         ) : is3D && current.status === "valid" ? (
           <ThreeViewport
             key={design.selectedPath}
+            renderingView={renderingView}
+            onRenderingViewChange={setRenderingView}
+            tracingPaused={tracingPaused}
+            onTracingPausedChange={setTracingPaused}
             postProcessing={postProcessing}
             onPostProcessingChange={setPostProcessing}
             globalIllumination={globalIllumination}

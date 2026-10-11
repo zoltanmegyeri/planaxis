@@ -350,7 +350,24 @@ with unresolved thin-partition leakage and hardware limits recorded in the linke
 Further VXGI work is set aside in favor of a separate path-tracing evaluation; the existing
 integration is retained.
 
-With **No design** selected, presentation controls remain transient. A resolved Design 1.0 or 1.1 scenario applies its saved tone mapping and exposure; edit these in the design editor rather than the Rendering panel. Environment intensity and rotation always remain transient. Resolved designs also apply Material 1.0 and 1.1 persistent finishes, including packed ORM textures shared across ambient-occlusion, roughness, and metalness roles. Design 1.1 luminaire validation and persistence are implemented. Luminaires survive name/presentation edits unchanged, and illuminate the scene in both lighting modes. Luminaire placement/editing UI, material-management UI, environment assets, IES, and path tracing remain deferred.
+Rendering → View now offers **Path tracing (experimental)** in eligible validated 3D scenes.
+It supports Physical Sunny daylight, neutral/opaque untextured nonmetallic matte finishes
+(roughness ≥ 0.5), and clear/unspecified panes. Watch the sample count and use Pause/Resume;
+returning to Interactive retains the camera, daylight and GI/bloom settings. Design luminaires
+are omitted and bloom is bypassed. Unsupported inputs or WebGL2 float-rendering failures are
+explained. Selection/pause/samples are session-only; the default renderer is unchanged.
+
+Try the enclosed windowed control with:
+
+```bash
+pnpm start -- --project fixtures/projects/daylight-path-tracing-windowed
+```
+
+Use camera **interior**, Physical **2026-10-09 12:00 Europe/Budapest**, Sunny, AgX, 0 EV,
+1× pixel ratio and bloom Off for the comparison. The [experiment documentation](docs/architecture/daylight-path-tracing.md)
+provides sealed/thin-wall controls, actual browser captures, sampling/lifecycle details and limitations.
+
+With **No design** selected, presentation controls remain transient. A resolved Design 1.0 or 1.1 scenario applies its saved tone mapping and exposure; edit these in the design editor rather than the Rendering panel. Environment intensity and rotation always remain transient. Resolved designs also apply Material 1.0 and 1.1 persistent finishes, including packed ORM textures shared across ambient-occlusion, roughness, and metalness roles. Design 1.1 luminaire validation and persistence are implemented. Luminaires survive name/presentation edits unchanged, and illuminate the interactive scene in both lighting modes. Luminaire placement/editing UI, material-management UI, environment assets, IES, and broader path-tracing support remain deferred.
 
 The same **Rendering** panel also offers **Quality**, **Pixel ratio**, **Shadows**, **Environment lighting**, and **Fill light**. Quality changes apply immediately without rebuilding the apartment or resetting navigation. Walk redraws are coalesced to display frames, and unchanged architectural shadows are reused during navigation. In Studio, all individual settings stay editable; changing a preset's settings selects **Custom**. Selecting a named preset reapplies every setting below:
 
@@ -529,7 +546,7 @@ PlanAxis Design Format 1.1 is the latest accepted normative persistence contract
 
 Materials may be authored manually under `assets/materials/` and referenced from a design. Re-select the design (choose **No design**, then the scenario) to reread external edits. No catalog, material editor, file watching, or global cache is provided. Shared textures are fetched and decoded once per selected load, including packed map roles. Selection changes cancel obsolete requests and release prepared images, textures, and scene resources.
 
-Phase 4 has implemented RenderPipeline/HDR bloom, physical daylight, persistent Design 1.1 luminaires, and native-WebGPU VXGI integration with finite convergence. TASK-043 is completed by human acceptance with unresolved leakage and large shadow-light limits; further VXGI work, including rectangular GI proxies, is set aside. Path tracing will be evaluated separately. Luminaire placement/editing, IES photometry, path tracing, and richer atmospheric effects remain future Phase 4 work. 3D asset importing and placement follow in Phase 5.
+Phase 4 has implemented RenderPipeline/HDR bloom, physical daylight, persistent Design 1.1 luminaires, and native-WebGPU VXGI integration with finite convergence. TASK-043 is completed by human acceptance with unresolved leakage and large shadow-light limits; further VXGI work, including rectangular GI proxies, is set aside. A bounded Physical Sunny daylight path-tracing experiment is implemented for human review. Luminaire placement/editing, IES photometry, broader path tracing, and richer atmospheric effects remain future Phase 4 work. 3D asset importing and placement follow in Phase 5.
 
 Each implementation phase should have explicit acceptance criteria and automated tests.
 

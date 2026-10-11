@@ -10,6 +10,19 @@ export function daylightSunColor(daylight: Daylight): Color {
   return neutral.lerp(warm, daylight.warmth);
 }
 
+/** Shared deterministic linear sky palette for visible raster sky and traced escapes. */
+export function daylightSkyColors(daylight: Daylight): { zenith: Color; horizon: Color } {
+  const overcast = daylight.weather === "overcast";
+  return {
+    zenith: new Color(0.0002, 0.0004, 0.0015)
+      .lerp(new Color(0.012, 0.024, 0.075), daylight.twilight)
+      .lerp(overcast ? new Color(0.55, 0.62, 0.72) : new Color(0.045, 0.22, 0.65), daylight.day),
+    horizon: new Color(0.0004, 0.0006, 0.0018)
+      .lerp(new Color(0.13, 0.045, 0.035), daylight.twilight)
+      .lerp(overcast ? new Color(0.72, 0.77, 0.83) : new Color(0.18, 0.4, 0.8), daylight.day),
+  };
+}
+
 /**
  * A small TSL background, shared by WebGPU and its WebGL2 backend. A gradient and
  * Sun-aligned horizon glow support overcast/night without clouds or a sky texture.
@@ -34,14 +47,9 @@ export function createPhysicalSky() {
       direction.value.set(sun.x, sun.z, sun.y);
       const overcast = daylight.weather === "overcast";
       // Linear-light palette. Night has no artificial fill or visible Sun disc.
-      zenith.value
-        .setRGB(0.0002, 0.0004, 0.0015)
-        .lerp(new Color(0.012, 0.024, 0.075), daylight.twilight)
-        .lerp(overcast ? new Color(0.55, 0.62, 0.72) : new Color(0.045, 0.22, 0.65), daylight.day);
-      horizon.value
-        .setRGB(0.0004, 0.0006, 0.0018)
-        .lerp(new Color(0.13, 0.045, 0.035), daylight.twilight)
-        .lerp(overcast ? new Color(0.72, 0.77, 0.83) : new Color(0.18, 0.4, 0.8), daylight.day);
+      const palette = daylightSkyColors(daylight);
+      zenith.value.copy(palette.zenith);
+      horizon.value.copy(palette.horizon);
       glowColor.value.copy(daylightSunColor(daylight));
       glow.value = overcast ? 0 : daylight.twilight * (0.12 + daylight.warmth * 1.5);
       disc.value = overcast ? 0 : daylight.directStrength * 12;

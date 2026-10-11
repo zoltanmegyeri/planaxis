@@ -9,12 +9,14 @@ export function DaylightControls({
   timeZone,
   ready,
   onChange,
+  pathTracing = false,
 }: {
   simulation: PhysicalSimulation;
   sessionInstant: number;
   timeZone: string | undefined;
   ready: boolean;
   onChange: (next: PhysicalSimulation) => void;
+  pathTracing?: boolean;
 }): ReactElement {
   const basis = useMemo(() => {
     try {
@@ -92,8 +94,9 @@ export function DaylightControls({
         </select>
       </label>
       <p>
-        Visible sky does not yet provide diffuse indoor lighting. Interiors may remain dark. Shadows
-        stay enabled.
+        {pathTracing
+          ? "Sun and sky illuminate the interior through traced paths. Design luminaires are omitted."
+          : "Visible sky does not yet provide diffuse indoor lighting. Interiors may remain dark. Shadows stay enabled."}
       </p>
     </fieldset>
   );

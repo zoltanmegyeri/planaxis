@@ -37,7 +37,15 @@ import {
 } from "three/webgpu";
 import type { RenderTarget } from "three/webgpu";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { createPhysicalSky, daylightSunColor } from "./physical-sky.js";
+import { createPhysicalSky, daylightSunColor, daylightSkyColors } from "./physical-sky.js";
+import { PathTracingBackend } from "./path-tracing/backend.js";
+import type { PathTracingStatus, RenderingView } from "./path-tracing/backend.js";
+import {
+  buildTracingBvh,
+  extractTracingTriangles,
+  unsupportedTracingInputs,
+} from "./path-tracing/scene.js";
+import { ProgressiveAccumulator } from "./path-tracing/progressive.js";
 import { buildApartmentScene } from "./apartment-scene.js";
 import type { ApartmentScene } from "./apartment-scene.js";
 import {
@@ -77,6 +85,9 @@ export interface ApartmentRenderer {
   getGlobalIlluminationCapability(): GlobalIlluminationCapability;
   setGlobalIlluminationSettings(settings: RendererGlobalIlluminationSettings): void;
   setLightingMode(mode: LightingMode, instant: number, weather?: Weather): void;
+  setRenderingView(view: RenderingView): void;
+  setPathTracingPaused(paused: boolean): void;
+  getPathTracingStatus(): PathTracingStatus;
   render(): void;
   dispose(): void;
 }
@@ -85,6 +96,7 @@ export interface ApartmentRenderer {
 export function createApartmentRenderer(
   canvas: HTMLCanvasElement,
   onError: (error: unknown) => void,
+  onPathTracingChange: (status: PathTracingStatus) => void = () => undefined,
 ): ApartmentRenderer {
   const requiredLimits: Record<string, number> = {};
   const renderer = new WebGPURenderer({
@@ -155,6 +167,113 @@ export function createApartmentRenderer(
   let gpuDevice: GPUDevice | undefined;
   let resourcesReleased = false;
   let walkRenderFrame: number | undefined;
+  let renderingView: RenderingView = "interactive";
+  let tracer: PathTracingBackend | undefined;
+  let tracingUnavailable = "Path tracing is available after renderer initialization.";
+  let tracingError: string | undefined;
+  let tracingSubsetReason: string | undefined;
+  let tracingGeometryRevision = 0;
+  let tracingSceneRevision = -1;
+  let tracingPaused = false;
+  const tracingReason = (): string | undefined => {
+    if (renderFailed) return "Path tracing is unavailable after renderer failure.";
+    if (!model?.metadata.location)
+      return "Path tracing requires validated geographic location and north orientation.";
+    if (lightingMode !== "physical") return "Path tracing requires Physical lighting.";
+    if (weather !== "sunny") return "Path tracing requires Sunny weather.";
+    if (tracingSubsetReason) return tracingSubsetReason;
+    if (tracingError) return tracingError;
+    if (!tracer) return tracingUnavailable;
+    return undefined;
+  };
+  const tracingStatus = (): PathTracingStatus => {
+    const reason = tracingReason();
+    return {
+      available: reason === undefined,
+      ...(reason === undefined ? {} : { reason }),
+      ...(tracingError === undefined ? {} : { error: tracingError }),
+      samples: accumulation?.samples ?? 0,
+      paused: tracingPaused,
+      active:
+        initialized &&
+        !disposed &&
+        renderingView === "path-tracing" &&
+        !reason &&
+        !tracingPaused &&
+        canvas.ownerDocument.visibilityState !== "hidden",
+    };
+  };
+  const tracingChanged = (): void => onPathTracingChange(tracingStatus());
+  const failTracing = (error: unknown): void => {
+    if (disposed) return;
+    tracingError = error instanceof Error ? error.message : String(error);
+    accumulation?.setActive(false);
+    tracer?.dispose();
+    tracer = undefined;
+    tracingChanged();
+  };
+  const view = canvas.ownerDocument?.defaultView;
+  const accumulation = view
+    ? new ProgressiveAccumulator(
+        view,
+        (sample) => {
+          tracer?.trace(camera, sample);
+        },
+        tracingChanged,
+        failTracing,
+      )
+    : undefined;
+  const syncTracing = (): void => {
+    if (disposed || renderFailed) {
+      accumulation?.setActive(false);
+      return;
+    }
+    const selected = renderingView === "path-tracing";
+    if (canvas.style) canvas.style.opacity = selected ? "0" : "1";
+    const reason = tracingReason();
+    if (tracer) {
+      tracer.canvas.style.display = selected && !reason ? "block" : "none";
+      if (
+        selected &&
+        !reason &&
+        apartment &&
+        initialized &&
+        canvas.ownerDocument.visibilityState !== "hidden"
+      ) {
+        if (tracingSceneRevision !== tracingGeometryRevision) {
+          tracer.setScene(buildTracingBvh(extractTracingTriangles(apartment)));
+          tracingSceneRevision = tracingGeometryRevision;
+        }
+        tracer.resize(width * quality.pixelRatio, height * quality.pixelRatio, canvas);
+        camera.updateMatrixWorld(true);
+        const key = JSON.stringify([
+          tracingGeometryRevision,
+          camera.matrixWorld.elements,
+          camera.projectionMatrix.elements,
+          tracer.canvas.width,
+          tracer.canvas.height,
+          simulationInstant,
+          lightingMode,
+          weather,
+        ]);
+        if (accumulation?.setInputs(key)) tracer.clear();
+        tracer.setPresentation(renderer.toneMapping, renderer.toneMappingExposure);
+        tracer.display();
+      }
+    }
+    accumulation?.setActive(
+      selected &&
+        !reason &&
+        initialized &&
+        !disposed &&
+        canvas.ownerDocument.visibilityState !== "hidden",
+    );
+    tracingChanged();
+  };
+  const visibilityChanged = (): void => {
+    if (renderingView === "path-tracing") render();
+  };
+  canvas.ownerDocument?.addEventListener("visibilitychange", visibilityChanged);
   const cancelWalkRender = (): void => {
     if (walkRenderFrame === undefined) return;
     canvas.ownerDocument.defaultView?.cancelAnimationFrame(walkRenderFrame);
@@ -186,6 +305,9 @@ export function createApartmentRenderer(
     if (resourcesReleased) return;
     resourcesReleased = true;
     convergence.cancel();
+    accumulation?.dispose();
+    tracer?.dispose();
+    tracer = undefined;
     gpuDevice?.removeEventListener("uncapturederror", onGpuError);
     scene.environment = null;
     environment?.dispose();
@@ -197,6 +319,7 @@ export function createApartmentRenderer(
     if (disposed || renderFailed) return;
     renderFailed = true;
     convergence.cancel();
+    accumulation?.setActive(false);
     cancelWalkRender();
     walk?.deactivate();
     onError(error);
@@ -217,6 +340,15 @@ export function createApartmentRenderer(
   const render = (): void => {
     cancelWalkRender();
     convergence.cancel();
+    if (renderingView === "path-tracing") {
+      try {
+        syncTracing();
+      } catch (error) {
+        failTracing(error);
+      }
+      return;
+    }
+    accumulation?.setActive(false);
     if (draw() && pipeline.giEnabled) convergence.restart(VXGI_CONFIGURATION.convergenceFrames);
   };
   renderer.onDeviceLost = (info): void => {
@@ -314,6 +446,13 @@ export function createApartmentRenderer(
         light.intensity = 3 * daylight.directStrength;
         light.color.copy(daylightSunColor(daylight));
         sky.update(daylight, direction);
+        const palette = daylightSkyColors(daylight);
+        tracer?.setDaylight(
+          new Vector3(direction.x, direction.z, direction.y),
+          daylightSunColor(daylight).multiplyScalar(3 * daylight.directStrength),
+          palette.zenith,
+          palette.horizon,
+        );
         skyLights.update(daylight);
       } else {
         light.position.copy(center).add(new Vector3(shadowRadius, shadowRadius * 2, shadowRadius));
@@ -364,10 +503,16 @@ export function createApartmentRenderer(
             gpuDevice?.addEventListener("uncapturederror", onGpuError);
           }
           environment = createStudioEnvironment(renderer);
+          try {
+            tracer = new PathTracingBackend(canvas, failTracing);
+          } catch (error) {
+            tracingUnavailable = error instanceof Error ? error.message : String(error);
+          }
           applyLighting();
           initialized = true;
           applyGi();
           render();
+          tracingChanged();
         })
         .catch((error: unknown) => {
           releaseRenderer();
@@ -386,6 +531,9 @@ export function createApartmentRenderer(
         apartment.dispose();
       }
       apartment = replacement;
+      tracingSubsetReason = unsupportedTracingInputs(next, finishes);
+      tracingGeometryRevision++;
+      accumulation?.setInputs(`architecture:${tracingGeometryRevision}`);
       giScene.architecture = apartment.group;
       skyLights.setBounds(giScene.architectureBounds());
       model = next;
@@ -515,6 +663,8 @@ export function createApartmentRenderer(
       }
       if (nextWeather !== "sunny" && nextWeather !== "overcast")
         throw new Error("Invalid weather.");
+      if (weather !== nextWeather || lightingMode !== mode || simulationInstant !== instant)
+        accumulation?.setInputs(`daylight:${mode}:${instant}:${nextWeather}`);
       weather = nextWeather;
       lightingMode = mode;
       simulationInstant = instant;
@@ -524,13 +674,39 @@ export function createApartmentRenderer(
       updateGiLights();
       pipeline.invalidateLighting();
       render();
+      tracingChanged();
     },
+    setRenderingView(next) {
+      if (disposed) return;
+      if (next !== "interactive" && next !== "path-tracing")
+        throw new Error("Invalid rendering view.");
+      renderingView = next;
+      convergence.cancel();
+      // Switching output leaves the shared navigation camera/projection untouched.
+      try {
+        syncTracing();
+      } catch (error) {
+        failTracing(error);
+      }
+      if (next === "interactive") render();
+    },
+    setPathTracingPaused(paused) {
+      if (disposed) return;
+      tracingPaused = paused;
+      accumulation?.setPaused(paused);
+      tracingChanged();
+    },
+    getPathTracingStatus: tracingStatus,
     render,
     dispose() {
       if (disposed) return;
       disposed = true;
       cancelWalkRender();
       convergence.cancel();
+      accumulation?.dispose();
+      tracer?.dispose();
+      tracer = undefined;
+      canvas.ownerDocument?.removeEventListener("visibilitychange", visibilityChanged);
       walk?.dispose();
       controls.removeEventListener("change", render);
       controls.dispose();

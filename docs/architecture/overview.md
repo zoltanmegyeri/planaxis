@@ -551,6 +551,18 @@ collections exceed the reference
 GPU's sampler limit. These original visual acceptance failures remain unresolved. Further VXGI
 work is set aside in favor of a separate path-tracing evaluation; the integration is retained.
 
+The explicit [experimental daylight path-tracing view](daylight-path-tracing.md) adds a
+bounded conventional WebGL2/GLSL backend in `renderer-three`, without changing the default
+interactive renderer. It reuses adapted physical surfaces and the navigation camera, tracing
+Physical Sunny Sun/sky transport through clear panes with matte diffuse finishes. Opaque
+floor/ceiling/walls remain two-sided ray occluders. Session-only selection, pause and sample
+count control progressive work while active and visible; camera/scene/daylight/buffer changes
+reset it. Presentation alone redraws accumulated HDR through the current tone mapping/exposure
+and sRGB transform. Raster GI/fill/sky-helper lights, design luminaires and bloom do not enter
+this view. Unsupported inputs or backend failures are explicit; the interactive view remains
+available with its retained GI/bloom intent. This is a qualitative proof of concept for human
+review, not full material parity or a renderer replacement.
+
 `RendererQualitySettings` is a separate renderer-owned runtime contract: `pixelRatio`, `shadowQuality`, `environmentLightingEnabled`, and `fillLightLevel`. `setQualitySettings` validates the complete update before mutation and renders immediately. DPR must be finite and positive; changes call the backend's pixel-ratio and buffer-size APIs with retained CSS dimensions, without touching the camera. `resize(width, height)` owns viewport/projection size only and retains the chosen DPR. No hard DPR cap remains in the adapter.
 
 In Studio, shadow levels Off/Low/Medium/High disable shadows or select 1024/2048/4096-square PCF shadow maps. Directional-light casting is disabled for Off; backend shadows remain enabled if active design lights need them; the directional light itself remains. Enabled levels use the bounds half-diagonal to frame the directional shadow map, a four-texel normal bias, and a positive depth bias equivalent to 2.5 world-space texels normalized by the shadow camera depth range. This favors occlusion at wall–ceiling contacts while retaining directly lit surfaces; offsets shrink with increasing resolution. Wide Overcast filtering can still leave faint contact halos. The single-level floor receives directional shadows but is excluded as a caster in the overhead directional pass: it cannot occlude the interior above it, and including it would falsely shadow biased wall samples below floor height. It remains a two-sided caster for perspective point/spot passes, blocking sources below the zero-thickness boundary. Floor-only cloned shadow masks preserve alpha masking and do not change shared ceiling/wall finishes. When an already allocated shadow map changes resolution, the adapter clones the directional-light configuration into a fresh light identity and disposes the previous light/target. This avoids stale depth-texture bindings after in-place shadow resizing in Three.js r185; apartment meshes, materials, cameras, and navigation are retained. The static apartment/key-light shadow map disables automatic updates and is invalidated on lighting-mode/instant changes, model replacement, or a shadow-quality change (including re-enablement), rather than regenerated during navigation. Environment disablement sets `scene.environment` to null, removing IBL/reflections while retaining the generated target and independent intensity/yaw values for re-enablement. Fill levels Off/Low/Medium/High set a white `AmbientLight` to 0/0.5/1/2; it adds non-directional diffuse illumination using the existing PBR materials, textures, and AO behavior. Quality updates do not replace meshes/materials, rebuild domain models, or start an idle render loop, and settings survive model replacement within an instance. Walk input updates the pose immediately but coalesces GPU redraws into one pending animation frame; an immediate settings/view update consumes that pending redraw, and disposal/device loss cancels it. This bounds queued work when pointer input outpaces the display.
@@ -582,7 +594,7 @@ sRGB fit (clamped to 1000–40000 K, then converted to linear RGB) supplies whit
 without camera white balance or persistence changes. This is qualitative lighting, not measured
 photometry. Manual JSON edits take effect on reload/reselection; no luminaire UI is implemented.
 
-The renderer APIs remain runtime-only. The browser currently maps resolved Design 1.0 / 1.1 presentation overrides and effective Material 1.0 / 1.1 finishes to these contracts. Persistent paths never enter the runtime material model. Resolved Design 1.1 luminaires are mapped to renderer-owned runtime light inputs. Luminaire placement/editing, environment assets, material-management UI, IES, and path tracing remain future work.
+The renderer APIs remain runtime-only. The browser currently maps resolved Design 1.0 / 1.1 presentation overrides and effective Material 1.0 / 1.1 finishes to these contracts. Persistent paths never enter the runtime material model. Resolved Design 1.1 luminaires are mapped to renderer-owned runtime light inputs. Luminaire placement/editing, environment assets, material-management UI, IES, and broader path tracing remain future work.
 
 Responsibilities may include:
 
@@ -746,7 +758,7 @@ Four shadow-aware Physical sky directions now approximate opening-dependent diff
 Native-WebGPU VXGI provides indirect lighting, with unresolved thin-wall leakage documented in
 [the evaluation](realtime-global-illumination.md). Interiors can still remain dark, particularly
 under Overcast. Design 1.1 persistent luminaire validation and persistence are implemented
-across the package, server, and browser; renderer mapping is implemented. Luminaire placement/editing, IES photometry, path tracing, and richer atmospheric effects remain
+across the package, server, and browser; renderer mapping is implemented. Luminaire placement/editing, IES photometry, broader path tracing, and richer atmospheric effects remain
 future work.
 
 ---
@@ -1276,7 +1288,7 @@ The Project Format 1.0 loading and project-filesystem foundation is implemented 
 
 Phase 1 includes exact designable surfaces with shared physical mapping frames, renderer UV generation, transient texture-capable metallic/roughness PBR finish assignments with non-overlapping coverage, and zero-thickness transmissive glass (sections 5.8–5.9). Built-in environment lighting and transient intensity, yaw, tone-mapping, and EV exposure controls complete the Phase 1 presentation foundation. Phase 2 is complete: Design Format 1.0, shared validation/resolution, server persistence, and browser scenario discovery/selection/creation/editing are implemented. Phase 3 is complete for Material 1.0 and 1.1: the pure `@planaxis/material` format package, controlled server descriptor/texture reads, browser material resolution, renderer-owned texture decoding, and persistent PBR rendering with physical scale are implemented. Material 1.1 ambient-occlusion map/strength support is implemented throughout validation, browser/runtime translation, and Three.js adaptation, preserving Material 1.0 compatibility.
 
-Phase 4 has implemented RenderPipeline/HDR bloom, physical daylight controls and the native-WebGPU VXGI integration described in section 7.1. Design Format 1.1 is now the accepted persistent luminaire contract; its `@planaxis/design`, server, and browser validation/persistence integration is implemented. TASK-043 is completed by human acceptance with leakage and shadow-light binding limits unresolved; further VXGI work, including rectangular GI, is set aside. Path tracing will be evaluated separately. Luminaire placement/editing, IES photometry, path tracing, environment assets, and richer atmospheric effects remain future Phase 4 work before Phase 5 asset importing and placement.
+Phase 4 has implemented RenderPipeline/HDR bloom, physical daylight controls and the native-WebGPU VXGI integration described in section 7.1. Design Format 1.1 is now the accepted persistent luminaire contract; its `@planaxis/design`, server, and browser validation/persistence integration is implemented. TASK-043 is completed by human acceptance with leakage and shadow-light binding limits unresolved; further VXGI work, including rectangular GI, is set aside. A bounded daylight path-tracing proof of concept is available for human evaluation. Luminaire placement/editing, IES photometry, broader path tracing, environment assets, and richer atmospheric effects remain future Phase 4 work before Phase 5 asset importing and placement.
 
 The intended implementation order is now broadly:
 

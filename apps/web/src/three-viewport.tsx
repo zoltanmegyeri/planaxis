@@ -23,6 +23,8 @@ import type {
   RendererPostProcessingSettings,
   RendererGlobalIlluminationSettings,
   GlobalIlluminationCapability,
+  RenderingView,
+  PathTracingStatus,
 } from "@planaxis/renderer-three";
 import { useEffect, useRef, useState } from "react";
 import type { ReactElement } from "react";
@@ -70,6 +72,10 @@ export function ThreeViewport({
   onPostProcessingChange,
   globalIllumination,
   onGlobalIlluminationChange,
+  renderingView,
+  onRenderingViewChange,
+  tracingPaused,
+  onTracingPausedChange,
 }: {
   model: ArchitecturalModel3D;
   luminaires?: readonly RuntimeLuminaire[];
@@ -82,6 +88,10 @@ export function ThreeViewport({
   onPostProcessingChange: (settings: RendererPostProcessingSettings) => void;
   globalIllumination: RendererGlobalIlluminationSettings;
   onGlobalIlluminationChange: (settings: RendererGlobalIlluminationSettings) => void;
+  renderingView: RenderingView;
+  onRenderingViewChange: (view: RenderingView) => void;
+  tracingPaused: boolean;
+  onTracingPausedChange: (paused: boolean) => void;
   onFailure: (error: unknown) => void;
   toolbar: HTMLDivElement | null;
   panel: WorkspacePanel;
@@ -104,6 +114,18 @@ export function ThreeViewport({
   const aspectRatioRef = useRef<RenderAspectRatio>(aspectRatio);
   aspectRatioRef.current = aspectRatio;
   const [ready, setReady] = useState(false);
+  const [tracingStatus, setTracingStatus] = useState<PathTracingStatus>({
+    available: false,
+    samples: 0,
+    paused: tracingPaused,
+    active: false,
+  });
+  const tracingRef = useRef({ renderingView, paused: tracingPaused });
+  tracingRef.current = { renderingView, paused: tracingPaused };
+  const selectRenderingView = (next: RenderingView): void => {
+    renderer.current?.setRenderingView(next);
+    onRenderingViewChange(next);
+  };
   const simulationInstant = simulation.instant;
   const lightingMode = model.metadata.location ? selectedLightingMode : "studio";
   const lightingRef = useRef({ mode: lightingMode, ...simulation });
@@ -224,7 +246,9 @@ export function ThreeViewport({
       onFailure(error);
     };
     try {
-      instance = createApartmentRenderer(element, fail);
+      instance = createApartmentRenderer(element, fail, (status) => {
+        if (active) setTracingStatus(status);
+      });
       renderer.current = instance;
       instance.setPresentationSettings(presentationRef.current);
       instance.setQualitySettings(qualityRef.current.settings);
@@ -259,6 +283,8 @@ export function ThreeViewport({
         lightingRef.current.instant,
         lightingRef.current.weather,
       );
+      instance.setPathTracingPaused(tracingRef.current.paused);
+      instance.setRenderingView(tracingRef.current.renderingView);
       observer = new ResizeObserver(resize);
       observer.observe(area);
       void instance
@@ -266,6 +292,7 @@ export function ThreeViewport({
         .then(() => {
           if (active && instance) {
             setGiCapability(instance.getGlobalIlluminationCapability());
+            setTracingStatus(instance.getPathTracingStatus());
             setReady(true);
           }
         })
@@ -446,6 +473,28 @@ export function ThreeViewport({
         onClose={onClosePanel}
       >
         <label>
+          View{" "}
+          <select
+            aria-label="Rendering view"
+            value={renderingView}
+            disabled={!ready}
+            onChange={(event) => {
+              const next = event.target.value;
+              if (next === "interactive" || next === "path-tracing") selectRenderingView(next);
+            }}
+          >
+            <option value="interactive">Interactive</option>
+            <option value="path-tracing" disabled={!tracingStatus.available}>
+              Path tracing (experimental)
+            </option>
+          </select>
+        </label>
+        <p>
+          Experimental path tracing: Physical Sunny daylight, matte surfaces and clear windows.
+          Design luminaires are omitted; bloom is bypassed.
+        </p>
+        {ready && !tracingStatus.available && <p>{tracingStatus.reason}</p>}
+        <label>
           Lighting{" "}
           <select
             aria-label="3D lighting mode"
@@ -477,6 +526,7 @@ export function ThreeViewport({
         )}
         {lightingMode === "physical" && (
           <DaylightControls
+            pathTracing={renderingView === "path-tracing"}
             simulation={simulation}
             sessionInstant={sessionInstant}
             timeZone={model.metadata.location?.timeZone}
@@ -607,6 +657,29 @@ export function ThreeViewport({
       )}
       <div ref={renderArea} className="three-render-area">
         <canvas ref={canvas} tabIndex={0} aria-label="Apartment 3D rendering" />
+        {renderingView === "path-tracing" && (
+          <div className="path-tracing-status">
+            {tracingStatus.available ? (
+              <>
+                <output aria-label="Path tracing samples">{tracingStatus.samples} samples</output>
+                <button
+                  aria-label={tracingPaused ? "Resume path tracing" : "Pause path tracing"}
+                  onClick={() => {
+                    renderer.current?.setPathTracingPaused(!tracingPaused);
+                    onTracingPausedChange(!tracingPaused);
+                  }}
+                >
+                  {tracingPaused ? "Resume" : "Pause"}
+                </button>
+              </>
+            ) : (
+              <span role="status">{tracingStatus.reason}</span>
+            )}
+            <button onClick={() => selectRenderingView("interactive")}>
+              Return to Interactive
+            </button>
+          </div>
+        )}
         {fullscreen.active && (
           <button
             className="fullscreen-close"

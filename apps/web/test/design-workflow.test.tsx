@@ -27,6 +27,14 @@ const renderer = vi.hoisted(() => ({
     () => import("@planaxis/renderer-three").GlobalIlluminationCapability
   >(() => ({ available: true })),
   setLightingMode: vi.fn(),
+  setRenderingView: vi.fn(),
+  setPathTracingPaused: vi.fn(),
+  getPathTracingStatus: vi.fn<() => import("@planaxis/renderer-three").PathTracingStatus>(() => ({
+    available: true,
+    samples: 0,
+    paused: false,
+    active: false,
+  })),
   dispose: vi.fn(),
 }));
 vi.mock("@planaxis/renderer-three", async (original) => ({

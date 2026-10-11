@@ -1,0 +1,7 @@
+{
+  "schema": "planaxis-project/1.0",
+  "name": "Daylight path tracing: sealed",
+  "architecture": {
+    "active": "architecture/apartment.svg"
+  }
+}

@@ -247,6 +247,29 @@ integration is retained, and the original visual acceptance failures remain docu
 This closes the task without selecting or implementing a replacement rendering architecture.
 Placement/editing, IES, path tracing and richer atmosphere remain Phase 4 work.
 
+### Experimental daylight WebGL2 backend refinement (2026-10-09)
+
+TASK-044 adds an explicitly selected, session-only daylight path-tracing proof of concept
+inside `renderer-three`. The default remains WebGPU-first `WebGPURenderer` with its supported
+WebGL2 fallback, retaining the existing VXGI integration. The experiment uses a separate
+conventional `WebGLRenderer`/GLSL context: forcing the default renderer's WebGL2 backend does
+not make conventional ShaderMaterial compatible with its node pipeline.
+
+A renderer-owned overlay displays only the path-traced HDR image, while the original canvas
+retains navigation input. Both outputs share the existing camera/projection and adapted
+architectural surface meshes. A local triangle/AABB texture BVH, matte diffuse transport,
+thin clear-window transmission and existing Physical Sunny simulation form the supported
+subset. Raster lights, VXGI, fill, PMREM and bloom are excluded from tracing. Exposure,
+AgX/ACES Filmic/Neutral and sRGB apply once to the accumulated linear image.
+
+Progressive work is an explicit exception to ordinary idle rendering, limited to the active,
+visible, eligible, unpaused experiment. Switching, hiding, failure and disposal cancel it;
+owned targets/textures/shaders/context are released, including partial failure. Renderer
+selection does not change camera, Physical state or retained GI/bloom settings. This is not
+a renderer-selection framework, migration, calibrated simulator or new persistence format.
+See [daylight path tracing](../architecture/daylight-path-tracing.md) for support, ownership,
+reproduction, real-browser findings and CC0 upstream provenance.
+
 ## Cameras and lifecycle
 
 OrbitControls supplies orbit, pan, and dolly with mouse and touch input. Initial framing
