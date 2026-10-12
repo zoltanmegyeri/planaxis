@@ -490,8 +490,8 @@ export function ThreeViewport({
           </select>
         </label>
         <p>
-          Experimental path tracing: Physical Sunny daylight, matte surfaces and clear windows.
-          Design luminaires are omitted; bloom is bypassed.
+          Experimental path tracing: Physical Sunny daylight and design luminaires, matte surfaces
+          and clear windows. Bloom is bypassed.
         </p>
         {ready && !tracingStatus.available && <p>{tracingStatus.reason}</p>}
         <label>

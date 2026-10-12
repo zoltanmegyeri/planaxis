@@ -1,0 +1,26 @@
+{
+  "schema": "planaxis-design/1.1",
+  "name": "Spot reoriented",
+  "architecture": "architecture/apartment.svg",
+  "luminaires": [
+    {
+      "id": "spot",
+      "type": "spot",
+      "position": {
+        "x": 330,
+        "y": 220,
+        "z": 230
+      },
+      "luminousFluxLumens": 6000,
+      "colorTemperatureKelvin": 3000,
+      "enabled": true,
+      "dimming": 1,
+      "orientation": {
+        "headingDegrees": 210,
+        "pitchDegrees": 55,
+        "rollDegrees": 20
+      },
+      "beamAngleDegrees": 60
+    }
+  ]
+}

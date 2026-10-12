@@ -1,0 +1,26 @@
+{
+  "schema": "planaxis-design/1.1",
+  "luminaires": [
+    {
+      "id": "spot",
+      "position": {
+        "x": 330,
+        "y": 220,
+        "z": 230
+      },
+      "luminousFluxLumens": 6000,
+      "colorTemperatureKelvin": 3000,
+      "enabled": true,
+      "dimming": 1,
+      "orientation": {
+        "headingDegrees": 30,
+        "pitchDegrees": 55,
+        "rollDegrees": 20
+      },
+      "type": "spot",
+      "beamAngleDegrees": 60
+    }
+  ],
+  "name": "Spot 60 degrees",
+  "architecture": "architecture/apartment.svg"
+}

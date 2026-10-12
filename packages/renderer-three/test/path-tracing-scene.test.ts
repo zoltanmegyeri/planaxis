@@ -8,6 +8,8 @@ import {
   unsupportedTracingInputs,
 } from "../src/path-tracing/scene.js";
 import type { TracingTriangle } from "../src/path-tracing/scene.js";
+import { prepareTracingLights, sampleTracingLight } from "../src/path-tracing/luminaires.js";
+import type { RuntimeLuminaire } from "../src/runtime-luminaires.js";
 import { modelFixture } from "./model-fixture.js";
 
 function physicalHits(
@@ -136,6 +138,94 @@ it("packs a deterministic BVH with every physical triangle and exact leaf/escape
     expect(
       Array.from(bvh.triangles).filter((_, i) => i % 16 === 15 && bvh.triangles[i] === 1),
     ).toHaveLength(2);
+  } finally {
+    apartment.dispose();
+  }
+});
+
+it("validates the luminaire review architectures and exposes the real baffle and 1 cm sealed partition", () => {
+  for (const filename of ["apartment", "windowed"]) {
+    const apartment = buildApartmentScene(
+      modelFixture(`../projects/path-traced-luminaires/architecture/${filename}.svg`),
+    );
+    try {
+      const triangles = extractTracingTriangles(apartment);
+      const baffle = triangles.filter((t) => t.source === "cove-baffle");
+      expect(baffle).toHaveLength(12);
+      // A floor-to-strip segment crosses the real 5 cm thick baffle.
+      const receiver = new Vector3(3.8, 0.01, 3);
+      const strip = new Vector3(3.8, 2.1, 0.8);
+      const ray = new Ray(receiver, strip.clone().sub(receiver).normalize());
+      const hits = baffle
+        .map((t) => ray.intersectTriangle(t.a, t.b, t.c, false, new Vector3()))
+        .filter((hit) => hit && hit.distanceTo(receiver) < strip.distanceTo(receiver));
+      expect(hits.length).toBeGreaterThan(0);
+      // Ceiling beyond the baffle has a physically open source route and room route.
+      const bounce = new Vector3(3.8, 2.59, 1.5);
+      const toStrip = new Ray(bounce, strip.clone().sub(bounce).normalize());
+      expect(
+        baffle.some((t) => {
+          const hit = toStrip.intersectTriangle(t.a, t.b, t.c, false, new Vector3());
+          return hit && hit.distanceTo(bounce) < strip.distanceTo(bounce);
+        }),
+      ).toBe(false);
+      const partition = triangles.filter((t) => t.source === "thin-partition");
+      expect(
+        physicalHits(partition, new Vector3(1, 1.5, 2), new Vector3(1, 0, 0)).length,
+      ).toBeGreaterThan(0);
+    } finally {
+      apartment.dispose();
+    }
+  }
+});
+
+it("checks finite sampled segments for every source against actual opaque architecture and clear panes", () => {
+  const apartment = buildApartmentScene(
+    modelFixture("../projects/path-traced-luminaires/architecture/windowed.svg"),
+  );
+  try {
+    const triangles = extractTracingTriangles(apartment);
+    const common = { positionCm: { x: 330, y: 220, z: 230 }, lumens: 6000, kelvin: 3000 };
+    const orientation = { headingDegrees: 0, pitchDegrees: 90, rollDegrees: 25 };
+    const sources: RuntimeLuminaire[] = [
+      { ...common, type: "point" },
+      { ...common, type: "spot", orientation, beamAngleDegrees: 60 },
+      { ...common, type: "linear", orientation, lengthCm: 180 },
+      { ...common, type: "area", orientation, widthCm: 80, heightCm: 40 },
+    ];
+    const segmentHits = (origin: Vector3, endpoint: Vector3): TracingTriangle[] => {
+      const ray = new Ray(origin, endpoint.clone().sub(origin).normalize());
+      return triangles.filter((triangle) => {
+        const hit = ray.intersectTriangle(triangle.a, triangle.b, triangle.c, false, new Vector3());
+        return hit !== null && hit.distanceTo(origin) < endpoint.distanceTo(origin);
+      });
+    };
+    for (const source of sources) {
+      const light = prepareTracingLights([source]).lights[0]!;
+      const endpoint = sampleTracingLight(light, 0.5, 0.5).position;
+      const receiver = new Vector3(3.3, 1.5, 3.5);
+      expect(segmentHits(receiver, endpoint)).toHaveLength(0);
+      // An infinite ray does hit the ceiling beyond the sampled source.
+      expect(
+        physicalHits(triangles, receiver, endpoint.clone().sub(receiver).normalize()).length,
+      ).toBeGreaterThan(0);
+      expect(
+        segmentHits(new Vector3(1, 1.5, 2.2), endpoint).some(
+          (t) => t.source === "thin-partition" && !t.glass,
+        ),
+      ).toBe(true);
+      const blocked = prepareTracingLights([{ ...source, positionCm: { x: 450, y: 220, z: 50 } }])
+        .lights[0]!;
+      expect(
+        segmentHits(
+          new Vector3(3.3, 0.5, 3.5),
+          sampleTracingLight(blocked, 0.5, 0.5).position,
+        ).some((t) => t.source === "shadow-blocker" && !t.glass),
+      ).toBe(true);
+    }
+    const paneHits = segmentHits(new Vector3(4, 1.4, 4), new Vector3(4, 1.4, 5.5));
+    expect(paneHits.length).toBeGreaterThan(0);
+    expect(paneHits.every((t) => t.glass)).toBe(true);
   } finally {
     apartment.dispose();
   }

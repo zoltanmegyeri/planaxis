@@ -1,0 +1,20 @@
+{
+  "schema": "planaxis-design/1.1",
+  "name": "Point at night",
+  "architecture": "architecture/apartment.svg",
+  "luminaires": [
+    {
+      "id": "point",
+      "type": "point",
+      "position": {
+        "x": 330,
+        "y": 220,
+        "z": 210
+      },
+      "luminousFluxLumens": 6000,
+      "colorTemperatureKelvin": 3000,
+      "enabled": true,
+      "dimming": 1
+    }
+  ]
+}

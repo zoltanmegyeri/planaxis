@@ -259,7 +259,7 @@ A renderer-owned overlay displays only the path-traced HDR image, while the orig
 retains navigation input. Both outputs share the existing camera/projection and adapted
 architectural surface meshes. A local triangle/AABB texture BVH, matte diffuse transport,
 thin clear-window transmission and existing Physical Sunny simulation form the supported
-subset. Raster lights, VXGI, fill, PMREM and bloom are excluded from tracing. Exposure,
+subset. Raster light objects, VXGI, fill, PMREM and bloom are excluded from tracing. Exposure,
 AgX/ACES Filmic/Neutral and sRGB apply once to the accumulated linear image.
 
 Progressive work is an explicit exception to ordinary idle rendering, limited to the active,
@@ -269,6 +269,19 @@ selection does not change camera, Physical state or retained GI/bloom settings. 
 a renderer-selection framework, migration, calibrated simulator or new persistence format.
 See [daylight path tracing](../architecture/daylight-path-tracing.md) for support, ownership,
 reproduction, real-browser findings and CC0 upstream provenance.
+
+On 2026-10-11, TASK-045 extends this bounded backend with the existing resolved runtime
+Design 1.1 point, spot, linear and area inputs. All effective lights participate, without VXGI
+budgets. Flux-normalized next-event sampling and diffuse continuation provide direct and
+indirect artificial light alongside the retained Sun/sky. Finite visibility segments use actual
+two-sided architecture and the existing thin-pane approximation. Ideal linear (length by 1 cm)
+and area sheets are renderer-owned emitting/occluding surfaces, separate from canonical
+architecture and finish targets; point/spot sources have no visible geometry. Source-normal
+sidedness is independent of ray-facing architectural normals. A partitioned estimator avoids
+double counting source samples and sheet hits. Light changes reset progressive history,
+including while paused, and own a replaceable GPU texture. Photometric-to-linear-RGB scaling
+is one documented qualitative policy, without spectral data or calibrated photometry.
+Persistence, material eligibility, navigation, Interactive lighting and GI/bloom are unchanged.
 
 ## Cameras and lifecycle
 

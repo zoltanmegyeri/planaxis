@@ -62,9 +62,11 @@ it("cancels failed tracing without a stale sample increment or further scheduled
 it("unprojects forward WebGL, forward WebGPU and reversed depth into the same camera rays", async () => {
   const { PerspectiveCamera, Vector3, WebGLCoordinateSystem, WebGPUCoordinateSystem } =
     await import("three/webgpu");
-  const { cameraNearClipDepth } = await import("../src/path-tracing/projection.js");
+  const { cameraNearClipDepth, cameraRayProjectionKey } =
+    await import("../src/path-tracing/projection.js");
   const camera = new PerspectiveCamera(60, 16 / 9, 0.01, 100);
   const rays: number[][] = [];
+  const keys: (readonly number[])[] = [];
   for (const [coordinates, reversed] of [
     [WebGLCoordinateSystem, false],
     [WebGPUCoordinateSystem, false],
@@ -79,6 +81,21 @@ it("unprojects forward WebGL, forward WebGPU and reversed depth into the same ca
       .normalize();
     expect(ray.z).toBeLessThan(0);
     rays.push(ray.toArray());
+    keys.push(cameraRayProjectionKey(camera));
   }
   for (const ray of rays) ray.forEach((value, i) => expect(value).toBeCloseTo(rays[0]![i]!, 10));
+  expect(keys[1]).toEqual(keys[0]);
+  expect(keys[2]).toEqual(keys[0]);
+  for (const update of [
+    { fov: 65 },
+    { aspect: 2 },
+    { near: 0.1 },
+    { far: 200 },
+    { filmOffset: 1 },
+    { zoom: 2 },
+  ]) {
+    Object.assign(camera, update);
+    camera.updateProjectionMatrix();
+    expect(cameraRayProjectionKey(camera)).not.toEqual(keys[0]);
+  }
 });

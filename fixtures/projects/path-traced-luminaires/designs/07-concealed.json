@@ -1,0 +1,26 @@
+{
+  "schema": "planaxis-design/1.1",
+  "name": "Concealed strip",
+  "architecture": "architecture/apartment.svg",
+  "luminaires": [
+    {
+      "id": "strip",
+      "type": "linear",
+      "position": {
+        "x": 380,
+        "y": 80,
+        "z": 210
+      },
+      "luminousFluxLumens": 6000,
+      "colorTemperatureKelvin": 3000,
+      "enabled": true,
+      "dimming": 1,
+      "orientation": {
+        "headingDegrees": 90,
+        "pitchDegrees": -90,
+        "rollDegrees": 0
+      },
+      "lengthCm": 180
+    }
+  ]
+}

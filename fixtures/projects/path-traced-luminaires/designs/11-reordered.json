@@ -1,0 +1,78 @@
+{
+  "schema": "planaxis-design/1.1",
+  "name": "All four reordered",
+  "architecture": "architecture/apartment.svg",
+  "luminaires": [
+    {
+      "id": "area",
+      "type": "area",
+      "position": {
+        "x": 330,
+        "y": 220,
+        "z": 220
+      },
+      "luminousFluxLumens": 6000,
+      "colorTemperatureKelvin": 3000,
+      "enabled": true,
+      "dimming": 1,
+      "orientation": {
+        "headingDegrees": 0,
+        "pitchDegrees": 90,
+        "rollDegrees": 25
+      },
+      "widthCm": 80,
+      "heightCm": 40
+    },
+    {
+      "id": "strip",
+      "type": "linear",
+      "position": {
+        "x": 380,
+        "y": 80,
+        "z": 210
+      },
+      "luminousFluxLumens": 6000,
+      "colorTemperatureKelvin": 3000,
+      "enabled": true,
+      "dimming": 1,
+      "orientation": {
+        "headingDegrees": 90,
+        "pitchDegrees": -90,
+        "rollDegrees": 0
+      },
+      "lengthCm": 180
+    },
+    {
+      "id": "spot",
+      "type": "spot",
+      "position": {
+        "x": 330,
+        "y": 220,
+        "z": 230
+      },
+      "luminousFluxLumens": 6000,
+      "colorTemperatureKelvin": 3000,
+      "enabled": true,
+      "dimming": 1,
+      "orientation": {
+        "headingDegrees": 30,
+        "pitchDegrees": 55,
+        "rollDegrees": 20
+      },
+      "beamAngleDegrees": 60
+    },
+    {
+      "id": "point",
+      "type": "point",
+      "position": {
+        "x": 330,
+        "y": 220,
+        "z": 210
+      },
+      "luminousFluxLumens": 6000,
+      "colorTemperatureKelvin": 3000,
+      "enabled": true,
+      "dimming": 1
+    }
+  ]
+}

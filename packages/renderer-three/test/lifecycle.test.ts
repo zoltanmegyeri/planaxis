@@ -18,6 +18,7 @@ import {
   FloatType,
   AmbientLight,
   PCFShadowMap,
+  WebGPUCoordinateSystem,
 } from "three/webgpu";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
@@ -50,6 +51,7 @@ const tracingGpu = vi.hoisted(() => ({
   failInitialization: false,
   trace: vi.fn(),
   setScene: vi.fn(),
+  setLuminaires: vi.fn(),
   setDaylight: vi.fn(),
   setPresentation: vi.fn(),
   display: vi.fn(),
@@ -68,6 +70,7 @@ vi.mock("../src/path-tracing/backend.js", () => ({
     }
     trace = tracingGpu.trace;
     setScene = tracingGpu.setScene;
+    setLuminaires = tracingGpu.setLuminaires;
     setDaylight = tracingGpu.setDaylight;
     setPresentation = tracingGpu.setPresentation;
     display = tracingGpu.display;
@@ -1627,7 +1630,7 @@ it("invalidates camera, daylight, buffer and geometry inputs and cancels hidden/
   instance.dispose();
 });
 
-it("maps the existing simulation's Sun and sky only, ignoring raster fill, helpers and luminaires", async () => {
+it("preserves the existing Sun/sky when design lights change, excluding raster fill and helpers", async () => {
   const surface = navigationSurface();
   const instance = createApartmentRenderer(surface.canvas, vi.fn());
   instance.setModel(
@@ -1645,7 +1648,7 @@ it("maps the existing simulation's Sun and sky only, ignoring raster fill, helpe
   const calls = tracingGpu.setDaylight.mock.calls.length;
   instance.setLuminaires([
     {
-      id: "ignored",
+      id: "lamp",
       type: "point",
       positionCm: { x: 100, y: 100, z: 200 },
       lumens: 10000,
@@ -1653,7 +1656,128 @@ it("maps the existing simulation's Sun and sky only, ignoring raster fill, helpe
     },
   ]);
   expect(tracingGpu.setDaylight).toHaveBeenCalledTimes(calls);
+  expect(tracingGpu.setLuminaires.mock.calls.at(-1)?.[0].lights).toHaveLength(1);
   expect(instance.getPathTracingStatus().samples).toBe(0);
+  instance.dispose();
+});
+
+it("replaces every light input while paused, retains navigation and redraws presentation without resetting", async () => {
+  const surface = navigationSurface();
+  const instance = createApartmentRenderer(surface.canvas, vi.fn());
+  instance.setModel(
+    modelFixture("../projects/daylight-path-tracing-windowed/architecture/apartment.svg"),
+  );
+  instance.setLightingMode("physical", Date.parse("2026-10-09T21:00:00Z"), "sunny");
+  await instance.initialize();
+  instance.selectCamera("interior");
+  const camera = gpu.passes.at(-1)!.camera as PerspectiveCamera;
+  camera.updateMatrixWorld(true);
+  const pose = camera.matrixWorld.clone();
+  instance.setRenderingView("path-tracing");
+  const common = { id: "lamp", positionCm: { x: 300, y: 250, z: 230 }, lumens: 1000, kelvin: 3000 };
+  const orientation = { headingDegrees: 90, pitchDegrees: 90, rollDegrees: 0 };
+  const updates: import("../src/runtime-luminaires.js").RuntimeLuminaire[] = [
+    { ...common, type: "point" },
+    { ...common, type: "point", lumens: 500 },
+    { ...common, type: "point", kelvin: 5000 },
+    { ...common, type: "point", positionCm: { x: 301, y: 252, z: 234 } },
+    { ...common, type: "spot", orientation, beamAngleDegrees: 60 },
+    { ...common, type: "spot", orientation, beamAngleDegrees: 30 },
+    ...["headingDegrees", "pitchDegrees", "rollDegrees"].map((axis) => ({
+      ...common,
+      type: "spot" as const,
+      orientation: { ...orientation, [axis]: 45 },
+      beamAngleDegrees: 30,
+    })),
+    { ...common, type: "linear", orientation, lengthCm: 100 },
+    { ...common, type: "linear", orientation, lengthCm: 200 },
+    { ...common, type: "area", orientation, widthCm: 50, heightCm: 50 },
+    { ...common, type: "area", orientation, widthCm: 100, heightCm: 50 },
+    { ...common, type: "area", orientation, widthCm: 100, heightCm: 100 },
+    { ...common, type: "area", orientation, widthCm: 100, heightCm: 100, lumens: 0 },
+  ];
+  for (const light of updates) {
+    surface.frame(16);
+    expect(instance.getPathTracingStatus().samples).toBeGreaterThan(0);
+    instance.setPathTracingPaused(true);
+    instance.setLuminaires([light]);
+    expect(instance.getPathTracingStatus()).toMatchObject({
+      samples: 0,
+      paused: true,
+      active: false,
+    });
+    expect(surface.frames.size).toBe(0);
+    expect(tracingGpu.setLuminaires.mock.calls.at(-1)?.[0].lights).toHaveLength(
+      light.lumens ? 1 : 0,
+    );
+    expect(camera.matrixWorld).toEqual(pose);
+    instance.setPathTracingPaused(false);
+  }
+  instance.setLuminaires([]);
+  expect(tracingGpu.setLuminaires.mock.calls.at(-1)?.[0].lights).toHaveLength(0);
+  surface.frame(16);
+  instance.setPresentationSettings({ ...DEFAULT_PRESENTATION_SETTINGS, exposureEv: 1 });
+  expect(instance.getPathTracingStatus().samples).toBe(1);
+  instance.dispose();
+});
+
+it("keeps reordered lights/history and releases a failed light upload without failing Interactive", async () => {
+  const surface = navigationSurface();
+  const failure = vi.fn();
+  const instance = createApartmentRenderer(surface.canvas, failure);
+  instance.setModel(
+    modelFixture("../projects/daylight-path-tracing-windowed/architecture/apartment.svg"),
+  );
+  instance.setLightingMode("physical", 0, "sunny");
+  await instance.initialize();
+  const lights = ["a", "b"].map((id) => ({
+    id,
+    type: "point" as const,
+    lumens: 1000,
+    kelvin: 3000,
+    positionCm: { x: 300, y: 200, z: 200 },
+  }));
+  instance.setLuminaires(lights);
+  instance.setRenderingView("path-tracing");
+  surface.frame(16);
+  instance.setLuminaires([...lights].reverse());
+  expect(instance.getPathTracingStatus().samples).toBe(1);
+  tracingGpu.setLuminaires.mockImplementationOnce(() => {
+    throw new Error("Luminaires texture upload failed.");
+  });
+  instance.setLuminaires([]);
+  expect(instance.getPathTracingStatus().error).toContain("upload failed");
+  expect(surface.frames.size).toBe(0);
+  expect(tracingGpu.dispose).toHaveBeenCalledOnce();
+  instance.setRenderingView("interactive");
+  expect(gpu.pipelineRender).toHaveBeenCalled();
+  expect(failure).not.toHaveBeenCalled();
+  instance.dispose();
+});
+
+it("retains a tracing-first mount's unchanged history across Interactive depth convention adoption", async () => {
+  const surface = navigationSurface();
+  const instance = createApartmentRenderer(surface.canvas, vi.fn());
+  instance.setModel(
+    modelFixture("../projects/daylight-path-tracing-windowed/architecture/apartment.svg"),
+  );
+  instance.setLightingMode("physical", 0, "sunny");
+  instance.setRenderingView("path-tracing");
+  await instance.initialize();
+  surface.frame(16);
+  instance.setPathTracingPaused(true);
+  const camera = tracingGpu.trace.mock.calls.at(-1)![0] as PerspectiveCamera;
+  gpu.pipelineRender.mockImplementationOnce(() => {
+    camera.coordinateSystem = WebGPUCoordinateSystem;
+    Object.assign(camera, { _reversedDepth: true });
+    camera.updateProjectionMatrix();
+  });
+  instance.setRenderingView("interactive");
+  instance.setRenderingView("path-tracing");
+  expect(instance.getPathTracingStatus()).toMatchObject({ samples: 1, paused: true });
+  instance.setPathTracingPaused(false);
+  surface.frame(16);
+  expect(tracingGpu.trace).toHaveBeenLastCalledWith(camera, 1);
   instance.dispose();
 });
 

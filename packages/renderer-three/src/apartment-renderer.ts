@@ -46,6 +46,8 @@ import {
   unsupportedTracingInputs,
 } from "./path-tracing/scene.js";
 import { ProgressiveAccumulator } from "./path-tracing/progressive.js";
+import { prepareTracingLights } from "./path-tracing/luminaires.js";
+import { cameraRayProjectionKey } from "./path-tracing/projection.js";
 import { buildApartmentScene } from "./apartment-scene.js";
 import type { ApartmentScene } from "./apartment-scene.js";
 import {
@@ -174,6 +176,8 @@ export function createApartmentRenderer(
   let tracingSubsetReason: string | undefined;
   let tracingGeometryRevision = 0;
   let tracingSceneRevision = -1;
+  let tracingLightKey = "[]";
+  let tracingUploadedLightKey: string | undefined;
   let tracingPaused = false;
   const tracingReason = (): string | undefined => {
     if (renderFailed) return "Path tracing is unavailable after renderer failure.";
@@ -244,12 +248,17 @@ export function createApartmentRenderer(
           tracer.setScene(buildTracingBvh(extractTracingTriangles(apartment)));
           tracingSceneRevision = tracingGeometryRevision;
         }
+        if (tracingUploadedLightKey !== tracingLightKey) {
+          tracer.setLuminaires(prepareTracingLights(luminaireInputs));
+          tracingUploadedLightKey = tracingLightKey;
+        }
         tracer.resize(width * quality.pixelRatio, height * quality.pixelRatio, canvas);
         camera.updateMatrixWorld(true);
         const key = JSON.stringify([
           tracingGeometryRevision,
+          tracingLightKey,
           camera.matrixWorld.elements,
-          camera.projectionMatrix.elements,
+          cameraRayProjectionKey(camera),
           tracer.canvas.width,
           tracer.canvas.height,
           simulationInstant,
@@ -565,6 +574,11 @@ export function createApartmentRenderer(
     setLuminaires(next) {
       if (disposed) return;
       luminaireInputs = next;
+      const key = JSON.stringify(next.map((input) => JSON.stringify(input)).sort());
+      if (key !== tracingLightKey) {
+        tracingLightKey = key;
+        accumulation?.setInputs(`luminaires:${key}`);
+      }
       replaceLuminaires();
       applyShadows();
       updateGiLights();

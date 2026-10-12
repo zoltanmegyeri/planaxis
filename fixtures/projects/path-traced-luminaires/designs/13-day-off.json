@@ -1,0 +1,5 @@
+{
+  "schema": "planaxis-design/1.1",
+  "name": "Daylight only",
+  "architecture": "architecture/windowed.svg"
+}

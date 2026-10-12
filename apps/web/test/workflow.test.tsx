@@ -1552,7 +1552,9 @@ it("selects experimental tracing explicitly, retains camera/daylight/presentatio
   };
   await selectQuality("Rendering view", "path-tracing");
   expect(rendererMocks.setRenderingView).toHaveBeenLastCalledWith("path-tracing");
-  expect(host.textContent).toContain("Design luminaires are omitted");
+  expect(host.textContent).toContain(
+    "Sun, sky and design luminaires illuminate the interior through traced paths.",
+  );
   await act(async () =>
     rendererMocks.onTracing?.({ available: true, samples: 1024, paused: false, active: true }),
   );

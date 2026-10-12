@@ -554,11 +554,14 @@ work is set aside in favor of a separate path-tracing evaluation; the integratio
 The explicit [experimental daylight path-tracing view](daylight-path-tracing.md) adds a
 bounded conventional WebGL2/GLSL backend in `renderer-three`, without changing the default
 interactive renderer. It reuses adapted physical surfaces and the navigation camera, tracing
-Physical Sunny Sun/sky transport through clear panes with matte diffuse finishes. Opaque
+Physical Sunny Sun/sky and resolved Design 1.1 luminaire transport through clear panes with matte diffuse finishes. Opaque
 floor/ceiling/walls remain two-sided ray occluders. Session-only selection, pause and sample
-count control progressive work while active and visible; camera/scene/daylight/buffer changes
+count control progressive work while active and visible; camera/scene/daylight/light/buffer changes
 reset it. Presentation alone redraws accumulated HDR through the current tone mapping/exposure
-and sRGB transform. Raster GI/fill/sky-helper lights, design luminaires and bloom do not enter
+and sRGB transform. Every effective point/spot/linear/area source participates with normalized total
+flux and traced occlusion; renderer-owned linear (length × 1 cm) and area sheets visibly emit
+only from their declared forward side. Nighttime and mixed daylight use the same transport.
+Raster GI/fill/sky-helper lights and bloom do not enter
 this view. Unsupported inputs or backend failures are explicit; the interactive view remains
 available with its retained GI/bloom intent. This is a qualitative proof of concept for human
 review, not full material parity or a renderer replacement.
@@ -584,7 +587,7 @@ unlimited range, luminous `power`, and architectural shadows at 1024/2048/4096 r
 (minimum Low for Off, independent of Studio/Physical). Spot penumbra is 0.2; full cone angles
 become half-angles. Shadow cameras cover the architecture independently of light attenuation.
 Linear maps to RectAreaLight with length × 1 cm; area uses its declared width/height.
-Both rectangular types are one-sided and intentionally shadowless, so light can cross walls.
+In Interactive, both rectangular types are one-sided and intentionally shadowless, so light can cross walls.
 Three.js node-light LTC textures support both WebGPU and its WebGL2 fallback.
 
 The Design 1.1 normative forward/rolledSide/rolledVertical frame is derived explicitly, then
@@ -1288,7 +1291,7 @@ The Project Format 1.0 loading and project-filesystem foundation is implemented 
 
 Phase 1 includes exact designable surfaces with shared physical mapping frames, renderer UV generation, transient texture-capable metallic/roughness PBR finish assignments with non-overlapping coverage, and zero-thickness transmissive glass (sections 5.8–5.9). Built-in environment lighting and transient intensity, yaw, tone-mapping, and EV exposure controls complete the Phase 1 presentation foundation. Phase 2 is complete: Design Format 1.0, shared validation/resolution, server persistence, and browser scenario discovery/selection/creation/editing are implemented. Phase 3 is complete for Material 1.0 and 1.1: the pure `@planaxis/material` format package, controlled server descriptor/texture reads, browser material resolution, renderer-owned texture decoding, and persistent PBR rendering with physical scale are implemented. Material 1.1 ambient-occlusion map/strength support is implemented throughout validation, browser/runtime translation, and Three.js adaptation, preserving Material 1.0 compatibility.
 
-Phase 4 has implemented RenderPipeline/HDR bloom, physical daylight controls and the native-WebGPU VXGI integration described in section 7.1. Design Format 1.1 is now the accepted persistent luminaire contract; its `@planaxis/design`, server, and browser validation/persistence integration is implemented. TASK-043 is completed by human acceptance with leakage and shadow-light binding limits unresolved; further VXGI work, including rectangular GI, is set aside. A bounded daylight path-tracing proof of concept is available for human evaluation. Luminaire placement/editing, IES photometry, broader path tracing, environment assets, and richer atmospheric effects remain future Phase 4 work before Phase 5 asset importing and placement.
+Phase 4 has implemented RenderPipeline/HDR bloom, physical daylight controls and the native-WebGPU VXGI integration described in section 7.1. Design Format 1.1 is now the accepted persistent luminaire contract; its `@planaxis/design`, server, and browser validation/persistence integration is implemented. TASK-043 is completed by human acceptance with leakage and shadow-light binding limits unresolved; further VXGI work, including rectangular GI, is set aside. A bounded daylight and design-luminaire path-tracing proof of concept is available for human evaluation. Luminaire placement/editing, IES photometry, broader path tracing, environment assets, and richer atmospheric effects remain future Phase 4 work before Phase 5 asset importing and placement.
 
 The intended implementation order is now broadly:
 

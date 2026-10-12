@@ -1,0 +1,27 @@
+{
+  "schema": "planaxis-design/1.1",
+  "name": "Area 160 by 80",
+  "architecture": "architecture/apartment.svg",
+  "luminaires": [
+    {
+      "id": "area",
+      "type": "area",
+      "position": {
+        "x": 330,
+        "y": 220,
+        "z": 220
+      },
+      "luminousFluxLumens": 6000,
+      "colorTemperatureKelvin": 3000,
+      "enabled": true,
+      "dimming": 1,
+      "orientation": {
+        "headingDegrees": 0,
+        "pitchDegrees": 90,
+        "rollDegrees": 25
+      },
+      "widthCm": 160,
+      "heightCm": 80
+    }
+  ]
+}

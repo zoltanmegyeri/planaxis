@@ -1,0 +1,7 @@
+{
+  "schema": "planaxis-project/1.0",
+  "name": "Path-traced luminaires",
+  "architecture": {
+    "active": "architecture/apartment.svg"
+  }
+}

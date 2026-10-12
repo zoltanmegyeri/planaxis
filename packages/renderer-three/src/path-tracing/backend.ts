@@ -17,6 +17,7 @@ import type { PerspectiveCamera, ToneMapping, Vector3, Color } from "three/webgp
 import type { TracingBvh } from "./scene.js";
 import { outputFragment, tracingFragment, tracingVertex } from "./shaders.js";
 import { cameraNearClipDepth } from "./projection.js";
+import type { TracingLights } from "./luminaires.js";
 
 export interface PathTracingStatus {
   readonly available: boolean;
@@ -42,6 +43,7 @@ export class PathTracingBackend {
   private readonly quad: Mesh;
   private readonly targets: [WebGLRenderTarget, WebGLRenderTarget];
   private textures: DataTexture[] = [];
+  private lightTexture: DataTexture | undefined;
   private disposed = false;
   private readonly contextLost: (event: Event) => void;
 
@@ -90,6 +92,8 @@ export class PathTracingBackend {
         triangles: { value: null },
         nodes: { value: null },
         nodeCount: { value: 0 },
+        lights: { value: null },
+        lightCount: { value: 0 },
         previousImage: { value: null },
         sampleIndex: { value: 0 },
         resolution: { value: new Vector2(1, 1) },
@@ -127,23 +131,43 @@ export class PathTracingBackend {
     }
   }
 
+  private uploadRecords(records: Float32Array, label: string): DataTexture {
+    const limit = this.renderer.capabilities.maxTextureSize;
+    const texels = Math.max(1, records.length / 4);
+    const width = Math.min(limit, 1024, texels);
+    const height = Math.ceil(texels / width);
+    if (height > limit) throw new Error(`${label} exceeds path tracing texture capacity.`);
+    const padded = new Float32Array(width * height * 4);
+    padded.set(records);
+    const texture = new DataTexture(padded, width, height, RGBAFormat, FloatType);
+    try {
+      texture.colorSpace = NoColorSpace;
+      texture.minFilter = texture.magFilter = NearestFilter;
+      texture.generateMipmaps = false;
+      texture.needsUpdate = true;
+      this.renderer.initTexture(texture);
+      const gl = this.renderer.getContext();
+      if (gl.getError() !== gl.NO_ERROR) throw new Error(`${label} texture upload failed.`);
+      return texture;
+    } catch (error) {
+      texture.dispose();
+      throw error;
+    }
+  }
+
+  setLuminaires(lights: TracingLights): void {
+    const replacement = this.uploadRecords(lights.records, "Luminaires");
+    this.lightTexture?.dispose();
+    this.lightTexture = replacement;
+    this.tracing.uniforms.lights!.value = replacement;
+    this.tracing.uniforms.lightCount!.value = lights.lights.length;
+  }
+
   setScene(bvh: TracingBvh): void {
     const replacement: DataTexture[] = [];
     try {
-      for (const records of [bvh.triangles, bvh.nodes]) {
-        const limit = this.renderer.capabilities.maxTextureSize;
-        const width = Math.min(limit, Math.max(1, Math.min(1024, records.length / 4)));
-        const height = Math.ceil(records.length / 4 / width);
-        if (height > limit) throw new Error("Architecture exceeds path tracing texture capacity.");
-        const padded = new Float32Array(width * height * 4);
-        padded.set(records);
-        const texture = new DataTexture(padded, width, height, RGBAFormat, FloatType);
-        texture.colorSpace = NoColorSpace;
-        texture.minFilter = texture.magFilter = NearestFilter;
-        texture.generateMipmaps = false;
-        texture.needsUpdate = true;
-        replacement.push(texture);
-      }
+      for (const records of [bvh.triangles, bvh.nodes])
+        replacement.push(this.uploadRecords(records, "Architecture"));
     } catch (error) {
       for (const texture of replacement) texture.dispose();
       throw error;
@@ -227,6 +251,7 @@ export class PathTracingBackend {
     this.disposed = true;
     this.canvas.removeEventListener("webglcontextlost", this.contextLost);
     for (const texture of this.textures) texture.dispose();
+    this.lightTexture?.dispose();
     for (const target of this.targets) target.dispose();
     this.geometry.dispose();
     this.tracing.dispose();

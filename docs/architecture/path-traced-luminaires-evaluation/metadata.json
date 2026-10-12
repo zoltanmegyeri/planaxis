@@ -1,0 +1,269 @@
+{
+  "reviewDate": "2026-10-11",
+  "platform": "macOS, Codex in-app browser",
+  "backend": "WebGL2, RGBA32F accumulation",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "drawingBuffer": {
+    "width": 1280,
+    "height": 666
+  },
+  "renderPixelRatio": 1,
+  "lightingMode": "Physical",
+  "weather": "Sunny",
+  "toneMapping": "AgX",
+  "exposureEv": 0,
+  "horizontalFovDegrees": 75,
+  "aspectMode": "Fill",
+  "rasterShadows": "Medium",
+  "interactiveGi": "Off",
+  "bloom": "Off",
+  "materials": "Neutral matte architecture defaults",
+  "timeZone": "Europe/Budapest",
+  "sampleCountNote": "Paused UI counts; a few screenshots show the slightly earlier compositor frame.",
+  "captures": [
+    {
+      "file": "concealed-strip.jpg",
+      "scenario": "designs/07-concealed.json",
+      "camera": "interior",
+      "localTime": "2026-10-11 23:00 Europe/Budapest",
+      "project": "fixtures/projects/path-traced-luminaires",
+      "pausedSampleCount": 1074
+    },
+    {
+      "file": "concealed-sealed-side.jpg",
+      "scenario": "designs/07-concealed.json",
+      "camera": "sealed-side",
+      "localTime": "2026-10-11 23:00 Europe/Budapest",
+      "project": "fixtures/projects/path-traced-luminaires",
+      "pausedSampleCount": 428
+    },
+    {
+      "file": "lights-off.jpg",
+      "scenario": "designs/08-off.json",
+      "camera": "interior",
+      "localTime": "2026-10-11 23:00 Europe/Budapest",
+      "project": "fixtures/projects/path-traced-luminaires",
+      "pausedSampleCount": 243
+    },
+    {
+      "file": "point-night.jpg",
+      "scenario": "designs/01-point.json",
+      "camera": "interior",
+      "localTime": "2026-10-11 23:00 Europe/Budapest",
+      "project": "fixtures/projects/path-traced-luminaires",
+      "pausedSampleCount": 367
+    },
+    {
+      "file": "spot-wide.jpg",
+      "scenario": "designs/02-spot.json",
+      "camera": "interior",
+      "localTime": "2026-10-11 23:00 Europe/Budapest",
+      "project": "fixtures/projects/path-traced-luminaires",
+      "pausedSampleCount": 492
+    },
+    {
+      "file": "presentation-neutral-1ev.jpg",
+      "scenario": "designs/02-spot.json",
+      "camera": "interior",
+      "localTime": "2026-10-11 23:00 Europe/Budapest",
+      "toneMapping": "Neutral",
+      "exposureEv": 1,
+      "project": "fixtures/projects/path-traced-luminaires",
+      "pausedSampleCount": 492
+    },
+    {
+      "file": "spot-narrow.jpg",
+      "scenario": "designs/03-spot-narrow.json",
+      "camera": "interior",
+      "localTime": "2026-10-11 23:00 Europe/Budapest",
+      "project": "fixtures/projects/path-traced-luminaires",
+      "pausedSampleCount": 662
+    },
+    {
+      "file": "spot-reoriented.jpg",
+      "scenario": "designs/04-spot-aim.json",
+      "camera": "interior",
+      "localTime": "2026-10-11 23:00 Europe/Budapest",
+      "project": "fixtures/projects/path-traced-luminaires",
+      "pausedSampleCount": 261
+    },
+    {
+      "file": "area-night.jpg",
+      "scenario": "designs/05-area.json",
+      "camera": "interior",
+      "localTime": "2026-10-11 23:00 Europe/Budapest",
+      "project": "fixtures/projects/path-traced-luminaires",
+      "pausedSampleCount": 84
+    },
+    {
+      "file": "area-large-front.jpg",
+      "scenario": "designs/06-area-large.json",
+      "camera": "emitter-front",
+      "localTime": "2026-10-11 23:00 Europe/Budapest",
+      "project": "fixtures/projects/path-traced-luminaires",
+      "pausedSampleCount": 66
+    },
+    {
+      "file": "area-front.jpg",
+      "scenario": "designs/05-area.json",
+      "camera": "emitter-front",
+      "localTime": "2026-10-11 23:00 Europe/Budapest",
+      "project": "fixtures/projects/path-traced-luminaires",
+      "pausedSampleCount": 97
+    },
+    {
+      "file": "area-back.jpg",
+      "scenario": "designs/05-area.json",
+      "camera": "emitter-back",
+      "localTime": "2026-10-11 23:00 Europe/Budapest",
+      "project": "fixtures/projects/path-traced-luminaires",
+      "pausedSampleCount": 163
+    },
+    {
+      "file": "linear-front.jpg",
+      "scenario": "designs/07-concealed.json",
+      "camera": "emitter-back",
+      "localTime": "2026-10-11 23:00 Europe/Budapest",
+      "project": "fixtures/projects/path-traced-luminaires",
+      "pausedSampleCount": 159
+    },
+    {
+      "file": "disabled-zero.jpg",
+      "scenario": "designs/09-disabled.json",
+      "camera": "interior",
+      "localTime": "2026-10-11 23:00 Europe/Budapest",
+      "project": "fixtures/projects/path-traced-luminaires",
+      "pausedSampleCount": 48
+    },
+    {
+      "file": "legacy-empty.jpg",
+      "scenario": "designs/14-legacy.json",
+      "camera": "interior",
+      "localTime": "2026-10-11 23:00 Europe/Budapest",
+      "project": "fixtures/projects/path-traced-luminaires",
+      "pausedSampleCount": 45
+    },
+    {
+      "file": "no-design.jpg",
+      "scenario": null,
+      "camera": "interior",
+      "localTime": "2026-10-11 23:00 Europe/Budapest",
+      "project": "fixtures/projects/path-traced-luminaires",
+      "pausedSampleCount": 89
+    },
+    {
+      "file": "mixed-night.jpg",
+      "scenario": "designs/10-mixed.json",
+      "camera": "interior",
+      "localTime": "2026-10-11 23:00 Europe/Budapest",
+      "project": "fixtures/projects/path-traced-luminaires",
+      "pausedSampleCount": 163
+    },
+    {
+      "file": "mixed-reordered.jpg",
+      "scenario": "designs/11-reordered.json",
+      "camera": "interior",
+      "localTime": "2026-10-11 23:00 Europe/Budapest",
+      "project": "fixtures/projects/path-traced-luminaires",
+      "pausedSampleCount": 98
+    },
+    {
+      "file": "mixed-sealed-side.jpg",
+      "scenario": "designs/11-reordered.json",
+      "camera": "sealed-side",
+      "localTime": "2026-10-11 23:00 Europe/Budapest",
+      "project": "fixtures/projects/path-traced-luminaires",
+      "pausedSampleCount": 132
+    },
+    {
+      "file": "mixed-day.jpg",
+      "scenario": "designs/12-day-mixed.json",
+      "camera": "interior",
+      "localTime": "2026-10-11 12:00 Europe/Budapest",
+      "project": "fixtures/projects/path-traced-luminaires",
+      "pausedSampleCount": 175
+    },
+    {
+      "file": "mixed-after-night-change.jpg",
+      "scenario": "designs/12-day-mixed.json",
+      "camera": "interior",
+      "localTime": "2026-10-11 23:00 Europe/Budapest",
+      "project": "fixtures/projects/path-traced-luminaires",
+      "pausedSampleCount": 272
+    },
+    {
+      "file": "day-lights-off.jpg",
+      "scenario": "designs/13-day-off.json",
+      "camera": "interior",
+      "localTime": "2026-10-11 12:00 Europe/Budapest",
+      "project": "fixtures/projects/path-traced-luminaires",
+      "pausedSampleCount": 343
+    },
+    {
+      "file": "regression-windowed.jpg",
+      "scenario": null,
+      "camera": "interior",
+      "localTime": "2026-10-09 12:00 Europe/Budapest",
+      "project": "fixtures/projects/daylight-path-tracing-windowed",
+      "pausedSampleCount": 319
+    },
+    {
+      "file": "regression-sealed.jpg",
+      "scenario": null,
+      "camera": "interior",
+      "localTime": "2026-10-09 12:00 Europe/Budapest",
+      "project": "fixtures/projects/daylight-path-tracing-sealed",
+      "pausedSampleCount": 489
+    },
+    {
+      "file": "regression-thin-wall-lit.jpg",
+      "scenario": null,
+      "camera": "interior",
+      "localTime": "2026-10-09 12:00 Europe/Budapest",
+      "project": "fixtures/projects/daylight-path-tracing-thin-wall",
+      "pausedSampleCount": 403
+    },
+    {
+      "file": "regression-thin-wall-sealed.jpg",
+      "scenario": null,
+      "camera": "sealed-side",
+      "localTime": "2026-10-09 12:00 Europe/Budapest",
+      "project": "fixtures/projects/daylight-path-tracing-thin-wall",
+      "pausedSampleCount": 622
+    }
+  ],
+  "controlCaptures": [
+    {
+      "file": "settings.jpg",
+      "purpose": "Luminaire nighttime controls"
+    },
+    {
+      "file": "regression-settings.jpg",
+      "purpose": "Daylight regression controls"
+    },
+    {
+      "file": "spot-interactive.jpg",
+      "backend": "Native WebGPU",
+      "scenario": "designs/02-spot.json",
+      "camera": "interior",
+      "localTime": "2026-10-11 23:00 Europe/Budapest",
+      "purpose": "Qualitative Interactive comparison, GI/Bloom Off"
+    },
+    {
+      "file": "sunny-eligibility.jpg",
+      "project": "fixtures/projects/daylight-path-tracing-thin-wall",
+      "weather": "Overcast",
+      "purpose": "Explicit Sunny requirement and available Interactive return"
+    }
+  ],
+  "browserWarningsAndErrors": [],
+  "limitations": [
+    "Visible Monte Carlo noise, particularly indirect illumination",
+    "Ideal points, hard-edge spot cones and Lambertian sheets; no fixture housing",
+    "Qualitative flux/color/sky scale, not calibrated photometry",
+    "Human visual acceptance remains pending"
+  ]
+}

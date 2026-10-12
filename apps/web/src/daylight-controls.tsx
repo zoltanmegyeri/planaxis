@@ -95,7 +95,7 @@ export function DaylightControls({
       </label>
       <p>
         {pathTracing
-          ? "Sun and sky illuminate the interior through traced paths. Design luminaires are omitted."
+          ? "Sun, sky and design luminaires illuminate the interior through traced paths."
           : "Visible sky does not yet provide diffuse indoor lighting. Interiors may remain dark. Shadows stay enabled."}
       </p>
     </fieldset>
