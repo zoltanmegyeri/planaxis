@@ -2,11 +2,11 @@
 
 ## Task Metadata
 
-- **Status:** Ready
+- **Status:** In Progress
 - **Created:** 2026-10-12
-- **Issued:** —
+- **Issued:** 2026-10-12
 - **Completed:** —
-- **Agent:** —
+- **Agent:** Codex
 - **Repository:** PlanAxis
 - **Description:** `TASK-046-description.md`
 - **Related tasks:** TASK-044, TASK-045
@@ -84,6 +84,6 @@ Intended repository directory:
 docs/tasks/TASK-046-path-traced-pbr-materials-and-textures/
 ```
 
-The task is prepared but has not been issued. Execution and human acceptance remain pending.
+The task was issued to Codex on 2026-10-12. Execution and human acceptance remain pending; the issued task description is immutable.
 
 Masked/blended transparency, frosted/tinted glazing, additional weather modes, new material properties, material editing/import UI, and performance benchmarking remain outside this task.
