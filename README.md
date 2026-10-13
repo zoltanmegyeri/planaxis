@@ -352,8 +352,7 @@ integration is retained.
 
 Rendering → View now offers **Path tracing (experimental)** in eligible validated 3D scenes.
 It supports Physical Sunny daylight and Design 1.1 point/spot/linear/area luminaires,
-neutral/opaque untextured nonmetallic matte finishes
-(roughness ≥ 0.5), and clear/unspecified panes. Watch the sample count and use Pause/Resume;
+opaque Material 1.0/1.1 PBR finishes with base-color, roughness, metalness, normal and AO maps, and clear/unspecified panes. Watch the sample count and use Pause/Resume;
 returning to Interactive retains the camera, daylight and GI/bloom settings. All effective
 luminaires have traced direct/indirect transport; linear/area fronts visibly emit. Bloom is bypassed.
 Unsupported inputs or WebGL2 float-rendering failures are

@@ -1,0 +1,2357 @@
+[
+  {
+    "name": "26-no-finishes",
+    "scenario": "designs/26-no-finishes.json",
+    "camera": "interior",
+    "time": "2026-10-12T23:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "98 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim."
+  },
+  {
+    "name": "27-design-1.0-night",
+    "scenario": "designs/27-design-1.0.json",
+    "camera": "interior",
+    "time": "2026-10-12T23:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "317 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/wood.json"
+      },
+      {
+        "target": "space:tile-zone:floor",
+        "material": "assets/materials/tile.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim."
+  },
+  {
+    "name": "no-design-night",
+    "scenario": "",
+    "camera": "interior",
+    "time": "2026-10-12T23:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "217 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim."
+  },
+  {
+    "name": "01-textured-interactive",
+    "project": "fixtures/projects/path-traced-pbr",
+    "scenario": "designs/01-textured.json",
+    "camera": "interior",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "Interactive",
+    "samples": null,
+    "dimensions": [
+      {
+        "width": 1280,
+        "height": 666
+      }
+    ],
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/wood.json"
+      },
+      {
+        "target": "space:tile-zone:floor",
+        "material": "assets/materials/tile.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ]
+  },
+  {
+    "name": "24-orientation-interactive",
+    "project": "fixtures/projects/path-traced-pbr",
+    "scenario": "designs/24-orientation.json",
+    "camera": "interior",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "Interactive",
+    "samples": null,
+    "dimensions": [
+      {
+        "width": 1280,
+        "height": 666
+      }
+    ],
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "space:tile-zone:floor",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "wall:thin-partition:side-negative",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "wall:wall-south:opening:window-south:reveal-start",
+        "material": "assets/materials/normal.json"
+      }
+    ],
+    "sourceSet": "Original four luminaires; captured before isolated left-control source was added."
+  },
+  {
+    "name": "18-mask-unavailable",
+    "project": "fixtures/projects/path-traced-pbr",
+    "scenario": "designs/18-mask.json",
+    "camera": "interior",
+    "time": "2026-10-12T23:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "Unavailable: mask alpha",
+    "samples": null,
+    "dimensions": [
+      {
+        "width": 1280,
+        "height": 666
+      }
+    ],
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/mask.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ]
+  },
+  {
+    "name": "19-blend-unavailable",
+    "project": "fixtures/projects/path-traced-pbr",
+    "scenario": "designs/19-blend.json",
+    "camera": "interior",
+    "time": "2026-10-12T23:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "Unavailable: blend alpha",
+    "samples": null,
+    "dimensions": [
+      {
+        "width": 1280,
+        "height": 666
+      }
+    ],
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/blend.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ]
+  },
+  {
+    "name": "30-frosted-unavailable",
+    "project": "fixtures/projects/path-traced-pbr",
+    "scenario": "designs/30-frosted.json",
+    "camera": "interior",
+    "time": "2026-10-12T23:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "Unavailable: frosted glazing",
+    "samples": null,
+    "dimensions": [
+      {
+        "width": 1280,
+        "height": 666
+      }
+    ],
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/wood.json"
+      },
+      {
+        "target": "space:tile-zone:floor",
+        "material": "assets/materials/tile.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ]
+  },
+  {
+    "name": "overcast-unavailable",
+    "project": "fixtures/projects/path-traced-pbr",
+    "scenario": "designs/01-textured.json",
+    "camera": "interior",
+    "time": "2026-10-12T23:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "Unavailable: Overcast",
+    "samples": null,
+    "dimensions": [
+      {
+        "width": 1280,
+        "height": 666
+      }
+    ],
+    "lighting": "Physical / Overcast",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/wood.json"
+      },
+      {
+        "target": "space:tile-zone:floor",
+        "material": "assets/materials/tile.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ]
+  },
+  {
+    "name": "paused-time-reset",
+    "project": "fixtures/projects/path-traced-pbr",
+    "scenario": "designs/01-textured.json",
+    "camera": "interior",
+    "time": "2026-10-12T23:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F / paused",
+    "samples": "0 samples",
+    "dimensions": [
+      {
+        "width": 1280,
+        "height": 666
+      }
+    ],
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/wood.json"
+      },
+      {
+        "target": "space:tile-zone:floor",
+        "material": "assets/materials/tile.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ]
+  },
+  {
+    "name": "presentation-retains-samples",
+    "project": "fixtures/projects/path-traced-pbr",
+    "scenario": "",
+    "camera": "interior",
+    "time": "2026-10-12T23:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "Neutral / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F / paused",
+    "samples": "217 samples",
+    "dimensions": [
+      {
+        "width": 1280,
+        "height": 666
+      }
+    ],
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": []
+  },
+  {
+    "name": "regression-presentation-neutral",
+    "project": "fixtures/projects/daylight-path-tracing-windowed",
+    "scenario": "",
+    "camera": "interior",
+    "time": "2026-10-09T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "Neutral / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F / paused",
+    "samples": "119 samples",
+    "dimensions": [
+      {
+        "width": 1280,
+        "height": 666
+      }
+    ],
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [],
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "02-dielectric-rough",
+    "scenario": "designs/02-dielectric-rough.json",
+    "camera": "finish-detail",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "132 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/dielectric-rough.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "03-dielectric-polished",
+    "scenario": "designs/03-dielectric-polished.json",
+    "camera": "finish-detail",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "103 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/dielectric-polished.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "04-metal-rough",
+    "samples": "103 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "scenario": "designs/04-metal-rough.json",
+    "camera": "finish-detail",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/metal-rough.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "05-metal-polished",
+    "samples": "73 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "scenario": "designs/05-metal-polished.json",
+    "camera": "finish-detail",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/metal-polished.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "01-textured-day-final",
+    "scenario": "designs/01-textured.json",
+    "camera": "interior",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "103 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/wood.json"
+      },
+      {
+        "target": "space:tile-zone:floor",
+        "material": "assets/materials/tile.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "12-ao",
+    "scenario": "designs/12-ao.json",
+    "camera": "finish-detail",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "72 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/ao.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "13-ao-zero",
+    "scenario": "designs/13-ao-zero.json",
+    "camera": "finish-detail",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "72 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/ao-zero.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "14-ao-white",
+    "scenario": "designs/14-ao-white.json",
+    "camera": "finish-detail",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "72 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/ao-white.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "16-packed",
+    "scenario": "designs/16-packed.json",
+    "camera": "finish-detail",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "72 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/packed.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "17-separate",
+    "scenario": "designs/17-separate.json",
+    "camera": "finish-detail",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "71 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/separate.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "24-orientation",
+    "scenario": "designs/24-orientation.json",
+    "camera": "interior",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "71 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "space:tile-zone:floor",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "wall:thin-partition:side-negative",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "wall:wall-south:opening:window-south:reveal-start",
+        "material": "assets/materials/normal.json"
+      }
+    ],
+    "sourceSet": "Original four luminaires plus isolated left-chamber control point.",
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "25-neutral",
+    "scenario": "designs/25-neutral.json",
+    "camera": "interior",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "68 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/neutral-normal.json"
+      },
+      {
+        "target": "space:tile-zone:floor",
+        "material": "assets/materials/neutral-normal.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/neutral-normal.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/neutral-normal.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/neutral-normal.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/neutral-normal.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/neutral-normal.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/neutral-normal.json"
+      },
+      {
+        "target": "wall:thin-partition:side-negative",
+        "material": "assets/materials/neutral-normal.json"
+      },
+      {
+        "target": "wall:wall-south:opening:window-south:reveal-start",
+        "material": "assets/materials/neutral-normal.json"
+      }
+    ],
+    "sourceSet": "Original four luminaires plus isolated left-chamber control point.",
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "24-opposing-wall",
+    "scenario": "designs/24-orientation.json",
+    "camera": "sealed-side",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "71 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "space:tile-zone:floor",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "wall:thin-partition:side-negative",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "wall:wall-south:opening:window-south:reveal-start",
+        "material": "assets/materials/normal.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13",
+    "sourceSet": "Original four luminaires plus isolated left-chamber control point."
+  },
+  {
+    "name": "25-opposing-neutral",
+    "scenario": "designs/25-neutral.json",
+    "camera": "sealed-side",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "80 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/neutral-normal.json"
+      },
+      {
+        "target": "space:tile-zone:floor",
+        "material": "assets/materials/neutral-normal.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/neutral-normal.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/neutral-normal.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/neutral-normal.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/neutral-normal.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/neutral-normal.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/neutral-normal.json"
+      },
+      {
+        "target": "wall:thin-partition:side-negative",
+        "material": "assets/materials/neutral-normal.json"
+      },
+      {
+        "target": "wall:wall-south:opening:window-south:reveal-start",
+        "material": "assets/materials/neutral-normal.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13",
+    "sourceSet": "Original four luminaires plus isolated left-chamber control point."
+  },
+  {
+    "name": "06-metal-zero",
+    "scenario": "designs/06-metal-zero.json",
+    "camera": "finish-detail",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "75 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/metal-zero.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "07-metal-near-zero",
+    "scenario": "designs/07-metal-near-zero.json",
+    "camera": "finish-detail",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "73 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/metal-near-zero.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "09-roughness",
+    "scenario": "designs/09-roughness.json",
+    "camera": "finish-detail",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "74 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/roughness.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "10-metalness",
+    "scenario": "designs/10-metalness.json",
+    "camera": "finish-detail",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "75 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/metalness.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "11-normal",
+    "scenario": "designs/11-normal.json",
+    "camera": "finish-detail",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "75 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/normal.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "15-neutral-normal",
+    "scenario": "designs/15-neutral-normal.json",
+    "camera": "finish-detail",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "73 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/neutral-normal.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "08-mixed",
+    "scenario": "designs/08-mixed.json",
+    "camera": "finish-detail",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "75 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/mixed.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "05-window-reflection",
+    "scenario": "designs/05-metal-polished.json",
+    "camera": "window-reflection",
+    "time": "2026-10-12T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "70 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/metal-polished.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "01-textured-night",
+    "scenario": "designs/01-textured.json",
+    "camera": "interior",
+    "time": "2026-10-12T23:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "69 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/wood.json"
+      },
+      {
+        "target": "space:tile-zone:floor",
+        "material": "assets/materials/tile.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "29-concealed",
+    "scenario": "designs/29-concealed.json",
+    "camera": "interior",
+    "time": "2026-10-12T23:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "74 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/wood.json"
+      },
+      {
+        "target": "space:tile-zone:floor",
+        "material": "assets/materials/tile.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "29-thin-wall-sealed",
+    "scenario": "designs/29-concealed.json",
+    "camera": "sealed-side",
+    "time": "2026-10-12T23:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "82 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/wood.json"
+      },
+      {
+        "target": "space:tile-zone:floor",
+        "material": "assets/materials/tile.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "28-lights-off",
+    "scenario": "designs/28-lights-off.json",
+    "camera": "interior",
+    "time": "2026-10-12T23:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "76 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-pbr",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [
+      {
+        "target": "floor",
+        "material": "assets/materials/wood.json"
+      },
+      {
+        "target": "space:tile-zone:floor",
+        "material": "assets/materials/tile.json"
+      },
+      {
+        "target": "ceiling",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-south:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-north:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-west:side-positive",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:wall-east:side-negative",
+        "material": "assets/materials/plaster.json"
+      },
+      {
+        "target": "wall:thin-partition:side-positive",
+        "material": "assets/materials/plaster.json"
+      }
+    ],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "regression-windowed",
+    "scenario": "",
+    "camera": "interior",
+    "time": "2026-10-09T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "119 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/daylight-path-tracing-windowed",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "regression-sealed",
+    "scenario": "",
+    "camera": "interior",
+    "time": "2026-10-09T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "77 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/daylight-path-tracing-sealed",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "regression-thin-lit",
+    "scenario": "",
+    "camera": "interior",
+    "time": "2026-10-09T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "84 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/daylight-path-tracing-thin-wall",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "regression-thin-sealed",
+    "scenario": "",
+    "camera": "sealed-side",
+    "time": "2026-10-09T12:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "73 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/daylight-path-tracing-thin-wall",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "regression-original-concealed",
+    "scenario": "designs/07-concealed.json",
+    "camera": "interior",
+    "time": "2026-10-11T23:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "70 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-luminaires",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  },
+  {
+    "name": "regression-original-concealed-sealed",
+    "scenario": "designs/07-concealed.json",
+    "camera": "sealed-side",
+    "time": "2026-10-11T23:00:00+02:00",
+    "timeZone": "Europe/Budapest",
+    "presentation": "AgX / 0 EV",
+    "viewport": "1280 x 720",
+    "pixelRatio": 1,
+    "backend": "separate WebGL2 RGBA32F",
+    "samples": "82 samples",
+    "dimensions": [
+      {
+        "height": 666,
+        "width": 1280
+      },
+      {
+        "height": 666,
+        "width": 1280
+      }
+    ],
+    "project": "fixtures/projects/path-traced-luminaires",
+    "lighting": "Physical / Sunny",
+    "shadowQuality": "Medium",
+    "gi": "Off",
+    "bloom": "Off",
+    "materials": [],
+    "noise": "Visible Monte Carlo grain; qualitative review, no convergence claim.",
+    "transportRevision": "Reciprocal diffuse Fresnel, 2026-10-13"
+  }
+]

@@ -10,10 +10,14 @@ import {
   Scene,
   ShaderMaterial,
   Vector2,
+  Texture,
+  UnsignedByteType,
   WebGLRenderer,
   WebGLRenderTarget,
 } from "three";
 import type { PerspectiveCamera, ToneMapping, Vector3, Color } from "three/webgpu";
+import { prepareTracingMaterials } from "./materials.js";
+import type { TracingMaterials } from "./materials.js";
 import type { TracingBvh } from "./scene.js";
 import { outputFragment, tracingFragment, tracingVertex } from "./shaders.js";
 import { cameraNearClipDepth } from "./projection.js";
@@ -43,6 +47,7 @@ export class PathTracingBackend {
   private readonly quad: Mesh;
   private readonly targets: [WebGLRenderTarget, WebGLRenderTarget];
   private textures: DataTexture[] = [];
+  private materialAtlas: WebGLRenderTarget | undefined;
   private lightTexture: DataTexture | undefined;
   private disposed = false;
   private readonly contextLost: (event: Event) => void;
@@ -91,6 +96,9 @@ export class PathTracingBackend {
       uniforms: {
         triangles: { value: null },
         nodes: { value: null },
+        materials: { value: null },
+        materialImages: { value: null },
+        imageRecords: { value: null },
         nodeCount: { value: 0 },
         lights: { value: null },
         lightCount: { value: 0 },
@@ -133,6 +141,8 @@ export class PathTracingBackend {
 
   private uploadRecords(records: Float32Array, label: string): DataTexture {
     const limit = this.renderer.capabilities.maxTextureSize;
+    if (records.some((value) => !Number.isFinite(value)))
+      throw new Error(`${label} exceeds path tracing numeric capacity.`);
     const texels = Math.max(1, records.length / 4);
     const width = Math.min(limit, 1024, texels);
     const height = Math.ceil(texels / width);
@@ -163,19 +173,128 @@ export class PathTracingBackend {
     this.tracing.uniforms.lightCount!.value = lights.lights.length;
   }
 
+  /** Copy decoded source pixels through this context; never mutate/dispose borrowed maps/images.
+   * Raw nearest lookup preserves hidden RGB in opaque alpha and data channels. Filtering and
+   * sRGB decoding occur per role in the tracer, before interpolation, not during this copy.
+   */
+  private uploadImages(input: TracingMaterials): WebGLRenderTarget {
+    // Browser-decoded PNG/JPEG/WebP sources are byte textures. Float storage adds no image
+    // precision and quadruples their allocation. Retain float storage for non-byte runtime maps.
+    const type = input.images.every((image) => image.texture.type === UnsignedByteType)
+      ? UnsignedByteType
+      : FloatType;
+    const bytes = input.width * input.height * (type === UnsignedByteType ? 4 : 16);
+    const target = new WebGLRenderTarget(input.width, input.height, {
+      type,
+      format: RGBAFormat,
+      minFilter: NearestFilter,
+      magFilter: NearestFilter,
+      depthBuffer: false,
+      stencilBuffer: false,
+    });
+    const copy = new ShaderMaterial({
+      vertexShader: tracingVertex,
+      fragmentShader: `
+      uniform sampler2D sourceImage;
+      uniform vec2 imageOrigin;
+      uniform vec2 imageSize;
+      void main() { gl_FragColor = texture2D(sourceImage, (gl_FragCoord.xy-imageOrigin)/imageSize); }
+    `,
+      toneMapped: false,
+      depthTest: false,
+      depthWrite: false,
+      uniforms: {
+        sourceImage: { value: null },
+        imageOrigin: { value: new Vector2() },
+        imageSize: { value: new Vector2() },
+      },
+    });
+    let source: Texture | undefined;
+    try {
+      this.renderer.setRenderTarget(target);
+      const gl = this.renderer.getContext();
+      const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+      const error = gl.getError();
+      if (status !== gl.FRAMEBUFFER_COMPLETE || error !== gl.NO_ERROR) {
+        const cause =
+          error === gl.OUT_OF_MEMORY
+            ? "GPU reported out of memory."
+            : `Framebuffer status 0x${status.toString(16)}, WebGL error 0x${error.toString(16)}.`;
+        throw new Error(
+          `Path tracing could not allocate material image storage (${input.images.length} images, ` +
+            `${input.width} × ${input.height}, ${Math.ceil(bytes / 2 ** 20)} MiB). ${cause} ` +
+            "Use smaller/fewer material images or free GPU memory; Interactive remains available.",
+        );
+      }
+      this.renderer.clear();
+      this.renderer.setScissorTest(true);
+      this.quad.material = copy;
+      for (const image of input.images) {
+        const borrowed = image.texture;
+        // clone/copy both mutate shared Source readiness. Construct an independent texture instead.
+        source =
+          borrowed instanceof DataTexture
+            ? new DataTexture(borrowed.image.data, borrowed.image.width, borrowed.image.height)
+            : new Texture(borrowed.image);
+        source.flipY = borrowed.flipY;
+        source.format = borrowed.format;
+        source.type = borrowed.type;
+        source.unpackAlignment = borrowed.unpackAlignment;
+        source.colorSpace = NoColorSpace;
+        source.minFilter = source.magFilter = NearestFilter;
+        source.generateMipmaps = false;
+        source.premultiplyAlpha = false;
+        source.needsUpdate = true;
+        this.renderer.initTexture(source);
+        copy.uniforms.sourceImage!.value = source;
+        copy.uniforms.imageOrigin!.value.set(image.x, image.y);
+        copy.uniforms.imageSize!.value.set(image.width, image.height);
+        this.renderer.setViewport(image.x, image.y, image.width, image.height);
+        this.renderer.setScissor(image.x, image.y, image.width, image.height);
+        this.renderer.render(this.scene, this.camera);
+        if (gl.getError() !== gl.NO_ERROR) throw new Error("Material image upload failed.");
+        source.dispose();
+        source = undefined;
+      }
+      return target;
+    } catch (error) {
+      target.dispose();
+      throw error;
+    } finally {
+      source?.dispose();
+      copy.dispose();
+      this.quad.material = this.tracing;
+      this.renderer.setScissorTest(false);
+      this.renderer.setRenderTarget(null);
+      this.renderer.setViewport(0, 0, this.canvas.width, this.canvas.height);
+    }
+  }
+
   setScene(bvh: TracingBvh): void {
     const replacement: DataTexture[] = [];
+    let atlas: WebGLRenderTarget | undefined;
     try {
-      for (const records of [bvh.triangles, bvh.nodes])
-        replacement.push(this.uploadRecords(records, "Architecture"));
+      const input = prepareTracingMaterials(
+        bvh.materials,
+        this.renderer.capabilities.maxTextureSize,
+      );
+      for (const records of [bvh.triangles, bvh.nodes, input.records, input.imageRecords])
+        replacement.push(this.uploadRecords(records, "Architecture/materials"));
+      atlas = this.uploadImages(input);
     } catch (error) {
       for (const texture of replacement) texture.dispose();
+      atlas?.dispose();
       throw error;
     }
     for (const texture of this.textures) texture.dispose();
+    this.materialAtlas?.dispose();
     this.textures = replacement;
+    this.materialAtlas = atlas;
     this.tracing.uniforms.triangles!.value = replacement[0];
     this.tracing.uniforms.nodes!.value = replacement[1];
+    this.tracing.uniforms.materials!.value = replacement[2];
+    this.tracing.uniforms.imageRecords!.value = replacement[3];
+    this.tracing.uniforms.materialImages!.value = atlas.texture;
     this.tracing.uniforms.nodeCount!.value = bvh.nodeCount;
   }
 
@@ -252,6 +371,7 @@ export class PathTracingBackend {
     this.canvas.removeEventListener("webglcontextlost", this.contextLost);
     for (const texture of this.textures) texture.dispose();
     this.lightTexture?.dispose();
+    this.materialAtlas?.dispose();
     for (const target of this.targets) target.dispose();
     this.geometry.dispose();
     this.tracing.dispose();

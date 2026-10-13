@@ -1,0 +1,112 @@
+{
+  "schema": "planaxis-design/1.1",
+  "name": "17-separate",
+  "architecture": "architecture/windowed.svg",
+  "presentation": {
+    "toneMapping": "agx",
+    "exposureEv": 0
+  },
+  "finishes": [
+    {
+      "target": "floor",
+      "material": "assets/materials/separate.json"
+    },
+    {
+      "target": "ceiling",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-south:side-negative",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-north:side-positive",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-west:side-positive",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-east:side-negative",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:thin-partition:side-positive",
+      "material": "assets/materials/plaster.json"
+    }
+  ],
+  "luminaires": [
+    {
+      "id": "panel",
+      "type": "area",
+      "position": {
+        "x": 370,
+        "y": 300,
+        "z": 230
+      },
+      "orientation": {
+        "headingDegrees": 0,
+        "pitchDegrees": 90,
+        "rollDegrees": 0
+      },
+      "widthCm": 140,
+      "heightCm": 60,
+      "luminousFluxLumens": 4500,
+      "colorTemperatureKelvin": 3500,
+      "enabled": true,
+      "dimming": 1
+    },
+    {
+      "id": "point",
+      "type": "point",
+      "position": {
+        "x": 530,
+        "y": 150,
+        "z": 200
+      },
+      "luminousFluxLumens": 1500,
+      "colorTemperatureKelvin": 3500,
+      "enabled": true,
+      "dimming": 1
+    },
+    {
+      "id": "spot",
+      "type": "spot",
+      "position": {
+        "x": 300,
+        "y": 200,
+        "z": 240
+      },
+      "orientation": {
+        "headingDegrees": 0,
+        "pitchDegrees": 90,
+        "rollDegrees": 0
+      },
+      "beamAngleDegrees": 55,
+      "luminousFluxLumens": 1500,
+      "colorTemperatureKelvin": 3500,
+      "enabled": true,
+      "dimming": 1
+    },
+    {
+      "id": "strip",
+      "type": "linear",
+      "position": {
+        "x": 400,
+        "y": 80,
+        "z": 210
+      },
+      "orientation": {
+        "headingDegrees": 0,
+        "pitchDegrees": -90,
+        "rollDegrees": 0
+      },
+      "lengthCm": 150,
+      "luminousFluxLumens": 4500,
+      "colorTemperatureKelvin": 3500,
+      "enabled": true,
+      "dimming": 1
+    }
+  ]
+}

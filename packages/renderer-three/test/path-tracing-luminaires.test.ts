@@ -177,3 +177,11 @@ it("fails explicitly on values the float GPU backend cannot represent, without m
     ).length(),
   ).toBe(0);
 });
+
+it("rejects flux that fits records but can overflow a polished PBR direct estimate", () => {
+  expect(() =>
+    prepareTracingLights([
+      { type: "point", positionCm: { x: 100, y: 100, z: 100 }, lumens: 1e26, kelvin: 3000 },
+    ]),
+  ).toThrow("transport numeric capacity");
+});

@@ -1,0 +1,14 @@
+{
+  "schema": "planaxis-material/1.0",
+  "name": "normal",
+  "baseColor": [0.75, 0.75, 0.75],
+  "roughness": 0.35,
+  "metalness": 0,
+  "mapping": {
+    "widthCm": 60,
+    "heightCm": 30
+  },
+  "maps": {
+    "normal": "assets/materials/normal.png"
+  }
+}

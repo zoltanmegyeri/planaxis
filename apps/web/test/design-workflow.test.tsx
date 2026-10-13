@@ -698,6 +698,8 @@ it.each(["adaptation", "rendering"])(
     expect(host.textContent).toContain("Renderer material adaptation/rendering failed");
     expect(host.textContent).not.toContain("/private");
     expect(renderer.setModel.mock.lastCall).toHaveLength(1);
+    expect(renderer.dispose).not.toHaveBeenCalled(); // material fallback keeps navigation/backend ownership
+    expect(renderer.selectCamera).not.toHaveBeenCalled();
     expect(imageClose).toHaveBeenCalledTimes(1);
     expect(renderer.setPresentationSettings).toHaveBeenLastCalledWith(
       expect.objectContaining({ toneMapping: "Neutral", exposureEv: 6 }),

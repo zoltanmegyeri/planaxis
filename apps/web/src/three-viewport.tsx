@@ -220,6 +220,10 @@ export function ThreeViewport({
       onFailure(error);
     }
   }, [scenarioPresentation, onFailure]);
+  const sceneInputs = useRef({ model, materials });
+  sceneInputs.current = { model, materials };
+  const persistentFinishes = useRef(false);
+  const appliedSceneInputs = useRef(sceneInputs.current);
   useEffect(() => {
     const element = canvas.current;
     const area = renderArea.current;
@@ -227,12 +231,12 @@ export function ThreeViewport({
     let active = true;
     let instance: ApartmentRenderer | undefined;
     let observer: ResizeObserver | undefined;
-    let persistentFinishes = false;
     setReady(false);
     const fail = (error: unknown): void => {
       if (!active) return;
-      if (persistentFinishes && instance && materials) {
-        persistentFinishes = false;
+      const { model, materials } = sceneInputs.current;
+      if (persistentFinishes.current && instance && materials) {
+        persistentFinishes.current = false;
         try {
           instance.setModel(model);
           materials.dispose();
@@ -246,6 +250,7 @@ export function ThreeViewport({
       onFailure(error);
     };
     try {
+      appliedSceneInputs.current = sceneInputs.current;
       instance = createApartmentRenderer(element, fail, (status) => {
         if (active) setTracingStatus(status);
       });
@@ -270,7 +275,7 @@ export function ThreeViewport({
       resizeRenderer.current = resize;
       resize();
       if (materials) {
-        persistentFinishes = true;
+        persistentFinishes.current = true;
         try {
           instance.setModel(model, materials.finishes);
         } catch (error) {
@@ -310,7 +315,33 @@ export function ThreeViewport({
       renderer.current = null;
       resizeRenderer.current = () => undefined;
     };
-  }, [model, onFailure, materials, onMaterialFailure]);
+  }, [model, onFailure, onMaterialFailure]);
+  useEffect(() => {
+    const instance = renderer.current;
+    if (
+      !instance ||
+      (appliedSceneInputs.current.model === model &&
+        appliedSceneInputs.current.materials === materials)
+    )
+      return;
+    appliedSceneInputs.current = { model, materials };
+    persistentFinishes.current = materials !== undefined;
+    try {
+      if (materials) instance.setModel(model, materials.finishes);
+      else instance.setModel(model);
+    } catch (error) {
+      if (materials) {
+        persistentFinishes.current = false;
+        try {
+          instance.setModel(model);
+          materials.dispose();
+          onMaterialFailure?.();
+        } catch (fallbackError) {
+          onFailure(fallbackError);
+        }
+      } else onFailure(error);
+    }
+  }, [model, materials, onFailure, onMaterialFailure]);
   useEffect(() => {
     try {
       renderer.current?.setLuminaires(luminaires ?? []);
@@ -490,8 +521,9 @@ export function ThreeViewport({
           </select>
         </label>
         <p>
-          Experimental path tracing: Physical Sunny daylight and design luminaires, matte surfaces
-          and clear windows. Bloom is bypassed.
+          Experimental path tracing: Physical Sunny daylight and design luminaires, opaque PBR
+          finishes, textures and clear windows. Mask/blend and other glazing are unavailable. Bloom
+          is bypassed.
         </p>
         {ready && !tracingStatus.available && <p>{tracingStatus.reason}</p>}
         <label>

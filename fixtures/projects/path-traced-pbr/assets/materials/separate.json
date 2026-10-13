@@ -1,0 +1,16 @@
+{
+  "schema": "planaxis-material/1.1",
+  "name": "separate",
+  "baseColor": [0.75, 0.75, 0.75],
+  "roughness": 0.35,
+  "metalness": 1,
+  "mapping": {
+    "widthCm": 60,
+    "heightCm": 30
+  },
+  "maps": {
+    "ambientOcclusion": "assets/materials/ao.png",
+    "roughness": "assets/materials/roughness.png",
+    "metalness": "assets/materials/metalness.png"
+  }
+}

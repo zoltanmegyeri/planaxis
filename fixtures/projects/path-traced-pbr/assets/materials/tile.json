@@ -1,0 +1,14 @@
+{
+  "schema": "planaxis-material/1.0",
+  "name": "tile",
+  "baseColor": [1, 1, 1],
+  "roughness": 0.12,
+  "mapping": {
+    "widthCm": 60,
+    "heightCm": 30
+  },
+  "maps": {
+    "baseColor": "assets/materials/tile.webp",
+    "normal": "assets/materials/normal.png"
+  }
+}

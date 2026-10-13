@@ -1,0 +1,14 @@
+{
+  "schema": "planaxis-material/1.1",
+  "name": "ao-white",
+  "baseColor": [0.75, 0.75, 0.75],
+  "roughness": 0.35,
+  "mapping": {
+    "widthCm": 60,
+    "heightCm": 30
+  },
+  "maps": {
+    "ambientOcclusion": "assets/materials/white.png"
+  },
+  "ambientOcclusionStrength": 1
+}

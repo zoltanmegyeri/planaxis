@@ -1,6 +1,7 @@
 # Experimental daylight path tracing
 
-Implemented 2026-10-09 for TASK-044, extended with design luminaires on 2026-10-11 for TASK-045.
+Implemented 2026-10-09 for TASK-044, extended with design luminaires on 2026-10-11 for TASK-045
+and opaque PBR materials/textures on 2026-10-12 for TASK-046.
 This is a bounded qualitative experiment for human
 review, not a renderer replacement or calibrated lux/irradiance prediction. The accepted
 VXGI integration and its [known limitations](realtime-global-illumination.md) remain available.
@@ -14,11 +15,11 @@ RGBA32F framebuffer. Missing capabilities, unsupported inputs and shader/context
 are explained. Return to Interactive remains available without invalidating the architecture.
 Changing a lighting/weather setting never silently changes it to satisfy tracing eligibility.
 
-The supported finishes are neutral architecture defaults and effective opaque, untextured,
-nonmetallic matte base colors (roughness ≥ 0.5). They are treated as Lambertian diffuse surfaces;
-there is no roughness-dependent glossy lobe. All texture roles, metallic/glossy finishes,
-mask/blend alpha and frosted/tinted/other glazing explicitly disable tracing. Material 1.0/1.1
-and Design 1.0/1.1 loading and persistence retain their existing version semantics.
+The supported finishes are neutral defaults and opaque Material 1.0/1.1 metallic/roughness
+finishes, including base-color, roughness, metalness, normal and ambient-occlusion maps.
+All declared roughness/metalness endpoints are available. Omitted/explicit opaque alpha ignore
+source alpha for visibility. Mask/blend alpha and frosted/tinted/other glazing still explicitly
+disable tracing. Material and Design declared-version loading/persistence semantics are unchanged.
 Resolved Design 1.1 luminaires contribute at night and alongside daylight; bloom is bypassed.
 Neither luminaire data nor the user's interactive GI/bloom intent is overwritten.
 
@@ -41,8 +42,8 @@ redefine the domain's `EPSILON`. The 1 cm partition controls exercise this scale
 
 The existing `calculateSolarPosition`, `planaxisSunDirection` and `deriveDaylight` result drives
 both views. Scene-to-Sun `(x,y,z)` maps to `(x,z,y)`; the same Sunny Sun color and qualitative
-strength (`3 × directStrength`) feed next-event estimation at each diffuse hit. The tracer
-continues cosine-weighted diffuse paths for up to eight diffuse interactions, with Russian
+strength (`3 × directStrength`) feed next-event estimation at each opaque hit. The tracer
+continues sampled diffuse/GGX paths for up to eight opaque interactions, with Russian
 roulette after three and at most 24 total surface interactions. Glass visibility allows up to
 32 crossings; exhaustion blocks light. Sun visibility is deterministic with sharp shadows.
 
@@ -58,6 +59,20 @@ frame. The output shader uses Three.js's current AgX, ACES Filmic or Neutral map
 `2 ** exposureEv`, and sRGB output once. There is no additional demo Reinhard/gamma transform.
 Presentation edits redraw this image, retaining samples and geometry/BVH. Interactive bloom and
 GI resume their retained behavior on return; there is no second bloom graph.
+
+Sunny interiors can remain visually dark at the default exposure even after accumulation.
+The Sun scale and sky palette are appearance values inherited from Interactive, without a
+calibrated daylight radiance/exposure relationship; the visible blue sky palette also supplies
+the traced environment. A summer date changes solar direction but does not establish measured
+indoor illumination. Surface reflectance, metallic floor assignments, the finite path limit and
+the passive single-scattering BSDF also affect indirect light. Russian roulette compensates
+surviving paths and does not itself dim the expected result.
+
+Exposure changes brighten direct and indirect contributions together. Window-guided sky
+sampling could reduce variance without raising the converged illumination. Changing the
+indirect/direct daylight balance requires a separately evaluated Sun/sky calibration or exterior
+lighting model; TASK-046 preserves existing source strengths. No arbitrary bounce multiplier
+is applied to brighten rooms.
 
 ## Ownership, invalidation and navigation
 
@@ -184,7 +199,7 @@ build retains Vite's large-chunk advisory; it is not a build failure. No require
 omitted. No dependency manifest/lockfile changed, so dependency-change checks do not apply.
 
 The current experiment supports Physical Sunny daylight and design luminaires. Studio/Overcast tracing,
-full PBR/textures, caustics, denoising, native WebGPU tracing, exports and persisted jobs remain
+additional PBR lobes/transparency, caustics, denoising, native WebGPU tracing, exports and persisted jobs remain
 outside scope. There is no performance target or benchmark. Very small geometry, very large
 world coordinates and scenes beyond device texture capacity require further review. Diffuse
 bounce limits/Russian roulette and the idealized sky/panes are approximations. Human review
@@ -224,7 +239,8 @@ Fixed-flux resizing changes luminance and distribution without multiplying total
 narrower cones redistribute the same flux. Canonical source ordering makes reordered runtime
 sets use identical random sequences, without priority, selection budgets or omitted sources.
 
-The integrator partitions estimators instead of using MIS: next-event estimation exclusively
+The original TASK-045 integrator partitioned estimators instead of using MIS (superseded by
+the TASK-046 PBR extension below): next-event estimation exclusively
 estimates diffuse-to-emitter segments, including straight transmission through thin panes.
 After a diffuse hit, an emitter path hit terminates without adding emission. Camera rays and
 chains containing a subsequent specular pane reflection collect source-hit emission, since
@@ -376,3 +392,114 @@ are claimed.
 Upstream: **a930973667faf4502b427a01dd338a19522c8f6c**, CC0-1.0 Universal.
 [Source provenance, files and material adaptations](../../packages/renderer-three/src/path-tracing/UPSTREAM.md)
 and the retained license live beside the adapted modules. No dependencies or lockfile changed.
+
+## Opaque PBR materials (2026-10-12)
+
+Persistent semantics remain defined by [Material 1.0](../specifications/planaxis-material/1.0.md)
+and [Material 1.1](../specifications/planaxis-material/1.1.md), without migration. The tracer
+extracts effective scene-owned standard materials after normal finish resolution/partitioning.
+The factor color is already linear. Only base-map RGB is decoded from sRGB, per texel before
+bilinear interpolation; factors multiply that result once. Roughness uses green, metalness
+blue and AO red as raw data. AO uses the effective 1.1 strength; 1.0 acquires no AO state.
+Opaque source alpha is ignored. PNG/JPEG/WebP decoding remains the existing content-checked,
+flip-once, unpremultiplied, no-color-conversion workflow; the tracer makes no HTTP requests.
+
+### Mapping, normals and storage
+
+Seven texels per BVH triangle retain positions, material identity, glass classification, three
+UVs and two physical tangent directions. Hit barycentrics interpolate the existing physical
+UVs. Solving world-position derivatives against those UVs retains +U/right and +V/up without
+assuming a right-handed frame after the PlanAxis basis swap. Opposing faces, floor/ceiling,
+reveals and space partitions keep their existing mapping/phase. Two-sided hits orient the
+geometric normal toward the incident ray while retaining UV directions. Normal detail decodes
+in the physical outward frame; back hits flip the complete perturbation, preserving the same
+physical normal convention on both sides. Degenerate UVs use a
+geometric frame (normal detail requires the established nondegenerate architectural UVs).
+
+Normal RGB maps to [-1,1]. A normalized perturbation uses the two physical tangent directions
+and oriented geometric normal. Degenerate or below-hemisphere/view-facing perturbations fall
+back to the geometric normal; the hemisphere tolerance is 1e-4. 8-bit neutral (128,128,255)
+retains the small encoding quantization error. Normal detail never changes geometry. Ray origins
+use only the geometric normal and the existing 0.00001 m offset. Both direct and continued
+rays below its outward hemisphere are rejected, without resampling or moving origins through
+walls. This bounded shading-normal treatment deliberately omits displacement and microsurface
+self-occlusion; extreme normal maps can lose energy near grazing angles.
+
+Native pixels are shelf-packed into a separate raw atlas through nearest-filtered GPU
+copies of borrowed decoded images. Shared Source identity plus upload orientation deduplicates
+ORM/multi-role images. Each image keeps its native dimensions/aspect, with no resampling,
+padding or mipmaps. Manual four-texel wrapped bilinear lookup repeats even for negative UVs
+and wraps within the image rectangle, avoiding atlas-neighbor seams. Base-color decoding
+precedes filtering; data channels remain raw. All roles share identical normalized UVs despite
+differing pixel sizes. Without mipmapping/anisotropy, distant fine detail can alias; progressive
+pixel jitter reduces but does not eliminate that limitation.
+
+Browser-decoded PNG/JPEG/WebP sources use RGBA8 image storage (four bytes per pixel), matching
+their existing byte-texture contract; no additional color conversion or precision reduction is
+introduced. Non-byte runtime textures retain RGBA32F storage. HDR accumulation, geometry,
+light/material records remain floating point. Packing sorts placement by decreasing image
+height and tries compact shelf widths, retaining the smallest occupied rectangle within device
+limits. It preserves image IDs/roles, native resolution and orientation. Device maximum texture
+width is a capacity bound, not an allocation target. The original maximum-width RGBA32F layout
+could waste large empty rows and fail on ordinary 2K/4K material sets. The allocation regression
+tests include nine 2K images and thirteen mixed 4K/2K/nonsquare images. GPU allocation failures
+now report image count, dimensions, storage size and framebuffer/WebGL status (including
+out-of-memory), while keeping Interactive available. Dimension limits cannot guarantee enough
+free GPU memory, especially during atomic replacement when old and new atlases coexist.
+
+The separate WebGL2 context owns copied GPU images, independent texture-source upload bookkeeping,
+atlas, material/image records and BVH
+textures. It never closes borrowed images or modifies Interactive textures/transforms/color
+spaces. Preparation checks decoded readiness, exact float indexing, native maximum texture
+size, atlas capacity and finite records. The complete set uploads before binding new uniforms;
+partial allocation/copy failure releases only replacements. Factor underflow/overflow and a
+conservative polished-GGX direct-estimate bound produce explicit numeric-capacity failures. Old resources release after success.
+Context/framebuffer/shader failures use tracing status, leave architectural validity intact and
+keep Interactive accessible. All maps/materials participate or fail explicitly; no truncation.
+
+### BSDF, sampling and AO
+
+Opaque reflection uses isotropic GGX/Trowbridge–Reitz, separable Smith masking/shadowing and
+Schlick Fresnel. Dielectric F0 is 0.04; metalness interpolates it toward linear base color.
+Diffuse is (1-Fview) × (1-Flight) × baseColor × (1-metalness) / pi, using shading-normal
+cosines for reciprocal entry/exit Fresnel attenuation; metal endpoints have no diffuse lobe.
+This prevents the full diffuse substrate from adding energy to grazing specular reflection.
+It is a bounded interface attenuation approximation, without internal diffuse interreflection;
+white-furnace controls cover normal through 0.01 grazing cosine across roughness/metalness limits.
+This passive single-scattering model loses microsurface multiple-scattering energy on rough
+metals rather than introducing a compensation gain. Alpha = max(0.001, roughness²) gives a
+narrow, stable polished limit, not a matte threshold. GGX uses a cross-product denominator to
+avoid float32 cancellation near aligned half-vectors; small square-root arguments are protected.
+Smith G1/cosine is evaluated in cancelled form to avoid grazing 0/0; half vectors are scaled
+before normalization to prevent float32 squared-length underflow. No sample/intensity
+clamp, exposure compensation or denoiser hides transport errors.
+
+Continuation samples a luminance-based diffuse/specular mixture, with cosine diffuse and
+Heitz visible-GGX normals. Its full mixture PDF weights f × shadingCosine / PDF. Sun and all
+local-source next-event samples evaluate the same BSDF. Uniform source selection and existing
+flux coefficients are unchanged. Rectangles use solid-angle PDF distance²/(area × sourceCosine
+× sourceCount). Power-heuristic MIS weights both source samples and actual emitting-sheet hits,
+including glossy paths; delta point/spot and Sun samples receive unit estimator weight. Escaped
+paths collect the existing sky without a second sky estimator. Straight-through panes retain
+emitter MIS; a pane reflection starts a source-hit-only segment because straight visibility
+sampling does not estimate that reflected route. The ratio-form heuristic avoids squaring
+large GGX densities. Eight opaque/24 total interaction limits and roulette remain bounded.
+
+AO never modifies albedo, BSDF factors, cast-shadow geometry or direct light visibility.
+It attenuates the continuation's indirect/escaped-sky contribution. Current-vertex explicit
+Sun/lamp estimates and immediate emitter hits retain their unattenuated direct contribution;
+AO at preceding vertices still applies to those vertices' indirect paths. Pane reflections
+preserve that distinction. Strength zero and white AO remove attenuation.
+
+### Lifecycle and evidence
+
+Finish/factor/map/mapping changes replace tracing resources and clear transport history,
+including while paused. Source version/readiness changes participate in the effective input
+key. Identical runtime finish input and presentation-only redraw do not rebuild or reset.
+Finish-only replacement of the same architectural model preserves navigation/projection and
+daylight; the React viewport applies changed material props without replacing its renderer.
+Ordinary design selection still follows the established architecture-loading/2D workflow.
+
+[The PBR review report](path-traced-pbr-evaluation/README.md) records fixture variants,
+actual captures/settings/counts, regressions and agent observations separately from human
+acceptance. Earlier daylight/luminaire evidence above is preserved as historical evidence.

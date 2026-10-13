@@ -283,6 +283,17 @@ including while paused, and own a replaceable GPU texture. Photometric-to-linear
 is one documented qualitative policy, without spectral data or calibrated photometry.
 Persistence, material eligibility, navigation, Interactive lighting and GI/bloom are unchanged.
 
+On 2026-10-12, TASK-046 extends that same backend to opaque Material 1.0/1.1 PBR finishes.
+It borrows the resolved factors, decoded images, physical UVs and finish groups, preserving
+version semantics and Interactive resources. A separate raw native-pixel atlas and material
+records replace atomically with the BVH. GGX/Smith/Schlick reflection, diffuse weighting,
+visible-normal sampling and light/BSDF MIS replace Lambertian-only continuation and the old
+emission partition. Physical tangent +U/+V are retained across the handedness swap; geometric
+normals still govern origins and permitted ray directions. AO applies to indirect transport,
+not direct source visibility. Mask/blend, non-clear glazing and non-Sunny tracing remain
+explicit restrictions. See the architecture document for numerical/filtering choices and
+agent-observed evidence; human visual acceptance remains separate.
+
 ## Cameras and lifecycle
 
 OrbitControls supplies orbit, pan, and dolly with mouse and touch input. Initial framing

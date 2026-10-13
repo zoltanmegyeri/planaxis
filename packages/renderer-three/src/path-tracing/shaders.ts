@@ -2,6 +2,7 @@
  * CC0-1.0, upstream a930973667faf4502b427a01dd338a19522c8f6c.
  * See UPSTREAM.md and LICENSE-CC0.txt for provenance and substantive changes.
  */
+import { materialShader } from "./material-shader.js";
 import { TRACING_LIGHT_TEXELS, TRACING_RAY_OFFSET } from "./luminaires.js";
 
 export const tracingVertex = /* glsl */ `
@@ -58,10 +59,10 @@ bool boxHit(vec3 origin, vec3 direction, vec3 low, vec3 high, float closest) {
   }
   return true;
 }
-float triangleHit(vec3 origin, vec3 direction, int index, out vec3 normal) {
-  vec3 a = record(triangles, index * 4).xyz;
-  vec3 e1 = record(triangles, index * 4 + 1).xyz - a;
-  vec3 e2 = record(triangles, index * 4 + 2).xyz - a;
+float triangleHit(vec3 origin, vec3 direction, int index, out vec3 normal, out vec2 barycentric) {
+  vec3 a = record(triangles, index * 7).xyz;
+  vec3 e1 = record(triangles, index * 7 + 1).xyz - a;
+  vec3 e2 = record(triangles, index * 7 + 2).xyz - a;
   vec3 p = cross(direction, e2);
   float determinant = dot(e1, p);
   if (abs(determinant) < 1e-10) return FAR;
@@ -71,6 +72,7 @@ float triangleHit(vec3 origin, vec3 direction, int index, out vec3 normal) {
   float v = dot(direction, q) / determinant;
   float distance = dot(e2, q) / determinant;
   if (u < 0.0 || v < 0.0 || u + v > 1.0 || distance < RAY_OFFSET * 0.25) return FAR;
+  barycentric = vec2(u,v);
   normal = normalize(cross(e1, e2));
   if (dot(normal, direction) > 0.0) normal = -normal;
   return distance;
@@ -87,12 +89,12 @@ float intersectScene(vec3 origin, vec3 direction, out vec3 normal, out vec4 fini
     }
     if (high.w >= 0.0) {
       int index = int(high.w);
-      vec3 candidateNormal;
-      float distance = triangleHit(origin, direction, index, candidateNormal);
+      vec3 candidateNormal; vec2 barycentric;
+      float distance = triangleHit(origin, direction, index, candidateNormal, barycentric);
       if (distance < closest) {
         closest = distance;
         normal = candidateNormal;
-        finish = record(triangles, index * 4 + 3);
+        finish = vec4(float(index), barycentric, record(triangles, index * 7 + 1).w);
       }
     }
     node++;
@@ -143,7 +145,8 @@ float visibility(vec3 origin, vec3 direction, float remaining, int source) {
   // Bounded traversal exhaustion must occlude, never create a light leak.
   return 0.0;
 }
-vec3 sampleLocalLight(vec3 point, vec3 normal) {
+${materialShader}
+vec3 sampleLocalLight(vec3 point, vec3 normal, Surface surface, vec3 view) {
   if (lightCount == 0) return vec3(0.0);
   // Equal probability for every effective source, with reciprocal selection weight.
   int index = min(lightCount - 1, int(randomValue() * float(lightCount)));
@@ -162,7 +165,8 @@ vec3 sampleLocalLight(vec3 point, vec3 normal) {
   float distanceSquared = dot(delta, delta);
   if (distanceSquared <= RAY_OFFSET * RAY_OFFSET) return vec3(0.0);
   vec3 direction = delta / sqrt(distanceSquared);
-  float surfaceCosine = max(0.0, dot(normal, direction));
+  float surfaceCosine = max(0.0, dot(surface.normal, direction));
+  if (dot(normal, direction) <= 0.0) return vec3(0.0);
   float sourceCosine = -dot(forward.xyz, direction);
   if (source.w > 0.5 && source.w < 1.5 && sourceCosine < forward.w) return vec3(0.0);
   float sourceFactor = source.w > 1.5 ? max(0.0, sourceCosine) : 1.0;
@@ -172,46 +176,49 @@ vec3 sampleLocalLight(vec3 point, vec3 normal) {
   vec3 segment = samplePosition - origin;
   float segmentLength = length(segment);
   float transmission = visibility(origin, segment / segmentLength, segmentLength, index);
-  return record(lights, index * LIGHT_TEXELS + 4).rgb
-    * (surfaceCosine * sourceFactor * inverseDensity * float(lightCount) / (PI * distanceSquared))
-    * transmission;
-}
-vec3 cosineDirection(vec3 normal) {
-  float angle = 2.0 * PI * randomValue();
-  float radius = sqrt(randomValue());
-  vec3 tangent = normalize(cross(abs(normal.y) < 0.9 ? vec3(0,1,0) : vec3(1,0,0), normal));
-  return normalize(tangent * radius * cos(angle) + cross(normal, tangent) * radius * sin(angle)
-    + normal * sqrt(1.0 - radius * radius));
+  float bsdfPdf;
+  vec3 response = evaluateBsdf(surface, view, direction, normal, bsdfPdf);
+  float sourcePdf = distanceSquared / (sourceFactor * inverseDensity * float(lightCount));
+  float weight = source.w > 1.5 ? misWeight(sourcePdf, bsdfPdf) : 1.0;
+  return record(lights, index * LIGHT_TEXELS + 4).rgb * response
+    * (surfaceCosine / sourcePdf) * transmission * weight;
 }
 vec3 radiance(vec3 origin, vec3 direction) {
   vec3 throughput = vec3(1.0), result = vec3(0.0);
-  int diffuseBounces = 0;
-  // Partition estimators: NEE estimates diffuse -> emitter (also straight through panes).
-  // Only camera/specular-reflected paths collect sheet emission on hits; no double counting.
-  bool collectEmission = true;
-  // Enough room for eight diffuse interactions plus thin sheets. No denoising
-  // or fill hides occlusion; roulette only after the third diffuse bounce.
+  int surfaceBounces = 0;
+  float previousPdf = 0.0, indirectAo = 1.0, emitterAo = 1.0;
+  vec3 previousPoint = origin;
+  // Enough room for eight opaque interactions plus thin sheets. No denoising
+  // or fill hides occlusion; roulette only after the third opaque bounce.
   for (int bounce = 0; bounce < 24; bounce++) {
     vec3 normal; vec4 finish;
     float distance = intersectScene(origin, direction, normal, finish);
     int emitter;
-    intersectEmitters(origin, direction, distance, -1, emitter);
+    float emitterDistance = intersectEmitters(origin, direction, distance, -1, emitter);
     if (emitter >= 0) {
       vec3 emissionNormal = record(lights, emitter * LIGHT_TEXELS + 1).xyz;
-      if (collectEmission && dot(emissionNormal, direction) < 0.0)
-        result += throughput * record(lights, emitter * LIGHT_TEXELS + 4).rgb;
+      float cosine = -dot(emissionNormal, direction);
+      if (cosine > 0.0) {
+        vec4 side = record(lights, emitter * LIGHT_TEXELS + 2);
+        vec4 vertical = record(lights, emitter * LIGHT_TEXELS + 3);
+        vec3 delta = origin + direction * emitterDistance - previousPoint;
+        float lightPdf = dot(delta,delta) / (cosine*side.w*vertical.w*float(lightCount));
+        float weight = previousPdf == 0.0 ? 1.0 : misWeight(previousPdf, lightPdf);
+        result += throughput * emitterAo * record(lights, emitter * LIGHT_TEXELS + 4).rgb * weight;
+      }
       break; // nonemitting backs absorb; no inferred housing or diffuse finish.
     }
     if (distance == FAR) {
       // Match the existing procedural background's horizon continuation below
       // the horizon, without inserting the upstream demo's fabricated ground box.
-      result += throughput * mix(horizon, zenith, smoothstep(0.0, 0.8, direction.y));
+      result += throughput * indirectAo * mix(horizon, zenith, smoothstep(0.0, 0.8, direction.y));
       break;
     }
     vec3 point = origin + direction * distance;
     if (finish.w > 0.5) {
       if (randomValue() < glassReflection(normal, direction)) {
-        collectEmission = true;
+        previousPdf = 0.0;
+        emitterAo = indirectAo;
         direction = reflect(direction, normal);
         origin = point + normal * RAY_OFFSET;
       } else {
@@ -219,17 +226,29 @@ vec3 radiance(vec3 origin, vec3 direction) {
       }
       continue;
     }
-    throughput *= finish.rgb;
-    result += throughput * sampleLocalLight(point, normal);
-    collectEmission = false;
+    vec3 view = -direction;
+    Surface surface = surfaceAt(finish, normal, view);
+    result += throughput * indirectAo * sampleLocalLight(point, normal, surface, view);
     origin = point + normal * RAY_OFFSET;
-    float cosine = max(0.0, dot(normal, sunDirection));
-    if (cosine > 0.0)
-      result += throughput * sunRadiance * (cosine / PI) * visibility(origin, sunDirection, FAR, -1);
-    diffuseBounces++;
-    if (diffuseBounces >= 8) break;
-    direction = cosineDirection(normal);
-    if (diffuseBounces >= 3) {
+    float cosine = max(0.0, dot(surface.normal, sunDirection));
+    if (cosine > 0.0 && dot(normal, sunDirection) > 0.0) {
+      float pdf;
+      result += throughput * indirectAo * sunRadiance * evaluateBsdf(surface, view, sunDirection, normal, pdf)
+        * cosine * visibility(origin, sunDirection, FAR, -1);
+    }
+    surfaceBounces++;
+    if (surfaceBounces >= 8) break;
+    direction = sampleBsdf(surface, view);
+    float pdf;
+    vec3 response = evaluateBsdf(surface, view, direction, normal, pdf);
+    // Reject below-geometric-surface samples without resampling (lost probability is absorption).
+    if (pdf <= 0.0) break;
+    throughput *= response * max(0.0, dot(surface.normal, direction)) / pdf;
+    previousPdf = pdf;
+    previousPoint = point;
+    emitterAo = indirectAo; // this endpoint is direct illumination, so current AO does not attenuate it
+    indirectAo *= surface.ao;
+    if (surfaceBounces >= 3) {
       float survive = clamp(max(throughput.r, max(throughput.g, throughput.b)), 0.1, 0.95);
       if (randomValue() >= survive) break;
       throughput /= survive;

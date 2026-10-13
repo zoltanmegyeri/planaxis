@@ -36,3 +36,32 @@ Only the fullscreen GLSL materials are rendered by `WebGLRenderer`. The architec
 materials remain owned by the existing scene; only their already-linear base colors and
 triangles are extracted. Camera rays unproject the actual near-plane depth, including the
 native renderer's reversed depth convention, without mutating that camera or projection.
+
+## Opaque PBR extension (2026-10-12)
+
+TASK-046's `material-shader.ts`, `materials.ts`, `bsdf.ts` and revised scene/backend/integrator
+are local renderer code. Mathematical references inspected on 2026-10-12:
+
+- Eric Heitz, [Sampling the GGX Distribution of Visible Normals](https://jcgt.org/published/0007/04/01/paper.pdf),
+  JCGT 7(4), 2018, pp. 1–13, equations 1–13 and the reflection PDF derivation.
+  The isotropic stretched-view/projected-disk routine is reimplemented from those equations.
+- Pharr, Jakob and Humphreys, [PBRT 4, A Better Path Tracer](https://www.pbr-book.org/4ed/Light_Transport_I_Surface_Reflection/A_Better_Path_Tracer),
+  2023 edition, next-event estimation and power-heuristic emitter-hit weighting. No PBRT
+  source code is incorporated.
+- Pharr, Jakob and Humphreys, [PBRT 4, Scattering from Layered Materials](https://pbr-book.org/4ed/Light_Transport_II_Volume_Rendering/Scattering_from_Layered_Materials),
+  inspected on 2026-10-13 for the interface/substrate energy distinction. The local bounded
+  model uses reciprocal view/light Schlick transmission factors on diffuse, without PBRT
+  code, a layered random walk, new coat properties or internal diffuse interreflection.
+
+No additional third-party source file or asset is vendored; the existing CC0 upstream license
+and PlanAxis/Three.js licenses remain unchanged. Local texture packing uses native-pixel
+GPU copies and role-specific manual wrapped bilinear lookup. The earlier four-texel albedo
+records become seven-texel triangles plus a deduplicated PBR table and image rectangles.
+The old diffuse-emission partition is replaced by light/BSDF MIS. Scalar roughness uses
+alpha = max(0.001, roughness²), with cancellation-resistant GGX evaluation. No artistic gain,
+sample clamping, denoising, raster reflection input or persistent material property is added.
+
+The 2026-10-13 allocation correction uses compact local shelf packing and RGBA8 storage for
+decoded byte images, retaining RGBA32F for non-byte runtime maps and HDR/record textures.
+No packing library or additional upstream code is incorporated. Image resolutions, raw role
+channels and source ownership remain unchanged.

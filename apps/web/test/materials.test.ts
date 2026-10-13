@@ -252,3 +252,45 @@ it("closes a late AO decode after cancellation without returning assignments", a
   });
   expect(image.close).toHaveBeenCalledTimes(1);
 });
+
+it("loads all PBR review scenarios through the existing versioned material boundary", async () => {
+  const { readFileSync, readdirSync } = await import("node:fs");
+  const { processDocument } = await import("../src/process-document.js");
+  const { deriveArchitecturalSurfaces } = await import("@planaxis/model-3d");
+  const { resolveDesignArchitecture } = await import("@planaxis/design");
+  const { URL: FileURL } = await import("node:url");
+  const root = new FileURL("../../../fixtures/projects/path-traced-pbr/", import.meta.url);
+  for (const name of readdirSync(new FileURL("designs/", root))) {
+    const descriptor = parseDesignDescriptor(
+      readFileSync(new FileURL(`designs/${name}`, root), "utf8"),
+      `designs/${name}`,
+    );
+    if (!descriptor.ok) throw new Error(descriptor.error.message);
+    const document = processDocument(
+      readFileSync(new FileURL(descriptor.value.document.architecture, root), "utf8"),
+    );
+    if (document.status !== "valid") throw new Error(`Invalid PBR architecture: ${name}`);
+    expect(
+      resolveDesignArchitecture(descriptor.value, {
+        path: descriptor.value.document.architecture,
+        finishTargets: deriveArchitecturalSurfaces(document.architecturalModel).finishTargets,
+      }).ok,
+    ).toBe(true);
+    const references = descriptor.value.document.finishes ?? [];
+    for (const { material: path } of references) {
+      const source = readFileSync(new FileURL(path, root), "utf8");
+      resources.set(path, source);
+      const json = JSON.parse(source) as { maps?: Record<string, string> };
+      for (const imagePath of Object.values(json.maps ?? {}))
+        resources.set(imagePath, new Uint8Array(readFileSync(new FileURL(imagePath, root))));
+    }
+    const loaded = await loadMaterials(descriptor.value, new AbortController().signal);
+    if (references.length) expect(loaded?.finishes.assignments?.size).toBe(references.length);
+    else expect(loaded).toBeUndefined();
+    for (const finish of loaded?.finishes.assignments?.values() ?? []) {
+      if (!finish.textures?.ambientOcclusionMap)
+        expect(finish.ambientOcclusionStrength).toBeUndefined();
+    }
+    loaded?.dispose();
+  }
+});

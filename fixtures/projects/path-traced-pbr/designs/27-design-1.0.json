@@ -1,0 +1,43 @@
+{
+  "schema": "planaxis-design/1.0",
+  "name": "27-design-1.0",
+  "architecture": "architecture/windowed.svg",
+  "presentation": {
+    "toneMapping": "agx",
+    "exposureEv": 0
+  },
+  "finishes": [
+    {
+      "target": "floor",
+      "material": "assets/materials/wood.json"
+    },
+    {
+      "target": "space:tile-zone:floor",
+      "material": "assets/materials/tile.json"
+    },
+    {
+      "target": "ceiling",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-south:side-negative",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-north:side-positive",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-west:side-positive",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-east:side-negative",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:thin-partition:side-positive",
+      "material": "assets/materials/plaster.json"
+    }
+  ]
+}

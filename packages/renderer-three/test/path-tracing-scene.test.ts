@@ -134,9 +134,9 @@ it("packs a deterministic BVH with every physical triangle and exact leaf/escape
       if (triangle >= 0) leaves.push(triangle);
     }
     expect(leaves.sort((a, b) => a - b)).toEqual(triangles.map((_, i) => i));
-    expect(bvh.triangles.length).toBe(triangles.length * 16);
+    expect(bvh.triangles.length).toBe(triangles.length * 28);
     expect(
-      Array.from(bvh.triangles).filter((_, i) => i % 16 === 15 && bvh.triangles[i] === 1),
+      Array.from(bvh.triangles).filter((_, i) => i % 28 === 7 && bvh.triangles[i] === 1),
     ).toHaveLength(2);
   } finally {
     apartment.dispose();
@@ -246,16 +246,8 @@ it("uses effective sRGB matte base colors and explicitly rejects unsupported fin
     apartment.dispose();
   }
   for (const update of [
-    { metalness: 0.1 },
-    { roughness: 0.49 },
     { alpha: { mode: "blend" as const, opacity: 1 } },
-    {
-      textures: {
-        widthCm: createDecimal("1"),
-        heightCm: createDecimal("1"),
-        baseColorMap: Symbol(),
-      },
-    },
+    { alpha: { mode: "mask" as const, opacity: 1, cutoff: 0.5 } },
   ])
     expect(
       unsupportedTracingInputs(model, {

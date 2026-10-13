@@ -1,5 +1,5 @@
 import type { ArchitecturalModel3D } from "@planaxis/model-3d";
-import { Box3, Mesh, MeshStandardMaterial, Vector3 } from "three/webgpu";
+import { Box3, Mesh, MeshStandardMaterial, Vector2, Vector3 } from "three/webgpu";
 import type { BufferGeometry, Material } from "three/webgpu";
 import type { ApartmentScene } from "../apartment-scene.js";
 import type { RuntimeFinishOptions } from "../runtime-materials.js";
@@ -9,6 +9,10 @@ export interface TracingTriangle {
   readonly b: Vector3;
   readonly c: Vector3;
   readonly color: readonly [number, number, number];
+  readonly material?: MeshStandardMaterial;
+  readonly uv?: readonly [Vector2, Vector2, Vector2];
+  readonly tangent?: Vector3;
+  readonly bitangent?: Vector3;
   readonly glass: boolean;
   readonly source: string;
 }
@@ -23,13 +27,8 @@ export function unsupportedTracingInputs(
       return `Window ${window.id}: path tracing supports clear or unspecified glass only.`;
   }
   for (const [target, finish] of finishes.assignments ?? []) {
-    if (
-      finish.textures ||
-      finish.metalness !== 0 ||
-      finish.roughness < 0.5 ||
-      (finish.alpha !== undefined && finish.alpha.mode !== "opaque")
-    )
-      return `Finish ${target}: path tracing requires opaque, untextured, nonmetallic matte finishes (roughness ≥ 0.5).`;
+    if (finish.alpha !== undefined && finish.alpha.mode !== "opaque")
+      return `Finish ${target}: path tracing supports opaque alpha only; mask/blend finishes are unavailable.`;
   }
   return undefined;
 }
@@ -64,12 +63,25 @@ export function extractTracingTriangles(apartment: ApartmentScene): TracingTrian
       );
       const [a, b, c] = vertices;
       if (!a || !b || !c) throw new Error("Incomplete architectural triangle.");
+      const attribute = geometry.getAttribute("uv");
+      const uv = [0, 1, 2].map((corner) => {
+        const vertex = index ? index.getX(offset + corner) : offset + corner;
+        return attribute
+          ? new Vector2(attribute.getX(vertex), attribute.getY(vertex))
+          : new Vector2();
+      });
+      const coordinates = uv as [Vector2, Vector2, Vector2];
+      const { tangent, bitangent } = tracingTangentFrame(a, b, c, coordinates);
       result.push({
         a,
         b,
         c,
         // RuntimeMaterials already converted the effective sRGB factor to linear.
         color: [material.color.r, material.color.g, material.color.b],
+        material,
+        uv: coordinates,
+        tangent,
+        bitangent,
         glass,
         source: source ?? object.name,
       });
@@ -79,10 +91,11 @@ export function extractTracingTriangles(apartment: ApartmentScene): TracingTrian
 }
 
 export interface TracingBvh {
-  /** Four RGBA texels per triangle: a, b, c, linear albedo + thin-glass flag. */
+  /** Seven RGBA texels: positions/identity/glass, three UVs, physical +U/+V frame. */
   readonly triangles: Float32Array;
   /** Two RGBA texels per preorder node: min + escape, max + triangle (-1 inner). */
   readonly nodes: Float32Array;
+  readonly materials: readonly MeshStandardMaterial[];
   readonly nodeCount: number;
 }
 
@@ -93,6 +106,7 @@ export interface TracingBvh {
 export function buildTracingBvh(input: readonly TracingTriangle[]): TracingBvh {
   if (input.length === 0) throw new Error("Path tracing requires architectural surfaces.");
   const triangles: number[] = [];
+  const materials: MeshStandardMaterial[] = [];
   const nodes: number[] = [];
   const visit = (subset: readonly TracingTriangle[]): void => {
     const bounds = new Box3();
@@ -102,16 +116,33 @@ export function buildTracingBvh(input: readonly TracingTriangle[]): TracingBvh {
     nodes.push(...bounds.min.toArray(), 0, ...bounds.max.toArray(), -1);
     if (subset.length === 1) {
       const triangle = subset[0]!;
-      nodes[offset + 7] = triangles.length / 16;
+      nodes[offset + 7] = triangles.length / 28;
+      const material =
+        triangle.material ?? new MeshStandardMaterial({ roughness: 1, metalness: 0 });
+      if (!triangle.material) material.color.setRGB(...triangle.color);
+      let materialIndex = materials.indexOf(material);
+      if (materialIndex === -1) {
+        materialIndex = materials.length;
+        materials.push(material);
+      }
+      const uv = triangle.uv ?? [new Vector2(), new Vector2(), new Vector2()];
+      const frame = tracingTangentFrame(triangle.a, triangle.b, triangle.c, uv);
       triangles.push(
         ...triangle.a.toArray(),
-        0,
+        materialIndex,
         ...triangle.b.toArray(),
-        0,
+        triangle.glass ? 1 : 0,
         ...triangle.c.toArray(),
         0,
-        ...triangle.color,
-        triangle.glass ? 1 : 0,
+        ...uv[0].toArray(),
+        ...uv[1].toArray(),
+        ...uv[2].toArray(),
+        0,
+        0,
+        ...(triangle.tangent ?? frame.tangent).toArray(),
+        0,
+        ...(triangle.bitangent ?? frame.bitangent).toArray(),
+        0,
       );
     } else {
       const size = bounds.getSize(new Vector3());
@@ -132,5 +163,42 @@ export function buildTracingBvh(input: readonly TracingTriangle[]): TracingBvh {
     triangles: new Float32Array(triangles),
     nodes: new Float32Array(nodes),
     nodeCount: nodes.length / 8,
+    materials,
   };
+}
+
+/** Solve physical UV derivatives; do not infer handedness from a renderer cross product.
+ * The PlanAxis basis swap reverses handedness, so +V is retained independently of +U.
+ */
+export function tracingTangentFrame(
+  a: Vector3,
+  b: Vector3,
+  c: Vector3,
+  uv: readonly Vector2[],
+): { tangent: Vector3; bitangent: Vector3 } {
+  const e1 = b.clone().sub(a),
+    e2 = c.clone().sub(a);
+  const d1 = uv[1]!.clone().sub(uv[0]!),
+    d2 = uv[2]!.clone().sub(uv[0]!);
+  const determinant = d1.x * d2.y - d1.y * d2.x;
+  if (Math.abs(determinant) > 1e-20)
+    return {
+      tangent: e1
+        .clone()
+        .multiplyScalar(d2.y)
+        .addScaledVector(e2, -d1.y)
+        .divideScalar(determinant)
+        .normalize(),
+      bitangent: e2
+        .clone()
+        .multiplyScalar(d1.x)
+        .addScaledVector(e1, -d2.x)
+        .divideScalar(determinant)
+        .normalize(),
+    };
+  const normal = e1.clone().cross(e2).normalize();
+  const tangent = new Vector3(Math.abs(normal.y) < 0.9 ? 0 : 1, Math.abs(normal.y) < 0.9 ? 1 : 0, 0)
+    .cross(normal)
+    .normalize();
+  return { tangent, bitangent: normal.clone().cross(tangent) };
 }

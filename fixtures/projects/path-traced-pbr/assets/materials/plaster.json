@@ -1,0 +1,14 @@
+{
+  "schema": "planaxis-material/1.0",
+  "name": "plaster",
+  "baseColor": [0.95, 0.93, 0.9],
+  "roughness": 0.95,
+  "mapping": {
+    "widthCm": 50,
+    "heightCm": 50
+  },
+  "maps": {
+    "baseColor": "assets/materials/plaster.jpg",
+    "normal": "assets/materials/normal.png"
+  }
+}

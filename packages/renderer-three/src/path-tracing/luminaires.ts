@@ -1,3 +1,4 @@
+import { MAX_GGX_COSINE_WEIGHT } from "./bsdf.js";
 import { Vector3 } from "three/webgpu";
 import { kelvinColor, luminaireFrame } from "../runtime-luminaires.js";
 import type { RuntimeLuminaire } from "../runtime-luminaires.js";
@@ -113,7 +114,8 @@ export function prepareTracingLights(inputs: readonly RuntimeLuminaire[]): Traci
       const maximumEmission = Math.max(...light.emission.toArray());
       return (
         maximumEmission > floatMaximum / 16 ||
-        (maximumEmission * inverseDensity * lights.length) / (Math.PI * TRACING_RAY_OFFSET ** 2) >
+        (maximumEmission * inverseDensity * lights.length * MAX_GGX_COSINE_WEIGHT) /
+          TRACING_RAY_OFFSET ** 2 >
           floatMaximum / 16
       );
     })

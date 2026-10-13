@@ -1,17 +1,34 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { DataTexture } from "three";
+import {
+  DataTexture,
+  FloatType,
+  MeshStandardMaterial,
+  NoColorSpace,
+  RGBAFormat,
+  UnsignedByteType,
+  WebGLRenderTarget,
+} from "three";
 import { PathTracingBackend } from "../src/path-tracing/backend.js";
 import { prepareTracingLights } from "../src/path-tracing/luminaires.js";
 import { buildTracingBvh } from "../src/path-tracing/scene.js";
 import { Vector3 } from "three/webgpu";
 
-const gpu = vi.hoisted(() => ({ capacity: 1024, upload: vi.fn(), error: 0, disposed: vi.fn() }));
+const gpu = vi.hoisted(() => ({
+  capacity: 1024,
+  upload: vi.fn(),
+  error: 0,
+  disposed: vi.fn(),
+  render: vi.fn(),
+  target: vi.fn(),
+  status: 2,
+}));
 const gl = {
   FRAMEBUFFER: 1,
   FRAMEBUFFER_COMPLETE: 2,
   NO_ERROR: 0,
+  OUT_OF_MEMORY: 1285,
   getExtension: () => ({}),
-  checkFramebufferStatus: () => 2,
+  checkFramebufferStatus: () => gpu.status,
   getError: () => gpu.error,
 };
 vi.mock("three", async (original) => {
@@ -22,7 +39,12 @@ vi.mock("three", async (original) => {
       capabilities = { maxTextureSize: gpu.capacity };
       debug = {};
       initTexture = gpu.upload;
-      setRenderTarget = vi.fn();
+      setRenderTarget = gpu.target;
+      setScissorTest = vi.fn();
+      setViewport = vi.fn();
+      setScissor = vi.fn();
+      clear = vi.fn();
+      render = gpu.render;
       getContext = () => gl;
       dispose = gpu.disposed;
       forceContextLoss = vi.fn();
@@ -64,6 +86,71 @@ beforeEach(() => {
   gpu.upload.mockReset();
   gpu.capacity = 1024;
   gpu.error = 0;
+  gpu.status = 2;
+});
+
+it("stores decoded byte maps in RGBA8 and preserves non-byte runtime image precision", () => {
+  const instance = backend();
+  const material = new MeshStandardMaterial();
+  const source = new DataTexture(new Uint8Array([128, 64, 32, 0]), 1, 1);
+  material.map = source;
+  instance.setScene({ ...bvh, materials: [material] });
+  const first = gpu.target.mock.calls.find(
+    ([target]) => target?.width === 1 && target.texture.type === UnsignedByteType,
+  )?.[0] as WebGLRenderTarget;
+  expect(first.texture.type).toBe(UnsignedByteType);
+  expect(first.texture.colorSpace).toBe(NoColorSpace);
+  expect(first.texture.generateMipmaps).toBe(false);
+  const floatSource = new DataTexture(
+    new Float32Array([0.123456, 0.654321, 0.5, 1]),
+    1,
+    1,
+    RGBAFormat,
+    FloatType,
+  );
+  material.map = floatSource;
+  gpu.target.mockClear();
+  instance.setScene({ ...bvh, materials: [material] });
+  const next = gpu.target.mock.calls.find(
+    ([target]) => target?.texture.type === FloatType,
+  )?.[0] as WebGLRenderTarget;
+  expect(next.texture.type).toBe(FloatType);
+  expect((gpu.upload.mock.calls.at(-1)![0] as DataTexture).image.data).toBe(floatSource.image.data);
+  instance.dispose();
+  source.dispose();
+  floatSource.dispose();
+  material.dispose();
+});
+
+it("reports image allocation size/cause and releases only the failed replacement", () => {
+  const instance = backend();
+  instance.setScene(bvh);
+  const previous = gpu.target.mock.calls.find(
+    ([target]) => target?.texture.type === UnsignedByteType,
+  )?.[0] as WebGLRenderTarget;
+  const disposePrevious = vi.spyOn(previous, "dispose");
+  const material = new MeshStandardMaterial();
+  // Metadata-sized input; the mocked backend never uploads its pixels.
+  material.map = new DataTexture(new Uint8Array(4), 1024, 1024);
+  gpu.status = 0x8cd6;
+  expect(() => instance.setScene({ ...bvh, materials: [material] })).toThrow(
+    /1 images, 1024 × 1024, 4 MiB.*Framebuffer status 0x8cd6.*Interactive remains available/,
+  );
+  expect(disposePrevious).not.toHaveBeenCalled();
+  gpu.status = 2;
+  // Trigger memory failure specifically during atlas allocation, after record uploads.
+  gpu.target.mockImplementationOnce(() => {
+    gpu.error = gl.OUT_OF_MEMORY;
+  });
+  expect(() => instance.setScene({ ...bvh, materials: [material] })).toThrow(
+    "GPU reported out of memory",
+  );
+  expect(disposePrevious).not.toHaveBeenCalled();
+  gpu.error = 0;
+  instance.dispose();
+  expect(disposePrevious).toHaveBeenCalledOnce();
+  material.map.dispose();
+  material.dispose();
 });
 
 it("owns uploaded light textures independently of borrowed/replaced architectural data", () => {
@@ -79,7 +166,7 @@ it("owns uploaded light textures independently of borrowed/replaced architectura
   expect(dispose.mock.contexts.filter((texture) => texture === first)).toHaveLength(1);
   instance.dispose();
   instance.dispose();
-  expect(dispose).toHaveBeenCalledTimes(6);
+  expect(dispose).toHaveBeenCalledTimes(10);
   expect(gpu.disposed).toHaveBeenCalledOnce();
 });
 
@@ -110,4 +197,55 @@ it("retains the previous set until a replacement has uploaded successfully", () 
   expect(dispose).toHaveBeenCalledOnce();
   instance.dispose();
   expect(dispose.mock.contexts).toContain(previous);
+});
+
+it("keeps the complete old scene until material upload succeeds and releases partial GPU resources", () => {
+  const instance = backend();
+  instance.setScene(bvh);
+  const previous = gpu.upload.mock.calls.map((call) => call[0]);
+  const dispose = vi.spyOn(DataTexture.prototype, "dispose");
+  gpu.upload
+    .mockImplementationOnce(() => undefined)
+    .mockImplementationOnce(() => undefined)
+    .mockImplementationOnce(() => {
+      throw new Error("Material upload failed");
+    });
+  expect(() => instance.setScene(bvh)).toThrow("Material upload failed");
+  for (const texture of previous) expect(dispose.mock.contexts).not.toContain(texture);
+  expect(dispose).toHaveBeenCalledTimes(3);
+  instance.dispose();
+  for (const texture of previous) expect(dispose.mock.contexts).toContain(texture);
+});
+
+it("owns raw image copies in its context, cleans failed copies and leaves borrowed pixels/transforms intact", () => {
+  const instance = backend();
+  const source = new DataTexture(new Uint8Array([128, 64, 32, 0]), 1, 1);
+  source.flipY = false;
+  source.offset.set(0.4, 0.7);
+  source.repeat.set(2, 3);
+  const material = new MeshStandardMaterial();
+  material.map = source;
+  material.roughnessMap = source;
+  material.metalnessMap = source;
+  material.aoMap = source;
+  const input = { ...bvh, materials: [material] };
+  const disposed = vi.spyOn(source, "dispose"),
+    targets = vi.spyOn(WebGLRenderTarget.prototype, "dispose");
+  const sourceVersion = source.source.version;
+  instance.setScene(input);
+  expect(source.source.version).toBe(sourceVersion);
+  expect(gpu.render).toHaveBeenCalledOnce();
+  expect(source.repeat.toArray()).toEqual([2, 3]);
+  expect(source.offset.toArray()).toEqual([0.4, 0.7]);
+  gpu.render.mockImplementationOnce(() => {
+    throw new Error("Image upload failed");
+  });
+  expect(() => instance.setScene(input)).toThrow("Image upload failed");
+  expect(targets).toHaveBeenCalledOnce();
+  expect(disposed).not.toHaveBeenCalled();
+  instance.dispose();
+  expect(disposed).not.toHaveBeenCalled();
+  expect(targets).toHaveBeenCalledTimes(4);
+  source.dispose();
+  material.dispose();
 });

@@ -1249,7 +1249,7 @@ it("preserves design luminaires through daylight/navigation and disposes replace
   const replacement = scene.getObjectByName("design-luminaires");
   expect(replacement).not.toBe(group);
   expect(gpu.instances[0]?.shadowMap.enabled).toBe(true);
-  renderer.setModel(model);
+  renderer.setModel({ ...model });
   expect(replacement?.parent).toBeNull();
   const modelGroup = scene.getObjectByName("design-luminaires");
   renderer.setLuminaires([{ ...common, type: "point", lumens: 200 }]);
@@ -1624,7 +1624,7 @@ it("invalidates camera, daylight, buffer and geometry inputs and cancels hidden/
   expect(instance.getPathTracingStatus().reason).toContain("Sunny");
   expect(surface.frames.size).toBe(0);
   instance.setLightingMode("physical", Date.parse("2026-10-09T11:00:00Z"), "sunny");
-  instance.setModel(model);
+  instance.setModel({ ...model });
   expect(instance.getPathTracingStatus().samples).toBe(0);
   expect(tracingGpu.setScene).toHaveBeenCalledTimes(2);
   instance.dispose();
@@ -1841,4 +1841,100 @@ it("cannot restart tracing after a shared rendering device failure", async () =>
   expect(tracingGpu.trace).toHaveBeenCalledTimes(draws);
   expect(instance.getPathTracingStatus().available).toBe(false);
   instance.dispose();
+});
+
+it("atomically changes PBR finishes while paused, preserves camera/lens and ignores unchanged effective inputs", async () => {
+  const surface = navigationSurface();
+  const instance = createApartmentRenderer(surface.canvas, vi.fn());
+  const model = modelFixture(
+    "../projects/daylight-path-tracing-windowed/architecture/apartment.svg",
+  );
+  instance.setModel(model);
+  instance.setLightingMode("physical", Date.parse("2026-10-09T10:00:00Z"), "sunny");
+  await instance.initialize();
+  instance.selectCamera("interior");
+  instance.setFocalLengthOverride(24);
+  instance.setRenderingView("path-tracing");
+  surface.frame(16);
+  instance.setPathTracingPaused(true);
+  const camera = gpu.passes.at(-1)!.camera as PerspectiveCamera;
+  camera.updateMatrixWorld(true);
+  const pose = camera.matrixWorld.clone(),
+    projection = camera.projectionMatrix.clone();
+  const finish = { baseColor: [0.6, 0.5, 0.4] as const, roughness: 0, metalness: 1 };
+  const options = {
+    assignments: new Map<
+      import("@planaxis/model-3d").FinishTargetId,
+      import("@planaxis/model-3d").RuntimePbrMaterial
+    >([["floor", finish]]),
+  };
+  instance.setModel(model, options);
+  expect(instance.getPathTracingStatus()).toMatchObject({
+    samples: 0,
+    paused: true,
+    available: true,
+  });
+  expect(camera.matrixWorld).toEqual(pose);
+  expect(camera.projectionMatrix).toEqual(projection);
+  const uploads = tracingGpu.setScene.mock.calls.length;
+  instance.setModel(model, { ...options, assignments: new Map(options.assignments) });
+  expect(tracingGpu.setScene).toHaveBeenCalledTimes(uploads);
+  instance.setPathTracingPaused(false);
+  surface.frame(16);
+  expect(instance.getPathTracingStatus().samples).toBe(1);
+  instance.setModel(model);
+  expect(instance.getPathTracingStatus().samples).toBe(0);
+  expect(camera.matrixWorld).toEqual(pose);
+  instance.dispose();
+});
+
+it("does not rebuild or reset identical mapped finishes after source upload bookkeeping", async () => {
+  const surface = navigationSurface(),
+    instance = createApartmentRenderer(surface.canvas, vi.fn());
+  const model = modelFixture(
+    "../projects/daylight-path-tracing-windowed/architecture/apartment.svg",
+  );
+  const reference = Symbol(),
+    source = new (await import("three/webgpu")).DataTexture(
+      new Uint8Array([128, 64, 32, 255]),
+      1,
+      1,
+    );
+  const textureOptions = {
+    assignments: new Map<
+      import("@planaxis/model-3d").FinishTargetId,
+      import("@planaxis/model-3d").RuntimePbrMaterial
+    >([
+      [
+        "floor",
+        {
+          baseColor: [1, 1, 1],
+          roughness: 0.2,
+          metalness: 0,
+          textures: {
+            widthCm: decimal("20"),
+            heightCm: decimal("40"),
+            baseColorMap: reference,
+            roughnessMap: reference,
+          },
+        },
+      ],
+    ]),
+    resolveTexture: () => source,
+  };
+  instance.setModel(model, textureOptions);
+  instance.setLightingMode("physical", Date.parse("2026-10-09T10:00:00Z"), "sunny");
+  await instance.initialize();
+  instance.setRenderingView("path-tracing");
+  surface.frame(16);
+  const uploads = tracingGpu.setScene.mock.calls.length;
+  instance.setModel(model, textureOptions);
+  expect(tracingGpu.setScene).toHaveBeenCalledTimes(uploads);
+  expect(instance.getPathTracingStatus().samples).toBe(1);
+  source.needsUpdate = true;
+  instance.setModel(model, textureOptions);
+  expect(instance.getPathTracingStatus().samples).toBe(0);
+  expect(tracingGpu.setScene).toHaveBeenCalledTimes(uploads + 1);
+  instance.dispose();
+  source.dispose();
 });

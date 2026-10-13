@@ -1,0 +1,18 @@
+{
+  "schema": "planaxis-material/1.0",
+  "name": "mask",
+  "baseColor": [1, 1, 1],
+  "roughness": 0.72,
+  "mapping": {
+    "widthCm": 120,
+    "heightCm": 20
+  },
+  "maps": {
+    "baseColor": "assets/materials/wood.png",
+    "normal": "assets/materials/normal.png"
+  },
+  "alpha": {
+    "mode": "mask",
+    "cutoff": 0.5
+  }
+}

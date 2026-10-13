@@ -60,7 +60,7 @@ leakage are recorded in `docs/architecture/realtime-global-illumination.md`. Fur
 is set aside in favor of a separate path-tracing evaluation.
 A separate experimental WebGL2 path-tracing view reuses physical architectural
 meshes and navigation, supporting Physical Sunny, Design 1.1 point/spot/linear/area luminaires,
-opaque matte finishes and thin clear panes. All effective sources use flux-normalized sampling
+opaque metallic/roughness PBR finishes with all Material 1.0/1.1 map roles and thin clear panes. All effective sources use flux-normalized sampling
 and architectural ray occlusion; linear/area sources have renderer-owned one-sided emitting sheets.
 It progressively accumulates linear HDR with pause/resume and input invalidation; current
 tone mapping/exposure applies once, and raster GI/fill and bloom are excluded.

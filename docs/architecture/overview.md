@@ -554,7 +554,10 @@ work is set aside in favor of a separate path-tracing evaluation; the integratio
 The explicit [experimental daylight path-tracing view](daylight-path-tracing.md) adds a
 bounded conventional WebGL2/GLSL backend in `renderer-three`, without changing the default
 interactive renderer. It reuses adapted physical surfaces and the navigation camera, tracing
-Physical Sunny Sun/sky and resolved Design 1.1 luminaire transport through clear panes with matte diffuse finishes. Opaque
+Physical Sunny Sun/sky and resolved Design 1.1 luminaire transport through clear panes with opaque metallic/roughness finishes and all Material 1.0/1.1 maps.
+Tracing retains physical UVs/tangent directions and owns native-pixel raw texture storage.
+GGX visible-normal sampling and emitter MIS provide glossy reflections; AO attenuates
+indirect transport independently of direct Sun/lamp visibility. Opaque
 floor/ceiling/walls remain two-sided ray occluders. Session-only selection, pause and sample
 count control progressive work while active and visible; camera/scene/daylight/light/buffer changes
 reset it. Presentation alone redraws accumulated HDR through the current tone mapping/exposure

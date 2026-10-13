@@ -175,6 +175,7 @@ export function createApartmentRenderer(
   let tracingError: string | undefined;
   let tracingSubsetReason: string | undefined;
   let tracingGeometryRevision = 0;
+  let appliedFinishKey = "";
   let tracingSceneRevision = -1;
   let tracingLightKey = "[]";
   let tracingUploadedLightKey: string | undefined;
@@ -531,10 +532,33 @@ export function createApartmentRenderer(
     },
     setModel(next, finishes) {
       if (disposed) throw new Error("Renderer is disposed.");
+      const effectiveFinishKey = (): string =>
+        JSON.stringify(
+          [...(finishes?.assignments ?? [])].sort(([a], [b]) => a.localeCompare(b)),
+          (_key, value: unknown) => {
+            if (typeof value !== "symbol") return value;
+            const source = finishes?.resolveTexture?.(value);
+            return source
+              ? [
+                  source.uuid,
+                  source.version,
+                  source.source.uuid,
+                  source.source.version,
+                  source.flipY,
+                ]
+              : String(value);
+          },
+        );
+      const sameArchitecture = model === next;
+      if (sameArchitecture && appliedFinishKey === effectiveFinishKey()) return;
       const replacement = buildApartmentScene(next, finishes);
-      walk?.dispose();
-      walk = undefined;
-      isWalking = false;
+      // Runtime adaptation also updates shared Source readiness. Snapshot after successful adaptation.
+      appliedFinishKey = effectiveFinishKey();
+      if (!sameArchitecture) {
+        walk?.dispose();
+        walk = undefined;
+        isWalking = false;
+      }
       if (apartment) {
         scene.remove(apartment.group);
         apartment.dispose();
@@ -569,7 +593,8 @@ export function createApartmentRenderer(
       light.shadow.needsUpdate = true;
       applyGi();
       pipeline.invalidateGeometry(giScene.architectureBounds());
-      selectCamera(null);
+      if (sameArchitecture) render();
+      else selectCamera(null);
     },
     setLuminaires(next) {
       if (disposed) return;

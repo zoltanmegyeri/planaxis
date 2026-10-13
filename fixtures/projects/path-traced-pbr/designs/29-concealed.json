@@ -1,0 +1,64 @@
+{
+  "schema": "planaxis-design/1.1",
+  "name": "29-concealed",
+  "architecture": "architecture/apartment.svg",
+  "presentation": {
+    "toneMapping": "agx",
+    "exposureEv": 0
+  },
+  "finishes": [
+    {
+      "target": "floor",
+      "material": "assets/materials/wood.json"
+    },
+    {
+      "target": "space:tile-zone:floor",
+      "material": "assets/materials/tile.json"
+    },
+    {
+      "target": "ceiling",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-south:side-negative",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-north:side-positive",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-west:side-positive",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-east:side-negative",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:thin-partition:side-positive",
+      "material": "assets/materials/plaster.json"
+    }
+  ],
+  "luminaires": [
+    {
+      "id": "strip",
+      "type": "linear",
+      "position": {
+        "x": 380,
+        "y": 80,
+        "z": 210
+      },
+      "luminousFluxLumens": 6000,
+      "colorTemperatureKelvin": 3000,
+      "enabled": true,
+      "dimming": 1,
+      "orientation": {
+        "headingDegrees": 90,
+        "pitchDegrees": -90,
+        "rollDegrees": 0
+      },
+      "lengthCm": 180
+    }
+  ]
+}
