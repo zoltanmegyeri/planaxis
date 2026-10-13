@@ -2,11 +2,11 @@
 
 ## Task Metadata
 
-- **Status:** Ready
+- **Status:** In Progress
 - **Created:** 2026-10-13
-- **Issued:** —
+- **Issued:** 2026-10-13
 - **Completed:** —
-- **Agent:** —
+- **Agent:** Codex
 - **Repository:** PlanAxis
 - **Description:** `TASK-047-description.md`
 - **Related tasks:** TASK-044, TASK-045, TASK-046
@@ -84,6 +84,6 @@ Repository directory:
 docs/tasks/TASK-047-path-traced-daylight-calibration/
 ```
 
-The task is prepared but has not been issued. Execution and human acceptance remain pending.
+The task was issued to Codex on 2026-10-13. Execution and human acceptance remain pending; the issued task description is immutable.
 
 Physical Sunny, the existing material/glazing subset, and final-rendering usage remain the accepted boundaries. Source calibration and evidence-backed transport corrections are included; arbitrary indirect-light gain, automatic exposure, and performance benchmarking are excluded.
