@@ -1,12 +1,12 @@
 import { expect, it } from "vitest";
-import { Vector3 } from "three/webgpu";
+import { PointLight, RectAreaLight, Vector3 } from "three/webgpu";
 import type { RuntimeLuminaire } from "../src/runtime-luminaires.js";
 import {
-  LUMENS_PER_TRANSPORT_UNIT,
   prepareTracingLights,
   sampleTracingLight,
   tracingLightEstimate,
 } from "../src/path-tracing/luminaires.js";
+import { buildLuminaireSet, kelvinColor } from "../src/runtime-luminaires.js";
 
 const common = { positionCm: { x: 100, y: 200, z: 550 }, lumens: 1000, kelvin: 3000 };
 const orientation = { headingDegrees: 90, pitchDegrees: 0, rollDegrees: 90 };
@@ -41,7 +41,7 @@ it("maps model-space centimeters and the normative rolled frame exactly once, wi
   expect(downward.forward.distanceTo(new Vector3(0, -1, 0))).toBeLessThan(1e-12);
 });
 
-it("preserves total flux for point, normalized spot cones and Lambertian rectangles", () => {
+it("preserves nominal flux and shared Kelvin RGB for point, normalized cones and rectangles", () => {
   for (const input of inputs) {
     const source = prepare(input);
     const measure =
@@ -50,7 +50,13 @@ it("preserves total flux for point, normalized spot cones and Lambertian rectang
         : source.type === "spot"
           ? 2 * Math.PI * (1 - source.coneCosine)
           : Math.PI * source.width * source.height;
-    expect(y(source.emission) * measure * LUMENS_PER_TRANSPORT_UNIT).toBeCloseTo(1000, 8);
+    const color = kelvinColor(input.kelvin);
+    expect(
+      source.emission
+        .clone()
+        .multiplyScalar(measure)
+        .distanceTo(new Vector3(color.r, color.g, color.b).multiplyScalar(1000)),
+    ).toBeLessThan(1e-10);
     expect(y(prepare({ ...input, lumens: 250 }).emission)).toBeCloseTo(
       y(source.emission) * 0.25,
       10,
@@ -83,7 +89,9 @@ it("samples the whole rolled rectangle with correct area and light-selection den
   const single = tracingLightEstimate(light, point, normal, 0.5, 0.5, 1);
   const selected = tracingLightEstimate(light, point, normal, 0.5, 0.5, 0.25);
   expect(selected.distanceTo(single.clone().multiplyScalar(4))).toBeLessThan(1e-12);
-  expect(y(single)).toBeCloseTo(1000 / (LUMENS_PER_TRANSPORT_UNIT * Math.PI ** 2 * 4));
+  const color = kelvinColor(common.kelvin);
+  const luminance = 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
+  expect(y(single)).toBeCloseTo((1000 * luminance) / (Math.PI ** 2 * 4));
   expect(
     tracingLightEstimate(
       light,
@@ -116,9 +124,57 @@ it("numerically integrates inverse-square point and cone emission over receiving
       );
       integral += (y(estimate) * Math.PI * 9 * 4 * Math.PI) / samples;
     }
-    expect(integral * LUMENS_PER_TRANSPORT_UNIT).toBeCloseTo(1000, 0);
+    const color = kelvinColor(input.kelvin);
+    const luminance = 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
+    expect(integral / luminance).toBeCloseTo(1000, 0);
   }
 });
+
+it.each([2700, 5600, 10000])(
+  "matches Interactive point/rectangle coefficients and inverse-square receiving light at %s K",
+  (kelvin) => {
+    for (const type of ["point", "linear", "area"] as const) {
+      const input: RuntimeLuminaire =
+        type === "point"
+          ? { ...common, type, kelvin, lumens: 560 }
+          : type === "linear"
+            ? { ...common, type, kelvin, lumens: 560, orientation, lengthCm: 150 }
+            : { ...common, type, kelvin, lumens: 560, orientation, widthCm: 80, heightCm: 40 };
+      const runtime = buildLuminaireSet([input], "Off");
+      try {
+        const light = runtime.group.children.find(
+          (item) => item instanceof PointLight || item instanceof RectAreaLight,
+        );
+        if (!(light instanceof PointLight || light instanceof RectAreaLight))
+          throw new Error("Missing Interactive light");
+        const source = prepare(input);
+        const expected = new Vector3(light.color.r, light.color.g, light.color.b).multiplyScalar(
+          light.intensity,
+        );
+        expect(source.emission.distanceTo(expected)).toBeLessThan(1e-10);
+        if (type === "point") {
+          // Independently known 560 lm isotropic source: I = 44.563... cd.
+          expect(light.intensity).toBeCloseTo(44.563384065730695, 10);
+          for (const distance of [1, 2]) {
+            const received = tracingLightEstimate(
+              source,
+              source.position.clone().add(new Vector3(0, -distance, 0)),
+              new Vector3(0, 1, 0),
+              0.5,
+              0.5,
+              1,
+            );
+            expect(
+              received.distanceTo(expected.clone().divideScalar(Math.PI * distance ** 2)),
+            ).toBeLessThan(1e-10);
+          }
+        }
+      } finally {
+        runtime.dispose();
+      }
+    }
+  },
+);
 
 it("retains every source beyond raster GI budgets, makes descriptor ordering immaterial and replaces empty/zero sets", () => {
   const many = Array.from({ length: 128 }, (_, i) => ({ ...inputs[i % 4]!, id: `lamp-${i}` }));
@@ -158,8 +214,8 @@ it("fails explicitly on values the float GPU backend cannot represent, without m
       lumens: 1,
       type: "area",
       orientation,
-      widthCm: 1e-19,
-      heightCm: 1e-18,
+      widthCm: 1e-16,
+      heightCm: 1e-16,
     }),
   ).toThrow("transport numeric capacity");
   expect(() => prepare({ ...common, type: "spot", orientation, beamAngleDegrees: 1e-8 })).toThrow(

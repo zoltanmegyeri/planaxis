@@ -1,0 +1,1222 @@
+[
+  {
+    "case": "final",
+    "project": "Path-traced PBR review",
+    "architecture": "architecture/windowed.svg",
+    "design": "designs/16-packed.json",
+    "camera": "finish-detail",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 155.52108933074646,
+      "elevation": 64.3198285880143
+    },
+    "direction": {
+      "x": 0.1795610073405245,
+      "y": 0.39439530549866436,
+      "z": 0.9012270455570401
+    },
+    "source": {
+      "sun": [
+        140.5085372327125,
+        128.060534704741,
+        113.43899270153014
+      ],
+      "zenith": [
+        1.319867680601879,
+        6.452686438498076,
+        19.06475538647159
+      ],
+      "horizon": [
+        5.279470722407516,
+        11.732157160905594,
+        23.464314321811187
+      ]
+    },
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 4,
+    "effectiveLuminaires": [
+      {
+        "id": "panel",
+        "positionCm": {
+          "x": 370,
+          "y": 300,
+          "z": 230
+        },
+        "lumens": 4500,
+        "kelvin": 3500,
+        "type": "area",
+        "orientation": {
+          "headingDegrees": 0,
+          "pitchDegrees": 90,
+          "rollDegrees": 0
+        },
+        "widthCm": 140,
+        "heightCm": 60
+      },
+      {
+        "id": "point",
+        "positionCm": {
+          "x": 530,
+          "y": 150,
+          "z": 200
+        },
+        "lumens": 1500,
+        "kelvin": 3500,
+        "type": "point"
+      },
+      {
+        "id": "spot",
+        "positionCm": {
+          "x": 300,
+          "y": 200,
+          "z": 240
+        },
+        "lumens": 1500,
+        "kelvin": 3500,
+        "type": "spot",
+        "orientation": {
+          "headingDegrees": 0,
+          "pitchDegrees": 90,
+          "rollDegrees": 0
+        },
+        "beamAngleDegrees": 55
+      },
+      {
+        "id": "strip",
+        "positionCm": {
+          "x": 400,
+          "y": 80,
+          "z": 210
+        },
+        "lumens": 4500,
+        "kelvin": 3500,
+        "type": "linear",
+        "orientation": {
+          "headingDegrees": 0,
+          "pitchDegrees": -90,
+          "rollDegrees": 0
+        },
+        "lengthCm": 150
+      }
+    ],
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "maximumY": 141.4949049621582,
+        "maximumPixel": {
+          "x": 67,
+          "y": 263,
+          "rgb": [
+            179.04066467285156,
+            135.26446533203125,
+            92.65531921386719
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.12111209311936945,
+            "spatialSd": 0.1234807618864412,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.3581857544211875,
+            "spatialSd": 0.5059407331084141,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.32636362025911286,
+            "spatialSd": 0.694269220764432,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 1024,
+        "maximumY": 70.92412326507568,
+        "maximumPixel": {
+          "x": 67,
+          "y": 263,
+          "rgb": [
+            89.70964813232422,
+            67.80492401123047,
+            46.50651550292969
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.12090530816892772,
+            "spatialSd": 0.08533955937179545,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.3554077372877484,
+            "spatialSd": 0.4223423322663835,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.4405910255487725,
+            "spatialSd": 2.459254146849011,
+            "pixels": 480
+          }
+        }
+      }
+    ],
+    "captureSamples": 1024,
+    "capture": "final-16-packed-finish-detail-1024s.jpg"
+  },
+  {
+    "case": "final",
+    "project": "Path-traced PBR review",
+    "architecture": "architecture/windowed.svg",
+    "design": "designs/17-separate.json",
+    "camera": "finish-detail",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 155.52108933074646,
+      "elevation": 64.3198285880143
+    },
+    "direction": {
+      "x": 0.1795610073405245,
+      "y": 0.39439530549866436,
+      "z": 0.9012270455570401
+    },
+    "source": {
+      "sun": [
+        140.5085372327125,
+        128.060534704741,
+        113.43899270153014
+      ],
+      "zenith": [
+        1.319867680601879,
+        6.452686438498076,
+        19.06475538647159
+      ],
+      "horizon": [
+        5.279470722407516,
+        11.732157160905594,
+        23.464314321811187
+      ]
+    },
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 4,
+    "effectiveLuminaires": [
+      {
+        "id": "panel",
+        "positionCm": {
+          "x": 370,
+          "y": 300,
+          "z": 230
+        },
+        "lumens": 4500,
+        "kelvin": 3500,
+        "type": "area",
+        "orientation": {
+          "headingDegrees": 0,
+          "pitchDegrees": 90,
+          "rollDegrees": 0
+        },
+        "widthCm": 140,
+        "heightCm": 60
+      },
+      {
+        "id": "point",
+        "positionCm": {
+          "x": 530,
+          "y": 150,
+          "z": 200
+        },
+        "lumens": 1500,
+        "kelvin": 3500,
+        "type": "point"
+      },
+      {
+        "id": "spot",
+        "positionCm": {
+          "x": 300,
+          "y": 200,
+          "z": 240
+        },
+        "lumens": 1500,
+        "kelvin": 3500,
+        "type": "spot",
+        "orientation": {
+          "headingDegrees": 0,
+          "pitchDegrees": 90,
+          "rollDegrees": 0
+        },
+        "beamAngleDegrees": 55
+      },
+      {
+        "id": "strip",
+        "positionCm": {
+          "x": 400,
+          "y": 80,
+          "z": 210
+        },
+        "lumens": 4500,
+        "kelvin": 3500,
+        "type": "linear",
+        "orientation": {
+          "headingDegrees": 0,
+          "pitchDegrees": -90,
+          "rollDegrees": 0
+        },
+        "lengthCm": 150
+      }
+    ],
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "maximumY": 141.4949049621582,
+        "maximumPixel": {
+          "x": 67,
+          "y": 263,
+          "rgb": [
+            179.04066467285156,
+            135.26446533203125,
+            92.65531921386719
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.12111209311936945,
+            "spatialSd": 0.1234807618864412,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.3581857544211875,
+            "spatialSd": 0.5059407331084141,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.32636362025911286,
+            "spatialSd": 0.694269220764432,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 1024,
+        "maximumY": 70.92412326507568,
+        "maximumPixel": {
+          "x": 67,
+          "y": 263,
+          "rgb": [
+            89.70964813232422,
+            67.80492401123047,
+            46.50651550292969
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.12090530816892772,
+            "spatialSd": 0.08533955937179545,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.3554077372877484,
+            "spatialSd": 0.4223423322663835,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.4405910255487725,
+            "spatialSd": 2.459254146849011,
+            "pixels": 480
+          }
+        }
+      }
+    ],
+    "captureSamples": 1024,
+    "capture": "final-17-separate-finish-detail-1024s.jpg"
+  },
+  {
+    "case": "final",
+    "project": "Path-traced PBR review",
+    "architecture": "architecture/windowed.svg",
+    "design": "designs/05-metal-polished.json",
+    "camera": "window-reflection",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 155.52108933074646,
+      "elevation": 64.3198285880143
+    },
+    "direction": {
+      "x": 0.1795610073405245,
+      "y": 0.39439530549866436,
+      "z": 0.9012270455570401
+    },
+    "source": {
+      "sun": [
+        140.5085372327125,
+        128.060534704741,
+        113.43899270153014
+      ],
+      "zenith": [
+        1.319867680601879,
+        6.452686438498076,
+        19.06475538647159
+      ],
+      "horizon": [
+        5.279470722407516,
+        11.732157160905594,
+        23.464314321811187
+      ]
+    },
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 4,
+    "effectiveLuminaires": [
+      {
+        "id": "panel",
+        "positionCm": {
+          "x": 370,
+          "y": 300,
+          "z": 230
+        },
+        "lumens": 4500,
+        "kelvin": 3500,
+        "type": "area",
+        "orientation": {
+          "headingDegrees": 0,
+          "pitchDegrees": 90,
+          "rollDegrees": 0
+        },
+        "widthCm": 140,
+        "heightCm": 60
+      },
+      {
+        "id": "point",
+        "positionCm": {
+          "x": 530,
+          "y": 150,
+          "z": 200
+        },
+        "lumens": 1500,
+        "kelvin": 3500,
+        "type": "point"
+      },
+      {
+        "id": "spot",
+        "positionCm": {
+          "x": 300,
+          "y": 200,
+          "z": 240
+        },
+        "lumens": 1500,
+        "kelvin": 3500,
+        "type": "spot",
+        "orientation": {
+          "headingDegrees": 0,
+          "pitchDegrees": 90,
+          "rollDegrees": 0
+        },
+        "beamAngleDegrees": 55
+      },
+      {
+        "id": "strip",
+        "positionCm": {
+          "x": 400,
+          "y": 80,
+          "z": 210
+        },
+        "lumens": 4500,
+        "kelvin": 3500,
+        "type": "linear",
+        "orientation": {
+          "headingDegrees": 0,
+          "pitchDegrees": -90,
+          "rollDegrees": 0
+        },
+        "lengthCm": 150
+      }
+    ],
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "maximumY": 174.5219858024597,
+        "maximumPixel": {
+          "x": 116,
+          "y": 210,
+          "rgb": [
+            324.28131103515625,
+            143.48931884765625,
+            40.94485092163086
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.22864361201477804,
+            "spatialSd": 1.4605697958154402,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5198849267871156,
+            "spatialSd": 0.6442939018475593,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.1863160035188774,
+            "spatialSd": 0.6701463092722604,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 1024,
+        "maximumY": 87.66544560775758,
+        "maximumPixel": {
+          "x": 651,
+          "y": 419,
+          "rgb": [
+            188.4613800048828,
+            65.38153076171875,
+            11.602291107177734
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.2421145211729687,
+            "spatialSd": 1.293335600393342,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5196919092273751,
+            "spatialSd": 0.627819282914445,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.2421796723241112,
+            "spatialSd": 1.4901745821982668,
+            "pixels": 480
+          }
+        }
+      }
+    ],
+    "captureSamples": 1024,
+    "capture": "final-05-metal-polished-window-reflection-1024s.jpg"
+  },
+  {
+    "case": "night",
+    "project": "Path-traced PBR review",
+    "architecture": "architecture/apartment.svg",
+    "design": "designs/29-concealed.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 335.0783770747049,
+      "elevation": -15.197198775453185
+    },
+    "direction": {
+      "x": -0.4066422119514353,
+      "y": -0.8751706600950393,
+      "z": -0.26214199810037536
+    },
+    "source": {
+      "sun": [
+        0,
+        0,
+        0
+      ],
+      "zenith": [
+        0,
+        0,
+        0
+      ],
+      "horizon": [
+        0,
+        0,
+        0
+      ]
+    },
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 1,
+    "effectiveLuminaires": [
+      {
+        "id": "strip",
+        "positionCm": {
+          "x": 380,
+          "y": 80,
+          "z": 210
+        },
+        "lumens": 6000,
+        "kelvin": 3000,
+        "type": "linear",
+        "orientation": {
+          "headingDegrees": 90,
+          "pitchDegrees": -90,
+          "rollDegrees": 0
+        },
+        "lengthCm": 180
+      }
+    ],
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "maximumY": 0.9233579647153616,
+        "maximumPixel": {
+          "x": 549,
+          "y": 4,
+          "rgb": [
+            1.819221019744873,
+            0.7278435230255127,
+            0.2221314162015915
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.04414950489730192,
+            "spatialSd": 0.020818707452380982,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.004881523992843169,
+            "spatialSd": 0.002530445116043428,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.01207328176477997,
+            "spatialSd": 0.003843554885329623,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 1024,
+        "maximumY": 0.8837926517367363,
+        "maximumPixel": {
+          "x": 544,
+          "y": 4,
+          "rgb": [
+            1.7416571378707886,
+            0.6965057849884033,
+            0.2129557728767395
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.04414388962568085,
+            "spatialSd": 0.020208992039466616,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.004899380374149293,
+            "spatialSd": 0.0022151631729688875,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.012108931430469465,
+            "spatialSd": 0.002841174277341818,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 1536,
+        "maximumY": 0.8863123714327812,
+        "maximumPixel": {
+          "x": 544,
+          "y": 4,
+          "rgb": [
+            1.7467464208602905,
+            0.6984478831291199,
+            0.21363097429275513
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.04413234275762679,
+            "spatialSd": 0.019941933087220146,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.004883199693311723,
+            "spatialSd": 0.002100068775653511,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.012038649835048517,
+            "spatialSd": 0.002572666177503277,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 2048,
+        "maximumY": 0.8770952713400125,
+        "maximumPixel": {
+          "x": 555,
+          "y": 5,
+          "rgb": [
+            1.7298455238342285,
+            0.690859854221344,
+            0.21090228855609894
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.04416143496376781,
+            "spatialSd": 0.019801571559989004,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.004889029627642668,
+            "spatialSd": 0.002044835198731416,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.012158364797594445,
+            "spatialSd": 0.002448203043884068,
+            "pixels": 480
+          }
+        }
+      }
+    ],
+    "captureSamples": 2048,
+    "capture": "night-29-concealed-interior-2048s.jpg"
+  },
+  {
+    "case": "night",
+    "project": "Path-traced PBR review",
+    "architecture": "architecture/windowed.svg",
+    "design": "designs/16-packed.json",
+    "camera": "emitter-front",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 335.0783770747049,
+      "elevation": -15.197198775453185
+    },
+    "direction": {
+      "x": -0.4066422119514353,
+      "y": -0.8751706600950393,
+      "z": -0.26214199810037536
+    },
+    "source": {
+      "sun": [
+        0,
+        0,
+        0
+      ],
+      "zenith": [
+        0,
+        0,
+        0
+      ],
+      "horizon": [
+        0,
+        0,
+        0
+      ]
+    },
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 4,
+    "effectiveLuminaires": [
+      {
+        "id": "panel",
+        "positionCm": {
+          "x": 370,
+          "y": 300,
+          "z": 230
+        },
+        "lumens": 4500,
+        "kelvin": 3500,
+        "type": "area",
+        "orientation": {
+          "headingDegrees": 0,
+          "pitchDegrees": 90,
+          "rollDegrees": 0
+        },
+        "widthCm": 140,
+        "heightCm": 60
+      },
+      {
+        "id": "point",
+        "positionCm": {
+          "x": 530,
+          "y": 150,
+          "z": 200
+        },
+        "lumens": 1500,
+        "kelvin": 3500,
+        "type": "point"
+      },
+      {
+        "id": "spot",
+        "positionCm": {
+          "x": 300,
+          "y": 200,
+          "z": 240
+        },
+        "lumens": 1500,
+        "kelvin": 3500,
+        "type": "spot",
+        "orientation": {
+          "headingDegrees": 0,
+          "pitchDegrees": 90,
+          "rollDegrees": 0
+        },
+        "beamAngleDegrees": 55
+      },
+      {
+        "id": "strip",
+        "positionCm": {
+          "x": 400,
+          "y": 80,
+          "z": 210
+        },
+        "lumens": 4500,
+        "kelvin": 3500,
+        "type": "linear",
+        "orientation": {
+          "headingDegrees": 0,
+          "pitchDegrees": -90,
+          "rollDegrees": 0
+        },
+        "lengthCm": 150
+      }
+    ],
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "maximumY": 2.496678596138954,
+        "maximumPixel": {
+          "x": 374,
+          "y": 196,
+          "rgb": [
+            4.085412502288818,
+            2.1668968200683594,
+            1.085253357887268
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.20190070602159516,
+            "spatialSd": 0.14346563953290553,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.027466692926422457,
+            "spatialSd": 0.010610402390764434,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.050612570235510766,
+            "spatialSd": 0.010044736895756369,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 1024,
+        "maximumY": 2.496678596138954,
+        "maximumPixel": {
+          "x": 374,
+          "y": 196,
+          "rgb": [
+            4.085412502288818,
+            2.1668968200683594,
+            1.085253357887268
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.20187797277312233,
+            "spatialSd": 0.14150277205631775,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.027464199222690774,
+            "spatialSd": 0.008426759256410964,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.05043541351685608,
+            "spatialSd": 0.006545660919055949,
+            "pixels": 480
+          }
+        }
+      }
+    ],
+    "captureSamples": 1024,
+    "capture": "night-16-packed-emitter-front-1024s.jpg"
+  },
+  {
+    "case": "night",
+    "project": "Path-traced PBR review",
+    "architecture": "architecture/windowed.svg",
+    "design": "designs/16-packed.json",
+    "camera": "emitter-back",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 335.0783770747049,
+      "elevation": -15.197198775453185
+    },
+    "direction": {
+      "x": -0.4066422119514353,
+      "y": -0.8751706600950393,
+      "z": -0.26214199810037536
+    },
+    "source": {
+      "sun": [
+        0,
+        0,
+        0
+      ],
+      "zenith": [
+        0,
+        0,
+        0
+      ],
+      "horizon": [
+        0,
+        0,
+        0
+      ]
+    },
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 4,
+    "effectiveLuminaires": [
+      {
+        "id": "panel",
+        "positionCm": {
+          "x": 370,
+          "y": 300,
+          "z": 230
+        },
+        "lumens": 4500,
+        "kelvin": 3500,
+        "type": "area",
+        "orientation": {
+          "headingDegrees": 0,
+          "pitchDegrees": 90,
+          "rollDegrees": 0
+        },
+        "widthCm": 140,
+        "heightCm": 60
+      },
+      {
+        "id": "point",
+        "positionCm": {
+          "x": 530,
+          "y": 150,
+          "z": 200
+        },
+        "lumens": 1500,
+        "kelvin": 3500,
+        "type": "point"
+      },
+      {
+        "id": "spot",
+        "positionCm": {
+          "x": 300,
+          "y": 200,
+          "z": 240
+        },
+        "lumens": 1500,
+        "kelvin": 3500,
+        "type": "spot",
+        "orientation": {
+          "headingDegrees": 0,
+          "pitchDegrees": 90,
+          "rollDegrees": 0
+        },
+        "beamAngleDegrees": 55
+      },
+      {
+        "id": "strip",
+        "positionCm": {
+          "x": 400,
+          "y": 80,
+          "z": 210
+        },
+        "lumens": 4500,
+        "kelvin": 3500,
+        "type": "linear",
+        "orientation": {
+          "headingDegrees": 0,
+          "pitchDegrees": -90,
+          "rollDegrees": 0
+        },
+        "lengthCm": 150
+      }
+    ],
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "maximumY": 68.2943763015747,
+        "maximumPixel": {
+          "x": 555,
+          "y": 202,
+          "rgb": [
+            111.751953125,
+            59.27387237548828,
+            29.684730529785156
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.29844678381190126,
+            "spatialSd": 0.2035392940169398,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.0606211169505713,
+            "spatialSd": 0.05818475855692123,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.07417070577106831,
+            "spatialSd": 0.011411282239828893,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 1024,
+        "maximumY": 65.578738048172,
+        "maximumPixel": {
+          "x": 548,
+          "y": 203,
+          "rgb": [
+            107.3080062866211,
+            56.91712951660156,
+            28.503114700317383
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.2984469718097868,
+            "spatialSd": 0.19987120670620456,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.06050867319625808,
+            "spatialSd": 0.05521329114285279,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.07433596980823597,
+            "spatialSd": 0.01117550781324816,
+            "pixels": 480
+          }
+        }
+      }
+    ],
+    "captureSamples": 1024,
+    "capture": "night-16-packed-emitter-back-1024s.jpg"
+  }
+]

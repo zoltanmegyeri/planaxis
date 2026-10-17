@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700" data-schema="apartment-svg" data-schema-version="2.2" data-unit="cm">
+  <metadata><![CDATA[
+{
+  "schema": "apartment-svg/2.2",
+  "project": {
+    "name": "Two-window summer living room",
+    "units": "cm"
+  },
+  "coordinateSystem": {
+    "x": "right",
+    "y": "down",
+    "z": "up",
+    "headingDegrees": {
+      "0": "+x",
+      "90": "+y",
+      "180": "-x",
+      "270": "-y"
+    }
+  },
+  "level": {
+    "id": "level-0",
+    "baseZ": 0,
+    "defaultCeilingHeight": 260
+  },
+  "location": {
+    "latitude": 47.4979,
+    "longitude": 19.0402,
+    "northHeading": 270,
+    "timeZone": "Europe/Budapest"
+  }
+}
+  ]]></metadata>
+  <g id="footprint"><polygon id="apartment-footprint" points="0,0 900,0 900,700 0,700" data-kind="footprint" /></g>
+  <g id="spaces" />
+  <g id="walls">
+    <rect id="wall-north" x="0" y="0" width="900" height="20" data-kind="wall" data-axis="x" data-class="exterior" data-status="fixed" />
+    <rect id="wall-south" x="0" y="680" width="900" height="20" data-kind="wall" data-axis="x" data-class="exterior" data-status="fixed" />
+    <rect id="wall-west" x="0" y="0" width="20" height="700" data-kind="wall" data-axis="y" data-class="exterior" data-status="fixed" />
+    <rect id="wall-east" x="880" y="0" width="20" height="700" data-kind="wall" data-axis="y" data-class="exterior" data-status="fixed" />
+  </g>
+  <g id="windows">
+    <rect id="window-left" x="100" y="680" width="240" height="20" data-kind="window" data-wall="wall-south" data-sill-height="60" data-opening-height="180" data-glass-type="clear" data-status="fixed" />
+    <rect id="window-right" x="530" y="680" width="240" height="20" data-kind="window" data-wall="wall-south" data-sill-height="60" data-opening-height="180" data-glass-type="clear" data-status="fixed" />
+  </g>
+  <g id="doors" />
+  <g id="fixed-elements" />
+  <g id="utilities" />
+  <g id="cameras">
+    <circle id="interior" cx="820" cy="90" r="4" data-kind="camera" data-z="160" data-heading="135" data-pitch="12" data-horizontal-fov="75" />
+  </g>
+  <g id="annotations" />
+</svg>

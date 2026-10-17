@@ -22,6 +22,8 @@ import type { TracingBvh } from "./scene.js";
 import { outputFragment, tracingFragment, tracingVertex } from "./shaders.js";
 import { cameraNearClipDepth } from "./projection.js";
 import type { TracingLights } from "./luminaires.js";
+import { MAX_GGX_COSINE_WEIGHT, TRACING_TRANSPORT_HEADROOM } from "./bsdf.js";
+import { reflectedSunRoughness } from "./sun-guide.js";
 
 export interface PathTracingStatus {
   readonly available: boolean;
@@ -32,6 +34,16 @@ export interface PathTracingStatus {
   readonly error?: string;
 }
 export type RenderingView = "interactive" | "path-tracing";
+
+/** Internal engineering controls; never exposed by the application or persisted. */
+export interface TracingPathLimits {
+  readonly opaque: number;
+  readonly total: number;
+  readonly roulette: boolean;
+  /** Historic baseline only: old intersection and terminal-estimator behavior. */
+  readonly legacyTransport?: boolean;
+  readonly sunGuiding?: boolean;
+}
 
 /** Conventional WebGL2/GLSL backend; never render node materials through it.
  * Three core math/camera types are shared by the classic and webgpu entrypoints.
@@ -50,6 +62,7 @@ export class PathTracingBackend {
   private materialAtlas: WebGLRenderTarget | undefined;
   private lightTexture: DataTexture | undefined;
   private disposed = false;
+  private retainedSamples = 0;
   private readonly contextLost: (event: Event) => void;
 
   constructor(inputCanvas: HTMLCanvasElement, fail: (error: unknown) => void) {
@@ -109,9 +122,16 @@ export class PathTracingBackend {
         inverseProjection: { value: null },
         nearClipDepth: { value: -1 },
         sunDirection: { value: null },
-        sunRadiance: { value: null },
+        sunIrradiance: { value: null },
         zenith: { value: null },
         horizon: { value: null },
+        upperSkyOnly: { value: false },
+        opaqueLimit: { value: 16 },
+        interactionLimit: { value: 96 },
+        rouletteEnabled: { value: true },
+        legacyTransport: { value: false },
+        sunGuiding: { value: true },
+        sunGuideRoughness: { value: -1 },
       },
     });
     this.output = new ShaderMaterial({
@@ -296,6 +316,7 @@ export class PathTracingBackend {
     this.tracing.uniforms.imageRecords!.value = replacement[3];
     this.tracing.uniforms.materialImages!.value = atlas.texture;
     this.tracing.uniforms.nodeCount!.value = bvh.nodeCount;
+    this.tracing.uniforms.sunGuideRoughness!.value = reflectedSunRoughness(bvh);
   }
 
   resize(width: number, height: number, inputCanvas: HTMLCanvasElement): void {
@@ -311,17 +332,86 @@ export class PathTracingBackend {
     )
       throw new Error("Viewport exceeds path tracing floating-point texture capacity.");
     if (this.canvas.width === w && this.canvas.height === h) return;
+    this.retainedSamples = 0;
     this.renderer.setSize(w, h, false);
     for (const target of this.targets) target.setSize(w, h);
     this.tracing.uniforms.resolution!.value.set(w, h);
     this.output.uniforms.resolution!.value.set(w, h);
   }
 
-  setDaylight(direction: Vector3, radiance: Color, zenith: Color, horizon: Color): void {
+  setDaylight(
+    direction: Vector3,
+    irradiance: Color,
+    zenith: Color,
+    horizon: Color,
+    // Historical black-lower-hemisphere control, used only by the evaluation harness.
+    upperSkyOnly = false,
+  ): void {
+    const values = [
+      ...direction.toArray(),
+      ...irradiance.toArray(),
+      ...zenith.toArray(),
+      ...horizon.toArray(),
+    ];
+    if (
+      values.some((value) => !Number.isFinite(Math.fround(value))) ||
+      [...irradiance.toArray(), ...zenith.toArray(), ...horizon.toArray()].some(
+        (value) =>
+          value < 0 ||
+          value > 3.4028234663852886e38 / (TRACING_TRANSPORT_HEADROOM * MAX_GGX_COSINE_WEIGHT),
+      ) ||
+      Math.abs(direction.lengthSq() - 1) > 1e-6 ||
+      typeof upperSkyOnly !== "boolean"
+    )
+      throw new RangeError(
+        "Daylight exceeds path tracing numeric capacity or has an invalid direction.",
+      );
     this.tracing.uniforms.sunDirection!.value = direction;
-    this.tracing.uniforms.sunRadiance!.value = radiance;
+    this.tracing.uniforms.sunIrradiance!.value = irradiance;
     this.tracing.uniforms.zenith!.value = zenith;
     this.tracing.uniforms.horizon!.value = horizon;
+    this.tracing.uniforms.upperSkyOnly!.value = upperSkyOnly;
+  }
+
+  setPathLimits(limits: TracingPathLimits): void {
+    if (
+      !Number.isInteger(limits.opaque) ||
+      limits.opaque < 1 ||
+      limits.opaque > 32 ||
+      !Number.isInteger(limits.total) ||
+      limits.total < limits.opaque ||
+      limits.total > 96 ||
+      typeof limits.roulette !== "boolean" ||
+      (limits.legacyTransport !== undefined && typeof limits.legacyTransport !== "boolean") ||
+      (limits.sunGuiding !== undefined && typeof limits.sunGuiding !== "boolean")
+    )
+      throw new RangeError(
+        "Tracing path limits require 1–32 opaque and up to 96 total interactions.",
+      );
+    this.tracing.uniforms.opaqueLimit!.value = limits.opaque;
+    this.tracing.uniforms.interactionLimit!.value = limits.total;
+    this.tracing.uniforms.rouletteEnabled!.value = limits.roulette;
+    this.tracing.uniforms.legacyTransport!.value = limits.legacyTransport ?? false;
+    this.tracing.uniforms.sunGuiding!.value = limits.sunGuiding ?? true;
+  }
+
+  /** Opt-in linear HDR readback, before any presentation conversion. Bottom-left origin. */
+  readLinearImage(samples: number): Float32Array {
+    if (
+      this.disposed ||
+      !Number.isInteger(samples) ||
+      samples < 1 ||
+      samples !== this.retainedSamples
+    )
+      throw new RangeError("Linear readback requires retained tracing samples.");
+    const target = this.targets[(samples - 1) % 2]!;
+    const pixels = new Float32Array(target.width * target.height * 4);
+    this.renderer.readRenderTargetPixels(target, 0, 0, target.width, target.height, pixels);
+    const gl = this.renderer.getContext();
+    if (gl.getError() !== gl.NO_ERROR) throw new Error("Path tracing linear readback failed.");
+    if (pixels.some((value) => !Number.isFinite(value)))
+      throw new Error("Path tracing linear readback contains nonfinite values.");
+    return pixels;
   }
 
   setPresentation(toneMapping: ToneMapping, exposure: number): void {
@@ -342,11 +432,13 @@ export class PathTracingBackend {
     this.quad.material = this.tracing;
     this.renderer.setRenderTarget(next);
     this.renderer.render(this.scene, this.camera);
+    this.retainedSamples = sample + 1;
     this.output.uniforms.image!.value = next.texture;
     this.display();
   }
 
   clear(): void {
+    this.retainedSamples = 0;
     for (const target of this.targets) {
       this.renderer.setRenderTarget(target);
       const gl = this.renderer.getContext();

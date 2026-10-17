@@ -10,7 +10,7 @@ export function daylightSunColor(daylight: Daylight): Color {
   return neutral.lerp(warm, daylight.warmth);
 }
 
-/** Shared deterministic linear sky palette for visible raster sky and traced escapes. */
+/** Interactive display palette; tracing borrows chromaticity and normalizes its lighting integral separately. */
 export function daylightSkyColors(daylight: Daylight): { zenith: Color; horizon: Color } {
   const overcast = daylight.weather === "overcast";
   return {

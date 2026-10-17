@@ -1,0 +1,62 @@
+{
+  "schema": "planaxis-design/1.1",
+  "name": "20 small point 10000",
+  "architecture": "architecture/small-sealed.svg",
+  "finishes": [
+    {
+      "target": "floor",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "ceiling",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-north:side-negative",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-north:side-positive",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-south:side-negative",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-south:side-positive",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-west:side-negative",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-west:side-positive",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-east:side-negative",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-east:side-positive",
+      "material": "assets/materials/neutral.json"
+    }
+  ],
+  "luminaires": [
+    {
+      "id": "reference-point",
+      "type": "point",
+      "position": {
+        "x": 150,
+        "y": 150,
+        "z": 230
+      },
+      "luminousFluxLumens": 10000,
+      "colorTemperatureKelvin": 5600,
+      "enabled": true,
+      "dimming": 1
+    }
+  ]
+}

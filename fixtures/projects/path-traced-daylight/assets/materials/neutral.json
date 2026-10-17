@@ -1,0 +1,7 @@
+{
+  "schema": "planaxis-material/1.0",
+  "name": "Neutral paint, linear factor 0.7",
+  "baseColor": [0.85430583154494, 0.85430583154494, 0.85430583154494],
+  "roughness": 1,
+  "metalness": 0
+}

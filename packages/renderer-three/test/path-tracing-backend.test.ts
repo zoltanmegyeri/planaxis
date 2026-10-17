@@ -3,6 +3,9 @@ import {
   DataTexture,
   FloatType,
   MeshStandardMaterial,
+  Mesh,
+  Scene,
+  ShaderMaterial,
   NoColorSpace,
   RGBAFormat,
   UnsignedByteType,
@@ -11,7 +14,7 @@ import {
 import { PathTracingBackend } from "../src/path-tracing/backend.js";
 import { prepareTracingLights } from "../src/path-tracing/luminaires.js";
 import { buildTracingBvh } from "../src/path-tracing/scene.js";
-import { Vector3 } from "three/webgpu";
+import { Color, PerspectiveCamera, Vector3 } from "three/webgpu";
 
 const gpu = vi.hoisted(() => ({
   capacity: 1024,
@@ -21,6 +24,7 @@ const gpu = vi.hoisted(() => ({
   render: vi.fn(),
   target: vi.fn(),
   status: 2,
+  read: vi.fn(),
 }));
 const gl = {
   FRAMEBUFFER: 1,
@@ -39,6 +43,7 @@ vi.mock("three", async (original) => {
       capabilities = { maxTextureSize: gpu.capacity };
       debug = {};
       initTexture = gpu.upload;
+      readRenderTargetPixels = gpu.read;
       setRenderTarget = gpu.target;
       setScissorTest = vi.fn();
       setViewport = vi.fn();
@@ -248,4 +253,55 @@ it("owns raw image copies in its context, cleans failed copies and leaves borrow
   expect(targets).toHaveBeenCalledTimes(4);
   source.dispose();
   material.dispose();
+});
+
+it("validates finite daylight/path inputs atomically and reads retained HDR before presentation", () => {
+  const instance = backend();
+  const direction = new Vector3(0, 1, 0),
+    sun = new Color(100, 90, 80),
+    sky = new Color(4, 5, 6);
+  instance.setDaylight(direction, sun, sky, sky);
+  for (const color of [new Color(NaN, 1, 1), new Color(-1, 1, 1), new Color(1e35, 1, 1)])
+    expect(() => instance.setDaylight(direction, color, sky, sky)).toThrow("numeric capacity");
+  expect(() => instance.setDaylight(new Vector3(), sun, sky, sky)).toThrow("direction");
+  instance.setPathLimits({ opaque: 32, total: 96, roulette: false, sunGuiding: false });
+  for (const limits of [
+    { opaque: 33, total: 96, roulette: true },
+    { opaque: 16, total: 8, roulette: true },
+    { opaque: 8, total: Infinity, roulette: true },
+  ])
+    expect(() => instance.setPathLimits(limits)).toThrow(RangeError);
+  let retained: ShaderMaterial["uniforms"] | undefined;
+  gpu.render.mockImplementation((scene: Scene) => {
+    const material = (scene.children[0] as Mesh).material as ShaderMaterial;
+    if (material.uniforms.sunIrradiance) retained = material.uniforms;
+  });
+  instance.trace(new PerspectiveCamera(), 0);
+  const uniforms = retained!;
+  expect(uniforms.sunIrradiance!.value).toBe(sun);
+  // The shared camera/reflection/diffuse escape environment must not turn black below
+  // the horizon. The upper-only boundary remains an explicit historical control.
+  expect(uniforms.upperSkyOnly!.value).toBe(false);
+  instance.setDaylight(direction, sun, sky, sky, true);
+  expect(uniforms.upperSkyOnly!.value).toBe(true);
+  instance.setDaylight(direction, sun, sky, sky);
+  expect(uniforms.upperSkyOnly!.value).toBe(false);
+  expect(uniforms.opaqueLimit!.value).toBe(32);
+  expect(uniforms.interactionLimit!.value).toBe(96);
+  expect(uniforms.rouletteEnabled!.value).toBe(false);
+  expect(uniforms.sunGuiding!.value).toBe(false);
+  gpu.read.mockImplementation((_target, _x, _y, _width, _height, pixels: Float32Array) => {
+    pixels.set([12, 8, 4, 1]);
+  });
+  expect(instance.readLinearImage(1)).toEqual(new Float32Array([12, 8, 4, 1]));
+  expect(gpu.read.mock.calls.at(-1)![0]).toBe(
+    gpu.target.mock.calls.find(([target]) => target?.texture.type === FloatType)![0],
+  );
+  expect(() => instance.readLinearImage(0)).toThrow(RangeError);
+  gpu.read.mockImplementation((_target, _x, _y, _width, _height, pixels: Float32Array) => {
+    pixels[0] = NaN;
+  });
+  expect(() => instance.readLinearImage(1)).toThrow("nonfinite");
+  instance.dispose();
+  expect(() => instance.readLinearImage(1)).toThrow(RangeError);
 });

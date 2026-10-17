@@ -1,0 +1,23 @@
+{
+  "input": {
+    "shadedWall": [
+      -0.1,
+      0.2,
+      0.2,
+      0.2
+    ],
+    "shadedFloor": [
+      0.1,
+      0.1,
+      0.2,
+      0.2
+    ],
+    "directFloor": [
+      0.1,
+      0.1,
+      0.2,
+      0.2
+    ]
+  },
+  "status": "FAILED: RangeError: Measurement rectangles must contain pixels inside the image."
+}

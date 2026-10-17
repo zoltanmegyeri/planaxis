@@ -2,6 +2,7 @@
 
 Implemented 2026-10-09 for TASK-044, extended with design luminaires on 2026-10-11 for TASK-045
 and opaque PBR materials/textures on 2026-10-12 for TASK-046.
+Sunny source calibration was added on 2026-10-13 for TASK-047.
 This is a bounded qualitative experiment for human
 review, not a renderer replacement or calibrated lux/irradiance prediction. The accepted
 VXGI integration and its [known limitations](realtime-global-illumination.md) remain available.
@@ -40,39 +41,28 @@ redefine the domain's `EPSILON`. The 1 cm partition controls exercise this scale
 
 ## Transport and presentation
 
-The existing `calculateSolarPosition`, `planaxisSunDirection` and `deriveDaylight` result drives
-both views. Scene-to-Sun `(x,y,z)` maps to `(x,z,y)`; the same Sunny Sun color and qualitative
-strength (`3 × directStrength`) feed next-event estimation at each opaque hit. The tracer
-continues sampled diffuse/GGX paths for up to eight opaque interactions, with Russian
-roulette after three and at most 24 total surface interactions. Glass visibility allows up to
-32 crossings; exhaustion blocks light. Sun visibility is deterministic with sharp shadows.
-
-Only rays that escape the geometry collect procedural sky radiance. The gradient reuses the
-existing Sunny linear zenith/horizon palette, including the current horizon continuation below
-the horizon. No external HDR/blue-noise asset, ground box, raster GI, Physical sky helper light,
-Studio PMREM or fill is added. This sky is a qualitative environment approximation, not a
-physical atmosphere or modeled exterior ground. Window reflections and diffuse escape sampling
-can remain noisy; no spatial denoising or exposure compensation conceals occlusion failures.
+The existing `calculateSolarPosition` and `planaxisSunDirection` drive both views from the
+same zoned instant and validated north heading. Interactive retains its qualitative
+`deriveDaylight` Sun/sky/VXGI scales. Tracing separately normalizes Sunny daylight through
+`calculateClearSkyReference`; see [the reference contract below](#sunny-reference-calibration-2026-10-13).
+Only rays escaping actual geometry collect sky radiance. Sun next-event estimation evaluates
+its integrated normal irradiance once at every opaque hit. Local sources retain flux and MIS.
+There is no external environment asset, exterior ground, sky Sun disc, unoccluded fill,
+portal emitter, raster GI or bloom in the tracing integral.
 
 Two RGBA32F targets hold a running **linear HDR average**, one independent sample per scheduled
 frame. The output shader uses Three.js's current AgX, ACES Filmic or Neutral mapping,
-`2 ** exposureEv`, and sRGB output once. There is no additional demo Reinhard/gamma transform.
-Presentation edits redraw this image, retaining samples and geometry/BVH. Interactive bloom and
-GI resume their retained behavior on return; there is no second bloom graph.
+`2 ** exposureEv`, and sRGB output once. There is no additional Reinhard/gamma transform,
+automatic exposure or hidden offset. Presentation edits redraw this image, retaining samples
+and geometry/BVH. Interactive bloom and GI resume their retained behavior on return.
 
-Sunny interiors can remain visually dark at the default exposure even after accumulation.
-The Sun scale and sky palette are appearance values inherited from Interactive, without a
-calibrated daylight radiance/exposure relationship; the visible blue sky palette also supplies
-the traced environment. A summer date changes solar direction but does not establish measured
-indoor illumination. Surface reflectance, metallic floor assignments, the finite path limit and
-the passive single-scattering BSDF also affect indirect light. Russian roulette compensates
-surviving paths and does not itself dim the expected result.
-
-Exposure changes brighten direct and indirect contributions together. Window-guided sky
-sampling could reduce variance without raising the converged illumination. Changing the
-indirect/direct daylight balance requires a separately evaluated Sun/sky calibration or exterior
-lighting model; TASK-046 preserves existing source strengths. No arbitrary bounce multiplier
-is applied to brighten rooms.
+The original appearance-scale sources caused dark indirectly lit regions at AgX/0 EV in the
+controlled summer room. Increasing accumulation reduced noise without removing that low mean.
+The fixed clear-sky reference establishes a reproducible Sunny appearance; material
+absorption, AO, finite path truncation and display exposure remain distinct effects.
+The later lamp-unit review below corrects a separate mismatch with Interactive photometric RGB.
+Detailed source isolation, retained-energy controls, path/roulette audit and measured before/after
+evidence are in [the daylight report](path-traced-daylight-evaluation/README.md).
 
 ## Ownership, invalidation and navigation
 
@@ -223,13 +213,15 @@ Analytical sheets are visible and occluding from both sides, with emission only 
 forward; their backs absorb. They are independent of architecture/BVH and finish targets.
 Point/spot lights have no visible bulb, sphere or radius.
 
-All four types use the same **683 lumens per linear transport unit** scale. The retained
-1000-40000 K approximate black-body sRGB fit is converted to linear RGB, then normalized to
-Rec.709 luminance Y=0.2126R+0.7152G+0.0722B. Multiplying the normalized chromaticity by each
-photometric coefficient divided by 683 preserves its Y/flux relationships. This scale is a
-qualitative RGB surrogate based on maximum photopic efficacy, **not** measured spectral
-power, manufacturer efficacy, white balance or calibrated photometry. Sun/sky keep their
-existing qualitative strengths; exposure and tone mapping remain output presentation only.
+All four types use **photometric RGB light units**, matching Interactive: the coefficients
+above multiply the same linear Kelvin color, without division by 683 or additional Y
+normalization. Point intensity matches Three.js candela; rectangular luminance matches nits.
+The shared 1000-40000 K approximate black-body sRGB fit and nominal scalar flux retain the
+existing Interactive convention: color multiplies the intensity rather than renormalizing its
+Rec.709 Y. This is an RGB renderer convention, not measured spectral power or certified photometry.
+The former `/683/Y` lamp adapter made a 5600 K source about 605 times weaker than Interactive;
+the lamp review supersedes that adapter and its earlier unit claims. Exposure and tone mapping
+remain output presentation only. Sunny daylight keeps its separately accepted render calibration.
 
 At each diffuse interaction, next-event estimation selects **one of all effective sources
 uniformly**, multiplying by the source count. Point/spot use explicit delta-source sampling.
@@ -483,7 +475,9 @@ including glossy paths; delta point/spot and Sun samples receive unit estimator 
 paths collect the existing sky without a second sky estimator. Straight-through panes retain
 emitter MIS; a pane reflection starts a source-hit-only segment because straight visibility
 sampling does not estimate that reflected route. The ratio-form heuristic avoids squaring
-large GGX densities. Eight opaque/24 total interaction limits and roulette remain bounded.
+large GGX densities. The 2026-10-13 audit increases production limits to 16 opaque/96 total interactions;
+roulette after three remains compensated. The earlier eight/24 limit is retained only as
+a diagnostic baseline.
 
 AO never modifies albedo, BSDF factors, cast-shadow geometry or direct light visibility.
 It attenuates the continuation's indirect/escaped-sky contribution. Current-vertex explicit
@@ -503,3 +497,182 @@ Ordinary design selection still follows the established architecture-loading/2D 
 [The PBR review report](path-traced-pbr-evaluation/README.md) records fixture variants,
 actual captures/settings/counts, regressions and agent observations separately from human
 acceptance. Earlier daylight/luminaire evidence above is preserved as historical evidence.
+
+## Sunny reference calibration (2026-10-13)
+
+`simulation/clear-sky.ts` owns renderer-independent reference irradiance and illuminance.
+The bounded atmosphere uses the ASHRAE 2017 tau equations as published in
+[EnergyPlus 24.2, Climate Calculations](https://bigladdersoftware.com/epx/docs/24-2/engineering-reference/climate-calculations.html#ashrae-revised-clear-sky-model-tau-model),
+inspected 2026-10-13. Fixed pseudo-optical depths b=0.4 and d=2.3 represent a single clear
+reference atmosphere, **not** local climate data. E0=1361 W/m² is the mean-distance solar
+reference documented by [NASA](https://earth.gsfc.nasa.gov/climate/projects/solar-irradiance/science).
+No atmospheric pressure/elevation, seasonal orbital distance, clouds, aerosols or actual weather
+are inferred from SVG metadata. The approximation is intended for visualization over ordinary
+positive solar elevations; it is deliberately smoothed near the horizon.
+
+For geometric elevation beta in degrees:
+
+```text
+m = 1 / [sin(beta) + 0.50572 (6.07995 + beta)^(-1.6364)]
+ab = 1.454 - 0.406 b - 0.268 d + 0.021 b d
+ad = 0.507 + 0.205 b - 0.080 d - 0.190 b d
+beam-normal irradiance Eb = E0 exp(-b m^ab)                  W/m²
+sky-horizontal irradiance Ed = E0 exp(-d m^ad)             W/m²
+```
+
+Daytime terms fade with smoothstep(0°,3°,beta), reaching zero at the geometric horizon;
+direct Sun is identically zero for beta<=0. A separate **assumed** 100 lx horizontal twilight
+reference multiplies smoothstep(-6°,0°,beta) × [1-smoothstep(0°,3°,beta)]. This is an explicit
+visualization extension outside the tau model, not a measured twilight prediction. Its
+equivalent sky irradiance uses the same assumed 120 lm/W, keeping returned watts and lux
+coherent through the horizon. The environment is zero below -6°, without moon/starlight. Polar/latitude/date cases use actual
+solar elevation: June alone never forces daytime lighting.
+
+Assumed fixed luminous efficacies are **100 lm/W beam, 120 lm/W diffuse**. They are reasonable
+reference choices, not the full weather-dependent Perez efficacy model used by EnergyPlus.
+The code makes that distinction explicit. Eb×100 gives direct-normal illuminance; Ed×120 plus
+twilight gives sky-horizontal illuminance. At the public noon elevation 64.3198286° these are
+**88,551.84 lx normal Sun**, **15,491.21 lx horizontal sky**, or **95,296.52 lx** total on an
+unoccluded upward horizontal receiver. The solar receiving cosine contributes only once:
+EbeamHorizontal = EbeamNormal sin(beta). At 60° the independent reference is Eb=874.9256933
+and Ed=126.3275078 W/m²; tests use these recorded values.
+
+`path-tracing/daylight.ts` retains the accepted **daylight-specific render calibration**:
+683 reference lux per RGB irradiance unit, with Rec.709 Y. This is no longer described as the
+lamp conversion or a spectral efficacy. The existing approximate Sun color is
+normalized to Y=1 and multiplied by direct-normal lux/683. The GLSL uniform is named
+`sunIrradiance` because it represents **integrated** normal input from a delta-direction
+source, never solar-disc radiance. The estimator multiplies the BSDF, receiving cosine and
+actual pane/architectural visibility; no disc solid angle or extra cosine multiplies that input.
+This maps the physical reference to the accepted Sunny appearance; it is not an absolute
+illuminance prediction in the native lamp RGB units. The lamp correction deliberately restores
+Interactive-compatible artificial-light strength without changing the accepted Sun/sky buffers.
+
+Sky chromaticity reuses the Interactive linear zenith/horizon palette, but its absolute
+magnitudes no longer determine lighting. With mu=direction.y, the upper hemisphere has
+C(mu)=mix(horizon,zenith,smoothstep(0,0.8,mu)). Its cosine-weighted angular integral is
+pi × [0.192 Yh + 0.808 Yz]. The **whole RGB gradient** scales by
+skyHorizontalLux / [683 pi (0.192 Yh + 0.808 Yz)]. Numerical hemisphere tests integrate that
+radiance back to its prescribed horizontal illuminance. Following the 2026-10-15 visual review,
+the lower hemisphere continues the calibrated horizon radiance, matching Interactive's angular
+appearance without a black horizon seam. This is an explicit exterior environment approximation,
+not a prediction of outdoor ground reflection; no exterior mesh is added. It contributes zero
+to an upward receiver's horizontal integral. An unobstructed downward receiver instead sees
+683 pi Yh reference-equivalent lx, and a vertical receiver gets an additional 683 pi Yh / 2
+reference-equivalent lx from below the horizon. These use the daylight mapping, not a lux-meter
+interpretation of the native RGB lamp buffer.
+Actual architecture and pane visibility still apply to every ray. This angular/color
+approximation omits circumsolar/horizon anisotropy, exterior terrain and spectral sky physics. The environment
+contains no Sun disc, so no explicit-Sun energy is duplicated. Camera, diffuse and reflection
+escapes evaluate the same gradient. There is no extra sky NEE/PDF/MIS term; BSDF escape
+sampling retains its original integral and actual aperture/pane visibility.
+
+Lamp point intensity remains Phi/(4 pi), spot intensity Phi/[2 pi (1-cos(halfAngle))], and
+rectangle luminance Phi/(pi area), all multiplied by Interactive's unnormalized linear Kelvin RGB.
+Enabled/dimming, nominal lumens, dimensions and sidedness are unchanged. The earlier claim that
+the `/683` lamp adapter matched Interactive was incorrect and is superseded. Mixed daylight/lamp
+balance is an explicitly approximate renderer appearance, with separate documented daylight
+calibration and native lamp units. AgX/0 EV remains
+the matched camera baseline. Bright exterior/solar patches occupy highlights while shaded
+interior values are assessable; other manual EVs remain ordinary presentation adjustments.
+
+The BSDF audit retains the accepted passive single-scattering GGX/diffuse approximation.
+At normal incidence and linear base factor 0.7, rough paint retains about **0.627**, compared
+with the independent diffuse contribution 0.7×0.96²×20/21=0.6144 plus rough-interface specular.
+A rough 0.7 metal retains about **0.2148**, while its polished endpoint approaches **0.7**.
+These values agree with independent hemisphere integration, not merely an upper-bound test.
+Rough metal multiple scattering, internal diffuse interreflection and extreme shading-normal
+loss remain approximations. Dark textures and defined AO legitimately reduce indirect light;
+neither is ignored to brighten this task's images. Fresnel, lobe PDFs, emitter MIS, geometric
+normals, offsets, bounded pane traversal and roulette compensation are retained.
+
+Production uses 16 opaque/96 total interactions, selected from measured 8/16/32 comparisons.
+The engineering backend exposes opt-in validated limits (1–32 opaque, up to 96 total),
+roulette controls and linear HDR readback only to the separate evaluation page. Production
+has no such controls. Source/camera/model changes use existing invalidation, including while
+paused. Presentation redraw retains samples. No new GPU resource, persistent field or loader
+is introduced; the diagnostic readback allocates CPU memory only on request. Nonfinite or
+out-of-capacity daylight values fail explicitly before uniform mutation; Interactive remains
+accessible through the existing backend-failure discipline.
+
+[The evidence report](path-traced-daylight-evaluation/README.md) records actual source/path
+measurements and public/private review status. Human visual acceptance is separate from these
+agent observations. The reference is reproducible and dimensionally coherent; it is not a
+certified illuminance analysis, real-weather reconstruction or full atmospheric renderer.
+
+### Contact and terminal-hit audit (2026-10-14)
+
+The finite opaque budget now limits the number of shaded surfaces. After the last allowed hit,
+its sampled BSDF may still reach sky, an emitting sheet or a thin pane; the next opaque hit
+terminates. Previously it stopped before that endpoint despite retaining MIS weights which
+assumed the competing estimator existed. A one-hit sky control had zero shaded-region light;
+the corrected control has nonzero illumination without adding another sky estimator.
+
+The source increase also exposed rare Sun visibility at wall/ceiling numerical contacts in
+otherwise black sealed images. Current triangle tests use a ray-aligned common-edge calculation
+and plane distance, with conservative BVH search. Scalar hit positions stay within the hit
+triangle's component bounds before the unchanged 0.00001 m normal offset. Continuation rays
+terminate at uncertain quarter-offset contacts, while shadow queries include zero-distance
+adjacent contacts. This prevents self-hit handling from skipping a tiny occluder and escaping. Material barycentrics,
+physical meshes, two-sided visibility and pane transmission remain unchanged. The real-browser
+whole-image HDR controls audit these choices; no image clamping, geometry dilation, added
+blocker or enclosure-specific light suppression conceals the defect. See the provenance and
+[final measurement report](path-traced-daylight-evaluation/README.md).
+
+### Reflected-Sun sampling (2026-10-14 review continuation)
+
+The polished-metal control exposed large finite-sample spikes from concentrated indirect Sun
+reflections. `sun-guide.ts` derives one angular proposal from existing horizontal, opaque
+triangles with metallic factor above 0.5 and roughness at most 0.35. The smallest eligible
+material roughness supplies a proposal width, not an override of any surface. Texture factors,
+normal maps, actual BSDFs and all architectural intersections still determine transported light.
+No new reflector, emitter, exterior surface or GPU texture is created.
+
+At eligible rough, diffuse-dominant receivers, the continuation mixes the ordinary BSDF proposal
+with a reversed visible-GGX proposal. Its reference normal is renderer Y-up and its view is the
+actual scene-to-Sun vector. Negating its sampled outgoing direction proposes paths toward a
+horizontal reflector. Invalid below-reflector samples are absorbed without resampling. The
+selection probability is p=0.5 max(0, Ns dot (sx,-sy,sz)), bounded to [0,0.5], where Ns is the
+receiving shading normal. It is zero without an eligible triangle, above-horizon effective Sun,
+or a receiver with metallic factor below 0.5 and roughness above 0.2.
+
+For every surviving direction, q=(1-p) qBSDF + p qGuide replaces the continuation density in
+throughput and both sides of rectangle-emitter MIS. The ordinary component retains at least
+half its probability and all previous nonzero support. The proposal changes variance, not the
+target BSDF, AO, Sun/sky power, pane transmission or finite path integral. It does not broaden
+reflections, regularize materials, clamp bright samples or denoise the image. Nighttime and
+ineligible scenes retain their original sampling sequence. Engineering `unguided` controls
+disable the proposal; legacy controls also disable it.
+
+Each mixture step can increase a weight by at most two relative to ordinary BSDF sampling.
+Numeric source admission therefore reserves 2^40 headroom for the 32-interaction engineering
+limit plus accumulation, reporting capacity failure rather than reducing declared flux.
+Current camera/input/history ownership remains unchanged. Analytical hemisphere/cap integrals,
+reflected-Sun variance controls and matched browser evidence are recorded in the
+[noise audit](path-traced-daylight-evaluation/README.md#reflected-sun-noise-review).
+This is a bounded horizontal-reflection proposal, not a general caustics integrator or a
+guarantee of clean pixels. Ordinary grain, mapped/tilted reflectors and narrow artificial-source
+paths can remain noisy.
+
+The maintainer accepted the calibration and firefly corrections on 2026-10-15 after checking
+multiple locations, camera angles and times. The same review identified the black lower sky.
+The restored horizon continuation described above has separate matched evidence in the
+[lower-sky review](path-traced-daylight-evaluation/README.md#lower-sky-visual-review-2026-10-15);
+it changes the exterior boundary, not the calibrated upper-sky or Sun quantities.
+
+## Lamp-unit review
+
+The maintainer accepted the daylight, full sky and firefly corrections, then reported that a
+560 lm enclosed-room point source remained almost dark while Interactive was visibly lit.
+The old tracing adapter divided nominal photometric coefficients by 683 and Kelvin Y; Interactive
+uses Three.js photometric RGB directly. The resulting scale difference was hundreds-fold,
+independent of path noise or finite bounce limits. The corrected adapter now matches Interactive
+point/rectangle coefficients across warm, neutral and cool colors; it retains the normalized
+spot cone, source MIS and all visibility tests. No source clamp, exposure offset, BSDF gain or
+sampling change is added. The full horizon environment and reflected-Sun proposal are untouched.
+
+The retained Sunny scale is explicitly daylight-specific, as requested by the maintainer's review;
+an absolute common photometric daylight/lamp simulation is not claimed. Spot distributions,
+PBR approximations, indirect transport, shadows and raster GI can still cause image differences.
+See [lamp evidence](path-traced-daylight-evaluation/README.md#lamp-unit-review) for actual pre-fix
+captures, independent Three.js coefficient checks, measured comparisons and limitations.

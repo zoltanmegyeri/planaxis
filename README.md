@@ -353,8 +353,18 @@ integration is retained.
 Rendering → View now offers **Path tracing (experimental)** in eligible validated 3D scenes.
 It supports Physical Sunny daylight and Design 1.1 point/spot/linear/area luminaires,
 opaque Material 1.0/1.1 PBR finishes with base-color, roughness, metalness, normal and AO maps, and clear/unspecified panes. Watch the sample count and use Pause/Resume;
-returning to Interactive retains the camera, daylight and GI/bloom settings. All effective
-luminaires have traced direct/indirect transport; linear/area fronts visibly emit. Bloom is bypassed.
+returning to Interactive retains the camera, daylight and GI/bloom settings. Sunny tracing uses
+a fixed clear-sky reference with documented Sun/sky render calibration;
+Interactive/VXGI keeps its existing lighting. See the
+[summer-room calibration evidence](docs/architecture/path-traced-daylight-evaluation/README.md)
+for matched AgX/0 EV measurements, material/path controls and limitations.
+Horizontal smooth-metal Sun reflections use a bounded sampling proposal to reduce bright
+speckles; raw progressive grain can remain.
+The sky continues its horizon color below the horizon; this approximate exterior boundary is
+shared by background, reflections and lighting through actual openings.
+Traced luminaires use Interactive-compatible photometric RGB units; the former /683 lamp
+conversion is removed. The daylight/lamp balance remains a documented RGB appearance approximation.
+All effective luminaires have traced direct/indirect transport; linear/area fronts visibly emit. Bloom is bypassed.
 Unsupported inputs or WebGL2 float-rendering failures are
 explained. Selection/pause/samples are session-only; the default renderer is unchanged.
 

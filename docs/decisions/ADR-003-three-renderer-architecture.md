@@ -294,6 +294,40 @@ not direct source visibility. Mask/blend, non-clear glazing and non-Sunny tracin
 explicit restrictions. See the architecture document for numerical/filtering choices and
 agent-observed evidence; human visual acceptance remains separate.
 
+On 2026-10-13, TASK-047 establishes a tracing-specific Sunny source reference. Renderer-independent
+ASHRAE tau irradiance/illuminance calculations belong to `simulation`; RGB/angular adaptation,
+shader inputs and opt-in HDR readback belong to `renderer-three`. The reference atmosphere and
+efficacies are explicit bounded assumptions, not inferred meteorology. Sun normal illuminance
+and integrated diffuse-horizontal sky map into the unchanged lamp flux convention. The
+upper-hemisphere gradient contains no solar disc or exterior ground contribution. Interactive
+Sun/sky/VXGI scales, lamp powers, exposure meaning and persistence are unchanged. The separate
+application engineering page loads through ordinary project APIs for source/path/material
+comparisons, without a product debug UI or a second loader. See the
+[calibration/evidence contract](../architecture/daylight-path-tracing.md#sunny-reference-calibration-2026-10-13).
+
+The 2026-10-14 review adds a bounded angular proposal for Sun reflected by existing horizontal
+smooth-metal surfaces. It stays in the conventional tracing adapter, retaining the ordinary
+BSDF proposal with full support and using the complete mixture density in throughput/emitter
+MIS. Actual BSDFs, calibrated source power, visibility, presentation and ownership remain intact.
+No general caustics framework, material regularization or denoising is introduced. See the
+[sampling contract](../architecture/daylight-path-tracing.md#reflected-sun-sampling-2026-10-14-review-continuation)
+for assumptions and measured limitations.
+
+The 2026-10-15 visual review restores a continuous horizon by continuing calibrated horizon
+radiance below zero elevation for all escape rays. This explicit environment boundary
+approximation replaces the initial black lower hemisphere without changing upper-horizontal
+sky calibration, direct Sun or Interactive appearance. It adds no outdoor geometry; actual
+architectural visibility still governs its light. Matched measurements record the additional
+lower-hemisphere contribution separately from the earlier accepted calibration and sampling fixes.
+
+The subsequent lamp review corrects the adapter's `/683/Y` mismatch with Interactive. Traced
+point/rectangle coefficients now use the same photometric RGB units and Kelvin color as Three.js;
+the bounded normalized spot cone remains. The already accepted Sunny buffers, continuous sky and
+reflected-Sun proposal are preserved. This explicitly separates the Sunny render calibration
+from native lamp units; the earlier common-scale claim is superseded. An absolute calibrated
+daylight/lamp illuminance simulation is not claimed. No persistent lamp value or Interactive
+light is changed. See the lamp-unit review in the architecture/evidence contract.
+
 ## Cameras and lifecycle
 
 OrbitControls supplies orbit, pan, and dolly with mouse and touch input. Initial framing

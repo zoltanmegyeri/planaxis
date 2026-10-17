@@ -9,6 +9,8 @@ export interface TracingBsdf {
   readonly metalness: number;
 }
 export const MIN_GGX_ALPHA = 0.001;
+/** 32 optional mixture steps can each increase a weight by at most two; retain extra headroom. */
+export const TRACING_TRANSPORT_HEADROOM = 2 ** 40;
 /** D <= 1/(pi*a²), G1/NV <= 2/a, G2/F <= 1, plus bounded diffuse. */
 export const MAX_GGX_COSINE_WEIGHT = 1 / (2 * Math.PI * MIN_GGX_ALPHA ** 3) + 1 / Math.PI;
 const luminance = (c: readonly number[]): number =>

@@ -1,0 +1,1780 @@
+[
+  {
+    "case": "upper-only",
+    "project": "Path-traced daylight calibration",
+    "architecture": "architecture/apartment.svg",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 155.52108933074646,
+      "elevation": 64.3198285880143
+    },
+    "direction": {
+      "x": 0.1795610073405245,
+      "y": 0.39439530549866436,
+      "z": 0.9012270455570401
+    },
+    "source": {
+      "sun": [
+        140.5085372327125,
+        128.060534704741,
+        113.43899270153014
+      ],
+      "zenith": [
+        1.319867680601879,
+        6.452686438498076,
+        19.06475538647159
+      ],
+      "horizon": [
+        5.279470722407516,
+        11.732157160905594,
+        23.464314321811187
+      ],
+      "lowerHemisphere": "black"
+    },
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "sampling": {
+      "sunGuiding": true,
+      "reflectedSunRoughness": -1,
+      "proposal": "receiver-cosine mixture with reversed horizontal GGX"
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 0,
+    "effectiveLuminaires": [],
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "maximumY": 19.3468017414093,
+        "maximumPixel": {
+          "x": 86,
+          "y": 298,
+          "rgb": [
+            20.461807250976562,
+            19.136959075927734,
+            18.142221450805664
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8239129004686944,
+            "spatialSd": 0.25443349391677605,
+            "pixels": 10812,
+            "pixelNoiseRms": null
+          },
+          "shadedFloor": {
+            "Y": 0.5282299981872763,
+            "spatialSd": 0.1101018269378231,
+            "pixels": 6336,
+            "pixelNoiseRms": null
+          },
+          "directFloor": {
+            "Y": 13.153464808622106,
+            "spatialSd": 7.836084366361762,
+            "pixels": 480,
+            "pixelNoiseRms": null
+          }
+        }
+      },
+      {
+        "samples": 1024,
+        "maximumY": 19.20393786125183,
+        "maximumPixel": {
+          "x": 107,
+          "y": 292,
+          "rgb": [
+            20.312849044799805,
+            18.995967864990234,
+            17.99875259399414
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8242579084612246,
+            "spatialSd": 0.23629404304925988,
+            "pixels": 10812,
+            "pixelNoiseRms": 0.09541777476850807
+          },
+          "shadedFloor": {
+            "Y": 0.5285793221082958,
+            "spatialSd": 0.07993684119889992,
+            "pixels": 6336,
+            "pixelNoiseRms": 0.07687462275509593
+          },
+          "directFloor": {
+            "Y": 13.153696061774669,
+            "spatialSd": 7.835192618902951,
+            "pixels": 480,
+            "pixelNoiseRms": 0.09811415046923516
+          }
+        }
+      },
+      {
+        "samples": 1536,
+        "maximumY": 19.164399588394165,
+        "maximumPixel": {
+          "x": 105,
+          "y": 294,
+          "rgb": [
+            20.26478385925293,
+            18.956750869750977,
+            17.98114013671875
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8242880632740062,
+            "spatialSd": 0.22922947427883708,
+            "pixels": 10812,
+            "pixelNoiseRms": 0.0775082880709314
+          },
+          "shadedFloor": {
+            "Y": 0.5280967093707822,
+            "spatialSd": 0.06670375948151236,
+            "pixels": 6336,
+            "pixelNoiseRms": 0.062484317256150085
+          },
+          "directFloor": {
+            "Y": 13.156196440742638,
+            "spatialSd": 7.832456860230174,
+            "pixels": 480,
+            "pixelNoiseRms": 0.07920540010850961
+          }
+        }
+      },
+      {
+        "samples": 2048,
+        "maximumY": 19.175233215332028,
+        "maximumPixel": {
+          "x": 97,
+          "y": 295,
+          "rgb": [
+            20.314231872558594,
+            18.96564483642578,
+            17.897483825683594
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8243965741743632,
+            "spatialSd": 0.22566338761693214,
+            "pixels": 10812,
+            "pixelNoiseRms": 0.06708128640728396
+          },
+          "shadedFloor": {
+            "Y": 0.5281012708697267,
+            "spatialSd": 0.059012144458258246,
+            "pixels": 6336,
+            "pixelNoiseRms": 0.05414657247239025
+          },
+          "directFloor": {
+            "Y": 13.158448848532183,
+            "spatialSd": 7.830700169971168,
+            "pixels": 480,
+            "pixelNoiseRms": 0.07140406197335243
+          }
+        }
+      }
+    ],
+    "captureSamples": 2048
+  },
+  {
+    "case": "final",
+    "project": "Path-traced daylight calibration",
+    "architecture": "architecture/apartment.svg",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 155.52108933074646,
+      "elevation": 64.3198285880143
+    },
+    "direction": {
+      "x": 0.1795610073405245,
+      "y": 0.39439530549866436,
+      "z": 0.9012270455570401
+    },
+    "source": {
+      "sun": [
+        140.5085372327125,
+        128.060534704741,
+        113.43899270153014
+      ],
+      "zenith": [
+        1.319867680601879,
+        6.452686438498076,
+        19.06475538647159
+      ],
+      "horizon": [
+        5.279470722407516,
+        11.732157160905594,
+        23.464314321811187
+      ],
+      "lowerHemisphere": "horizon continuation"
+    },
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "sampling": {
+      "sunGuiding": true,
+      "reflectedSunRoughness": -1,
+      "proposal": "receiver-cosine mixture with reversed horizontal GGX"
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 0,
+    "effectiveLuminaires": [],
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "maximumY": 19.662843496704102,
+        "maximumPixel": {
+          "x": 103,
+          "y": 293,
+          "rgb": [
+            20.52848243713379,
+            19.475067138671875,
+            18.973962783813477
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 1.1186359957898337,
+            "spatialSd": 0.3123760604911751,
+            "pixels": 10812,
+            "pixelNoiseRms": null
+          },
+          "shadedFloor": {
+            "Y": 0.730652138692807,
+            "spatialSd": 0.12277185479405363,
+            "pixels": 6336,
+            "pixelNoiseRms": null
+          },
+          "directFloor": {
+            "Y": 13.433722789113922,
+            "spatialSd": 7.836667972236396,
+            "pixels": 480,
+            "pixelNoiseRms": null
+          }
+        }
+      },
+      {
+        "samples": 1024,
+        "maximumY": 19.460757785797117,
+        "maximumPixel": {
+          "x": 107,
+          "y": 292,
+          "rgb": [
+            20.433856964111328,
+            19.26480484008789,
+            18.53644561767578
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 1.1188477021618108,
+            "spatialSd": 0.29486432665161083,
+            "pixels": 10812,
+            "pixelNoiseRms": 0.10523802445693728
+          },
+          "shadedFloor": {
+            "Y": 0.7305807220325836,
+            "spatialSd": 0.09027459206976639,
+            "pixels": 6336,
+            "pixelNoiseRms": 0.08451397506684835
+          },
+          "directFloor": {
+            "Y": 13.4345862857297,
+            "spatialSd": 7.836765686132923,
+            "pixels": 480,
+            "pixelNoiseRms": 0.10429753645874205
+          }
+        }
+      }
+    ],
+    "captureSamples": 1024
+  },
+  {
+    "case": "final",
+    "project": "Path-traced daylight calibration",
+    "architecture": "architecture/apartment.svg",
+    "design": "designs/09-metal-polished.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 155.52108933074646,
+      "elevation": 64.3198285880143
+    },
+    "direction": {
+      "x": 0.1795610073405245,
+      "y": 0.39439530549866436,
+      "z": 0.9012270455570401
+    },
+    "source": {
+      "sun": [
+        140.5085372327125,
+        128.060534704741,
+        113.43899270153014
+      ],
+      "zenith": [
+        1.319867680601879,
+        6.452686438498076,
+        19.06475538647159
+      ],
+      "horizon": [
+        5.279470722407516,
+        11.732157160905594,
+        23.464314321811187
+      ],
+      "lowerHemisphere": "horizon continuation"
+    },
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "sampling": {
+      "sunGuiding": true,
+      "reflectedSunRoughness": 0.08,
+      "proposal": "receiver-cosine mixture with reversed horizontal GGX"
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 0,
+    "effectiveLuminaires": [],
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "maximumY": 17.097596200180053,
+        "maximumPixel": {
+          "x": 1,
+          "y": 222,
+          "rgb": [
+            17.414398193359375,
+            16.91350555419922,
+            17.988309860229492
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.9865856590899166,
+            "spatialSd": 0.314476131110851,
+            "pixels": 10812,
+            "pixelNoiseRms": null
+          },
+          "shadedFloor": {
+            "Y": 0.7810381080847243,
+            "spatialSd": 0.5025830509779955,
+            "pixels": 6336,
+            "pixelNoiseRms": null
+          },
+          "directFloor": {
+            "Y": 0.3857469726632721,
+            "spatialSd": 0.21473396237682457,
+            "pixels": 480,
+            "pixelNoiseRms": null
+          }
+        }
+      },
+      {
+        "samples": 1024,
+        "maximumY": 17.007578474426268,
+        "maximumPixel": {
+          "x": 1,
+          "y": 222,
+          "rgb": [
+            17.256084442138672,
+            16.8415470123291,
+            17.92050552368164
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.984174440961668,
+            "spatialSd": 0.2750136949671781,
+            "pixels": 10812,
+            "pixelNoiseRms": 0.1498840273655349
+          },
+          "shadedFloor": {
+            "Y": 0.7821528376736342,
+            "spatialSd": 0.4894870231396705,
+            "pixels": 6336,
+            "pixelNoiseRms": 0.12911595090521727
+          },
+          "directFloor": {
+            "Y": 0.39092957742786955,
+            "spatialSd": 0.15354747174200786,
+            "pixels": 480,
+            "pixelNoiseRms": 0.15910185108215613
+          }
+        }
+      },
+      {
+        "samples": 1536,
+        "maximumY": 16.93676715812683,
+        "maximumPixel": {
+          "x": 1,
+          "y": 222,
+          "rgb": [
+            17.112323760986328,
+            16.782344818115234,
+            17.94950294494629
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.982418526469799,
+            "spatialSd": 0.2604508993870043,
+            "pixels": 10812,
+            "pixelNoiseRms": 0.12204067147627067
+          },
+          "shadedFloor": {
+            "Y": 0.7819032006691412,
+            "spatialSd": 0.48368126605977724,
+            "pixels": 6336,
+            "pixelNoiseRms": 0.10451376214068514
+          },
+          "directFloor": {
+            "Y": 0.39764943062198943,
+            "spatialSd": 0.12820511139470567,
+            "pixels": 480,
+            "pixelNoiseRms": 0.12892362961903286
+          }
+        }
+      },
+      {
+        "samples": 2048,
+        "maximumY": 16.860307343673703,
+        "maximumPixel": {
+          "x": 1,
+          "y": 222,
+          "rgb": [
+            17.024669647216797,
+            16.712297439575195,
+            17.842485427856445
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.982488437956808,
+            "spatialSd": 0.2531749144350469,
+            "pixels": 10812,
+            "pixelNoiseRms": 0.10542647469393435
+          },
+          "shadedFloor": {
+            "Y": 0.7831205488497477,
+            "spatialSd": 0.47939409263296695,
+            "pixels": 6336,
+            "pixelNoiseRms": 0.09093011363060158
+          },
+          "directFloor": {
+            "Y": 0.3955546946789851,
+            "spatialSd": 0.10763988559870616,
+            "pixels": 480,
+            "pixelNoiseRms": 0.11158858912820842
+          }
+        }
+      }
+    ],
+    "captureSamples": 2048
+  },
+  {
+    "case": "sun",
+    "project": "Path-traced daylight calibration",
+    "architecture": "architecture/apartment.svg",
+    "design": "designs/09-metal-polished.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 155.52108933074646,
+      "elevation": 64.3198285880143
+    },
+    "direction": {
+      "x": 0.1795610073405245,
+      "y": 0.39439530549866436,
+      "z": 0.9012270455570401
+    },
+    "source": {
+      "sun": [
+        140.5085372327125,
+        128.060534704741,
+        113.43899270153014
+      ],
+      "zenith": [
+        0,
+        0,
+        0
+      ],
+      "horizon": [
+        0,
+        0,
+        0
+      ],
+      "lowerHemisphere": "horizon continuation"
+    },
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "sampling": {
+      "sunGuiding": true,
+      "reflectedSunRoughness": 0.08,
+      "proposal": "receiver-cosine mixture with reversed horizontal GGX"
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 0,
+    "effectiveLuminaires": [],
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "maximumY": 15.245786213874817,
+        "maximumPixel": {
+          "x": 1,
+          "y": 222,
+          "rgb": [
+            16.82954216003418,
+            14.993742942810059,
+            13.07895565032959
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.3507485275489933,
+            "spatialSd": 0.22903633137991788,
+            "pixels": 10812,
+            "pixelNoiseRms": null
+          },
+          "shadedFloor": {
+            "Y": 0.32101849747778993,
+            "spatialSd": 0.4333065737294191,
+            "pixels": 6336,
+            "pixelNoiseRms": null
+          },
+          "directFloor": {
+            "Y": 0.22873940943752966,
+            "spatialSd": 0.21202231352535056,
+            "pixels": 480,
+            "pixelNoiseRms": null
+          }
+        }
+      }
+    ],
+    "captureSamples": 512
+  },
+  {
+    "case": "sky",
+    "project": "Path-traced daylight calibration",
+    "architecture": "architecture/apartment.svg",
+    "design": "designs/09-metal-polished.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 155.52108933074646,
+      "elevation": 64.3198285880143
+    },
+    "direction": {
+      "x": 0.1795610073405245,
+      "y": 0.39439530549866436,
+      "z": 0.9012270455570401
+    },
+    "source": {
+      "sun": [
+        0,
+        0,
+        0
+      ],
+      "zenith": [
+        1.319867680601879,
+        6.452686438498076,
+        19.06475538647159
+      ],
+      "horizon": [
+        5.279470722407516,
+        11.732157160905594,
+        23.464314321811187
+      ],
+      "lowerHemisphere": "horizon continuation"
+    },
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "sampling": {
+      "sunGuiding": true,
+      "reflectedSunRoughness": 0.08,
+      "proposal": "receiver-cosine mixture with reversed horizontal GGX"
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 0,
+    "effectiveLuminaires": [],
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "maximumY": 11.113329849147796,
+        "maximumPixel": {
+          "x": 52,
+          "y": 164,
+          "rgb": [
+            5.235140323638916,
+            11.633702278137207,
+            23.26752281188965
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.6330839328567469,
+            "spatialSd": 0.14029931366132917,
+            "pixels": 10812,
+            "pixelNoiseRms": null
+          },
+          "shadedFloor": {
+            "Y": 0.45873815426432446,
+            "spatialSd": 0.21197811196517552,
+            "pixels": 6336,
+            "pixelNoiseRms": null
+          },
+          "directFloor": {
+            "Y": 0.1566715421208064,
+            "spatialSd": 0.041608389863550706,
+            "pixels": 480,
+            "pixelNoiseRms": null
+          }
+        }
+      },
+      {
+        "samples": 1024,
+        "maximumY": 11.02150900554657,
+        "maximumPixel": {
+          "x": 147,
+          "y": 112,
+          "rgb": [
+            5.192086219787598,
+            11.53769302368164,
+            23.073593139648438
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.6327942711729245,
+            "spatialSd": 0.12649771752001635,
+            "pixels": 10812,
+            "pixelNoiseRms": 0.060766819844469175
+          },
+          "shadedFloor": {
+            "Y": 0.45921713146401844,
+            "spatialSd": 0.20901664068140863,
+            "pixels": 6336,
+            "pixelNoiseRms": 0.03867063206683527
+          },
+          "directFloor": {
+            "Y": 0.1553124051074481,
+            "spatialSd": 0.02977717803779511,
+            "pixels": 480,
+            "pixelNoiseRms": 0.0306666955481209
+          }
+        }
+      }
+    ],
+    "captureSamples": 1024
+  },
+  {
+    "case": "final",
+    "project": "Path-traced daylight calibration",
+    "architecture": "architecture/sealed.svg",
+    "design": "designs/15-polished-sealed.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 155.52108933074646,
+      "elevation": 64.3198285880143
+    },
+    "direction": {
+      "x": 0.1795610073405245,
+      "y": 0.39439530549866436,
+      "z": 0.9012270455570401
+    },
+    "source": {
+      "sun": [
+        140.5085372327125,
+        128.060534704741,
+        113.43899270153014
+      ],
+      "zenith": [
+        1.319867680601879,
+        6.452686438498076,
+        19.06475538647159
+      ],
+      "horizon": [
+        5.279470722407516,
+        11.732157160905594,
+        23.464314321811187
+      ],
+      "lowerHemisphere": "horizon continuation"
+    },
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "sampling": {
+      "sunGuiding": true,
+      "reflectedSunRoughness": 0.08,
+      "proposal": "receiver-cosine mixture with reversed horizontal GGX"
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 0,
+    "effectiveLuminaires": [],
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "maximumY": 0,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0,
+            "spatialSd": 0,
+            "pixels": 10812,
+            "pixelNoiseRms": null
+          },
+          "shadedFloor": {
+            "Y": 0,
+            "spatialSd": 0,
+            "pixels": 6336,
+            "pixelNoiseRms": null
+          },
+          "directFloor": {
+            "Y": 0,
+            "spatialSd": 0,
+            "pixels": 480,
+            "pixelNoiseRms": null
+          }
+        }
+      }
+    ],
+    "captureSamples": 512
+  },
+  {
+    "case": "final",
+    "project": "Path-traced daylight calibration",
+    "architecture": "architecture/blocked.svg",
+    "design": "designs/16-polished-blocked.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 155.52108933074646,
+      "elevation": 64.3198285880143
+    },
+    "direction": {
+      "x": 0.1795610073405245,
+      "y": 0.39439530549866436,
+      "z": 0.9012270455570401
+    },
+    "source": {
+      "sun": [
+        140.5085372327125,
+        128.060534704741,
+        113.43899270153014
+      ],
+      "zenith": [
+        1.319867680601879,
+        6.452686438498076,
+        19.06475538647159
+      ],
+      "horizon": [
+        5.279470722407516,
+        11.732157160905594,
+        23.464314321811187
+      ],
+      "lowerHemisphere": "horizon continuation"
+    },
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "sampling": {
+      "sunGuiding": true,
+      "reflectedSunRoughness": 0.08,
+      "proposal": "receiver-cosine mixture with reversed horizontal GGX"
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 0,
+    "effectiveLuminaires": [],
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "maximumY": 0,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0,
+            "spatialSd": 0,
+            "pixels": 10812,
+            "pixelNoiseRms": null
+          },
+          "shadedFloor": {
+            "Y": 0,
+            "spatialSd": 0,
+            "pixels": 6336,
+            "pixelNoiseRms": null
+          },
+          "directFloor": {
+            "Y": 0,
+            "spatialSd": 0,
+            "pixels": 480,
+            "pixelNoiseRms": null
+          }
+        }
+      }
+    ],
+    "captureSamples": 512
+  },
+  {
+    "case": "final",
+    "project": "Path-traced daylight calibration",
+    "architecture": "architecture/thin.svg",
+    "design": "designs/17-polished-thin.json",
+    "camera": "sealed-side",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 155.52108933074646,
+      "elevation": 64.3198285880143
+    },
+    "direction": {
+      "x": 0.1795610073405245,
+      "y": 0.39439530549866436,
+      "z": 0.9012270455570401
+    },
+    "source": {
+      "sun": [
+        140.5085372327125,
+        128.060534704741,
+        113.43899270153014
+      ],
+      "zenith": [
+        1.319867680601879,
+        6.452686438498076,
+        19.06475538647159
+      ],
+      "horizon": [
+        5.279470722407516,
+        11.732157160905594,
+        23.464314321811187
+      ],
+      "lowerHemisphere": "horizon continuation"
+    },
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "sampling": {
+      "sunGuiding": true,
+      "reflectedSunRoughness": 0.08,
+      "proposal": "receiver-cosine mixture with reversed horizontal GGX"
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 0,
+    "effectiveLuminaires": [],
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "maximumY": 0,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0,
+            "spatialSd": 0,
+            "pixels": 10812,
+            "pixelNoiseRms": null
+          },
+          "shadedFloor": {
+            "Y": 0,
+            "spatialSd": 0,
+            "pixels": 6336,
+            "pixelNoiseRms": null
+          },
+          "directFloor": {
+            "Y": 0,
+            "spatialSd": 0,
+            "pixels": 480,
+            "pixelNoiseRms": null
+          }
+        }
+      }
+    ],
+    "captureSamples": 512
+  },
+  {
+    "case": "morning",
+    "project": "Path-traced daylight calibration",
+    "architecture": "architecture/apartment.svg",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T06:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 86.59030650899592,
+      "elevation": 29.494139073470695
+    },
+    "direction": {
+      "x": 0.86886525237505,
+      "y": -0.051767625372092375,
+      "z": 0.49233452669762584
+    },
+    "source": {
+      "sun": [
+        116.82539911025103,
+        101.36361370507794,
+        88.44565794208765
+      ],
+      "zenith": [
+        0.9298929947012736,
+        4.546143529650672,
+        13.43178770124062
+      ],
+      "horizon": [
+        3.7195719788050945,
+        8.265715508455767,
+        16.531431016911533
+      ],
+      "lowerHemisphere": "horizon continuation"
+    },
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "sampling": {
+      "sunGuiding": true,
+      "reflectedSunRoughness": -1,
+      "proposal": "receiver-cosine mixture with reversed horizontal GGX"
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 0,
+    "effectiveLuminaires": [],
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "maximumY": 7.829735466575622,
+        "maximumPixel": {
+          "x": 52,
+          "y": 164,
+          "rgb": [
+            3.688338279724121,
+            8.196357727050781,
+            16.392793655395508
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.4721139483497827,
+            "spatialSd": 0.11209846403177579,
+            "pixels": 10812,
+            "pixelNoiseRms": null
+          },
+          "shadedFloor": {
+            "Y": 0.31914465170079603,
+            "spatialSd": 0.05524444953471457,
+            "pixels": 6336,
+            "pixelNoiseRms": null
+          },
+          "directFloor": {
+            "Y": 0.5656523904869614,
+            "spatialSd": 0.060011942395962206,
+            "pixels": 480,
+            "pixelNoiseRms": null
+          }
+        }
+      },
+      {
+        "samples": 600,
+        "maximumY": 7.812099959611892,
+        "maximumPixel": {
+          "x": 95,
+          "y": 172,
+          "rgb": [
+            3.6797006130218506,
+            8.177870750427246,
+            16.357097625732422
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.47188348805774327,
+            "spatialSd": 0.10915107386034743,
+            "pixels": 10812,
+            "pixelNoiseRms": null
+          },
+          "shadedFloor": {
+            "Y": 0.31921295960481944,
+            "spatialSd": 0.05159998008258939,
+            "pixels": 6336,
+            "pixelNoiseRms": null
+          },
+          "directFloor": {
+            "Y": 0.5640549863485315,
+            "spatialSd": 0.05591442951106914,
+            "pixels": 480,
+            "pixelNoiseRms": null
+          }
+        }
+      }
+    ],
+    "captureSamples": 600
+  },
+  {
+    "case": "afternoon",
+    "project": "Path-traced daylight calibration",
+    "architecture": "architecture/apartment.svg",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T14:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 255.5607610360032,
+      "elevation": 44.62487961274897
+    },
+    "direction": {
+      "x": -0.6892396771156022,
+      "y": 0.17746990237528146,
+      "z": 0.7024621706828693
+    },
+    "source": {
+      "sun": [
+        129.57925745344696,
+        118.09950713990055,
+        104.6152833844251
+      ],
+      "zenith": [
+        1.1489438794165887,
+        5.617058966036656,
+        16.595856036017395
+      ],
+      "horizon": [
+        4.595775517666355,
+        10.212834483703013,
+        20.425668967406025
+      ],
+      "lowerHemisphere": "horizon continuation"
+    },
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "sampling": {
+      "sunGuiding": true,
+      "reflectedSunRoughness": -1,
+      "proposal": "receiver-cosine mixture with reversed horizontal GGX"
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 0,
+    "effectiveLuminaires": [],
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "maximumY": 12.815814298439024,
+        "maximumPixel": {
+          "x": 3,
+          "y": 222,
+          "rgb": [
+            12.691756248474121,
+            12.734400749206543,
+            13.98758316040039
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.7049305574381085,
+            "spatialSd": 0.16999160392628507,
+            "pixels": 10812,
+            "pixelNoiseRms": null
+          },
+          "shadedFloor": {
+            "Y": 0.4684728979053743,
+            "spatialSd": 0.08002798801616426,
+            "pixels": 6336,
+            "pixelNoiseRms": null
+          },
+          "directFloor": {
+            "Y": 0.8512161735640221,
+            "spatialSd": 0.08311887280009539,
+            "pixels": 480,
+            "pixelNoiseRms": null
+          }
+        }
+      }
+    ],
+    "captureSamples": 512
+  },
+  {
+    "case": "night",
+    "project": "Path-traced daylight calibration",
+    "architecture": "architecture/apartment.svg",
+    "design": "designs/18-polished-mixed.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 335.0783770747049,
+      "elevation": -15.197198775453185
+    },
+    "direction": {
+      "x": -0.4066422119514353,
+      "y": -0.8751706600950393,
+      "z": -0.26214199810037536
+    },
+    "source": {
+      "sun": [
+        0,
+        0,
+        0
+      ],
+      "zenith": [
+        0,
+        0,
+        0
+      ],
+      "horizon": [
+        0,
+        0,
+        0
+      ],
+      "lowerHemisphere": "horizon continuation"
+    },
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "sampling": {
+      "sunGuiding": true,
+      "reflectedSunRoughness": 0.08,
+      "proposal": "receiver-cosine mixture with reversed horizontal GGX"
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 4,
+    "effectiveLuminaires": [
+      {
+        "id": "reference-point",
+        "positionCm": {
+          "x": 350,
+          "y": 350,
+          "z": 220
+        },
+        "lumens": 1200,
+        "kelvin": 3000,
+        "type": "point"
+      },
+      {
+        "id": "reference-spot",
+        "positionCm": {
+          "x": 650,
+          "y": 350,
+          "z": 230
+        },
+        "lumens": 1200,
+        "kelvin": 3000,
+        "type": "spot",
+        "orientation": {
+          "headingDegrees": 0,
+          "pitchDegrees": 90,
+          "rollDegrees": 0
+        },
+        "beamAngleDegrees": 60
+      },
+      {
+        "id": "reference-linear",
+        "positionCm": {
+          "x": 450,
+          "y": 200,
+          "z": 230
+        },
+        "lumens": 1600,
+        "kelvin": 3000,
+        "type": "linear",
+        "orientation": {
+          "headingDegrees": 0,
+          "pitchDegrees": 90,
+          "rollDegrees": 0
+        },
+        "lengthCm": 120
+      },
+      {
+        "id": "reference-area",
+        "positionCm": {
+          "x": 450,
+          "y": 450,
+          "z": 230
+        },
+        "lumens": 2400,
+        "kelvin": 3000,
+        "type": "area",
+        "orientation": {
+          "headingDegrees": 0,
+          "pitchDegrees": 90,
+          "rollDegrees": 0
+        },
+        "widthCm": 80,
+        "heightCm": 60
+      }
+    ],
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "maximumY": 23.204602940559386,
+        "maximumPixel": {
+          "x": 667,
+          "y": 1,
+          "rgb": [
+            43.055213928222656,
+            18.970186233520508,
+            6.697884559631348
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.018824337836305563,
+            "spatialSd": 0.028486801109010352,
+            "pixels": 10812,
+            "pixelNoiseRms": null
+          },
+          "shadedFloor": {
+            "Y": 0.007739663135770151,
+            "spatialSd": 0.01211396564194726,
+            "pixels": 6336,
+            "pixelNoiseRms": null
+          },
+          "directFloor": {
+            "Y": 0.01843934402575485,
+            "spatialSd": 0.02366544797677631,
+            "pixels": 480,
+            "pixelNoiseRms": null
+          }
+        }
+      }
+    ],
+    "captureSamples": 512
+  },
+  {
+    "case": "final",
+    "project": "Path-traced daylight calibration",
+    "architecture": "architecture/apartment.svg",
+    "design": "designs/18-polished-mixed.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 155.52108933074646,
+      "elevation": 64.3198285880143
+    },
+    "direction": {
+      "x": 0.1795610073405245,
+      "y": 0.39439530549866436,
+      "z": 0.9012270455570401
+    },
+    "source": {
+      "sun": [
+        140.5085372327125,
+        128.060534704741,
+        113.43899270153014
+      ],
+      "zenith": [
+        1.319867680601879,
+        6.452686438498076,
+        19.06475538647159
+      ],
+      "horizon": [
+        5.279470722407516,
+        11.732157160905594,
+        23.464314321811187
+      ],
+      "lowerHemisphere": "horizon continuation"
+    },
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "sampling": {
+      "sunGuiding": true,
+      "reflectedSunRoughness": 0.08,
+      "proposal": "receiver-cosine mixture with reversed horizontal GGX"
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 4,
+    "effectiveLuminaires": [
+      {
+        "id": "reference-point",
+        "positionCm": {
+          "x": 350,
+          "y": 350,
+          "z": 220
+        },
+        "lumens": 1200,
+        "kelvin": 3000,
+        "type": "point"
+      },
+      {
+        "id": "reference-spot",
+        "positionCm": {
+          "x": 650,
+          "y": 350,
+          "z": 230
+        },
+        "lumens": 1200,
+        "kelvin": 3000,
+        "type": "spot",
+        "orientation": {
+          "headingDegrees": 0,
+          "pitchDegrees": 90,
+          "rollDegrees": 0
+        },
+        "beamAngleDegrees": 60
+      },
+      {
+        "id": "reference-linear",
+        "positionCm": {
+          "x": 450,
+          "y": 200,
+          "z": 230
+        },
+        "lumens": 1600,
+        "kelvin": 3000,
+        "type": "linear",
+        "orientation": {
+          "headingDegrees": 0,
+          "pitchDegrees": 90,
+          "rollDegrees": 0
+        },
+        "lengthCm": 120
+      },
+      {
+        "id": "reference-area",
+        "positionCm": {
+          "x": 450,
+          "y": 450,
+          "z": 230
+        },
+        "lumens": 2400,
+        "kelvin": 3000,
+        "type": "area",
+        "orientation": {
+          "headingDegrees": 0,
+          "pitchDegrees": 90,
+          "rollDegrees": 0
+        },
+        "widthCm": 80,
+        "heightCm": 60
+      }
+    ],
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "maximumY": 23.667052879047393,
+        "maximumPixel": {
+          "x": 667,
+          "y": 1,
+          "rgb": [
+            43.76008224487305,
+            19.37649917602539,
+            7.00259256362915
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.9897497982842337,
+            "spatialSd": 0.3124962470965455,
+            "pixels": 10812,
+            "pixelNoiseRms": null
+          },
+          "shadedFloor": {
+            "Y": 0.7815470320049357,
+            "spatialSd": 0.5066459399388632,
+            "pixels": 6336,
+            "pixelNoiseRms": null
+          },
+          "directFloor": {
+            "Y": 0.38427173718499,
+            "spatialSd": 0.20874158607291024,
+            "pixels": 480,
+            "pixelNoiseRms": null
+          }
+        }
+      }
+    ],
+    "captureSamples": 512
+  }
+]

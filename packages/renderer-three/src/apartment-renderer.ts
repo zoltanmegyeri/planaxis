@@ -37,7 +37,8 @@ import {
 } from "three/webgpu";
 import type { RenderTarget } from "three/webgpu";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { createPhysicalSky, daylightSunColor, daylightSkyColors } from "./physical-sky.js";
+import { createPhysicalSky, daylightSunColor } from "./physical-sky.js";
+import { tracingDaylight } from "./path-tracing/daylight.js";
 import { PathTracingBackend } from "./path-tracing/backend.js";
 import type { PathTracingStatus, RenderingView } from "./path-tracing/backend.js";
 import {
@@ -456,13 +457,19 @@ export function createApartmentRenderer(
         light.intensity = 3 * daylight.directStrength;
         light.color.copy(daylightSunColor(daylight));
         sky.update(daylight, direction);
-        const palette = daylightSkyColors(daylight);
-        tracer?.setDaylight(
-          new Vector3(direction.x, direction.z, direction.y),
-          daylightSunColor(daylight).multiplyScalar(3 * daylight.directStrength),
-          palette.zenith,
-          palette.horizon,
-        );
+        if (tracer) {
+          try {
+            const traced = tracingDaylight(sun.elevation);
+            tracer.setDaylight(
+              new Vector3(direction.x, direction.z, direction.y),
+              traced.sun,
+              traced.zenith,
+              traced.horizon,
+            );
+          } catch (error) {
+            failTracing(error);
+          }
+        }
         skyLights.update(daylight);
       } else {
         light.position.copy(center).add(new Vector3(shadowRadius, shadowRadius * 2, shadowRadius));

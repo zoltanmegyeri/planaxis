@@ -1,0 +1,110 @@
+[
+  {
+    "viewCosine": 1,
+    "baseFactor": 0.7,
+    "metalness": 0,
+    "roughness": 1,
+    "diffuse": 0.6144,
+    "specular": 0.012306390851888763,
+    "retained": 0.6267063908518887
+  },
+  {
+    "viewCosine": 1,
+    "baseFactor": 0.7,
+    "metalness": 1,
+    "roughness": 1,
+    "diffuse": 0,
+    "specular": 0.21480719478341778,
+    "retained": 0.21480719478341778
+  },
+  {
+    "viewCosine": 1,
+    "baseFactor": 1,
+    "metalness": 0,
+    "roughness": 1,
+    "diffuse": 0.8777142857142857,
+    "specular": 0.012306390851888763,
+    "retained": 0.8900206765661745
+  },
+  {
+    "viewCosine": 0.5,
+    "baseFactor": 0.7,
+    "metalness": 0,
+    "roughness": 1,
+    "diffuse": 0.5951999999999998,
+    "specular": 0.018722913768246315,
+    "retained": 0.6139229137682461
+  },
+  {
+    "viewCosine": 0.5,
+    "baseFactor": 0.7,
+    "metalness": 1,
+    "roughness": 1,
+    "diffuse": 0,
+    "specular": 0.2871328407421705,
+    "retained": 0.2871328407421705
+  },
+  {
+    "viewCosine": 0.5,
+    "baseFactor": 1,
+    "metalness": 0,
+    "roughness": 1,
+    "diffuse": 0.8502857142857142,
+    "specular": 0.018722913768246315,
+    "retained": 0.8690086280539605
+  },
+  {
+    "viewCosine": 0.1,
+    "baseFactor": 0.7,
+    "metalness": 0,
+    "roughness": 1,
+    "diffuse": 0.25160294399999994,
+    "specular": 0.03532676336865041,
+    "retained": 0.28692970736865037
+  },
+  {
+    "viewCosine": 0.1,
+    "baseFactor": 0.7,
+    "metalness": 1,
+    "roughness": 1,
+    "diffuse": 0,
+    "specular": 0.3946058819930675,
+    "retained": 0.3946058819930675
+  },
+  {
+    "viewCosine": 0.1,
+    "baseFactor": 1,
+    "metalness": 0,
+    "roughness": 1,
+    "diffuse": 0.35943277714285715,
+    "specular": 0.03532676336865041,
+    "retained": 0.3947595405115076
+  },
+  {
+    "viewCosine": 0.01,
+    "baseFactor": 0.7,
+    "metalness": 0,
+    "roughness": 1,
+    "diffuse": 0.030111713341440017,
+    "specular": 0.04256024210178455,
+    "retained": 0.07267195544322456
+  },
+  {
+    "viewCosine": 0.01,
+    "baseFactor": 0.7,
+    "metalness": 1,
+    "roughness": 1,
+    "diffuse": 0,
+    "specular": 0.4310455165324498,
+    "retained": 0.4310455165324498
+  },
+  {
+    "viewCosine": 0.01,
+    "baseFactor": 1,
+    "metalness": 0,
+    "roughness": 1,
+    "diffuse": 0.04301673334491432,
+    "specular": 0.04256024210178455,
+    "retained": 0.08557697544669887
+  }
+]

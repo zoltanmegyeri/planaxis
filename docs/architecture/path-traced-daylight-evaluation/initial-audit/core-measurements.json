@@ -1,0 +1,1634 @@
+[
+  {
+    "project": "Path-traced daylight calibration",
+    "architecture": "architecture/apartment.svg",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 155.52108933074646,
+      "elevation": 64.3198285880143
+    },
+    "direction": {
+      "x": 0.1795610073405245,
+      "y": 0.39439530549866436,
+      "z": 0.9012270455570401
+    },
+    "source": {
+      "sun": [
+        3,
+        2.734222501213113,
+        2.4220377267251165
+      ],
+      "zenith": [
+        0,
+        0,
+        0
+      ],
+      "horizon": [
+        0,
+        0,
+        0
+      ]
+    },
+    "path": {
+      "opaque": 8,
+      "total": 24,
+      "roulette": true
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 0,
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.009367019988848747,
+            "spatialSd": 0.003963422806308368,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.0056971696559228804,
+            "spatialSd": 0.0018740074745707373,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.26953277164118894,
+            "spatialSd": 0.16731993011528784,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 1024,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.00937944812797095,
+            "spatialSd": 0.003589225442442148,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.005700234733493581,
+            "spatialSd": 0.0013474812857964048,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.26958264263744985,
+            "spatialSd": 0.16739317958629446,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 1536,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.009384291915221703,
+            "spatialSd": 0.0034444620226145,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.005697859392703212,
+            "spatialSd": 0.001113265973802982,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.2695893488339742,
+            "spatialSd": 0.16735719874725327,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 2048,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.009386101513511231,
+            "spatialSd": 0.0033684482338374056,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.005699480882599723,
+            "spatialSd": 0.0009764402803784518,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.2696453855421843,
+            "spatialSd": 0.1673352906254336,
+            "pixels": 480
+          }
+        }
+      }
+    ],
+    "case": "baseline-sun",
+    "capture": "baseline-sun-01-neutral-interior.png"
+  },
+  {
+    "project": "Path-traced daylight calibration",
+    "architecture": "architecture/apartment.svg",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 155.52108933074646,
+      "elevation": 64.3198285880143
+    },
+    "direction": {
+      "x": 0.1795610073405245,
+      "y": 0.39439530549866436,
+      "z": 0.9012270455570401
+    },
+    "source": {
+      "sun": [
+        0,
+        0,
+        0
+      ],
+      "zenith": [
+        0.045,
+        0.22,
+        0.65
+      ],
+      "horizon": [
+        0.18,
+        0.4,
+        0.8
+      ]
+    },
+    "path": {
+      "opaque": 8,
+      "total": 24,
+      "roulette": true
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 0,
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.022440497828361917,
+            "spatialSd": 0.005409690850544008,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.015002641189537235,
+            "spatialSd": 0.0026078971858134875,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.027021839383880513,
+            "spatialSd": 0.0028360509130343275,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 1024,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.022413307825340293,
+            "spatialSd": 0.004913327723981264,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.014996212419959354,
+            "spatialSd": 0.0019031006395951312,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.026981632280993314,
+            "spatialSd": 0.0021841607360612338,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 1536,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.0224145090927551,
+            "spatialSd": 0.00473958181524857,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.01498524700471748,
+            "spatialSd": 0.0015972170737776157,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.027026768251168513,
+            "spatialSd": 0.0018879559698093702,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 2048,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.022415959889119687,
+            "spatialSd": 0.004645198354575239,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.01498430484211026,
+            "spatialSd": 0.0014294500931628664,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.02702368675885431,
+            "spatialSd": 0.0018030122555783238,
+            "pixels": 480
+          }
+        }
+      }
+    ],
+    "case": "baseline-sky",
+    "capture": "baseline-sky-01-neutral-interior.png"
+  },
+  {
+    "project": "Path-traced daylight calibration",
+    "architecture": "architecture/apartment.svg",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 155.52108933074646,
+      "elevation": 64.3198285880143
+    },
+    "direction": {
+      "x": 0.1795610073405245,
+      "y": 0.39439530549866436,
+      "z": 0.9012270455570401
+    },
+    "source": {
+      "sun": [
+        140.5085372327125,
+        128.060534704741,
+        113.43899270153014
+      ],
+      "zenith": [
+        1.319867680601879,
+        6.452686438498076,
+        19.06475538647159
+      ],
+      "horizon": [
+        5.279470722407516,
+        11.732157160905594,
+        23.464314321811187
+      ]
+    },
+    "path": {
+      "opaque": 8,
+      "total": 24,
+      "roulette": true
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 0,
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8085878190241423,
+            "spatialSd": 0.25354269498607185,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5117574988778578,
+            "spatialSd": 0.10671894757957882,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.141929003217713,
+            "spatialSd": 7.837386547353457,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 1024,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8086702231260794,
+            "spatialSd": 0.2358342894582921,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5119954431414057,
+            "spatialSd": 0.07792682309481451,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.142044668548884,
+            "spatialSd": 7.83591863623554,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 1536,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8086115095024963,
+            "spatialSd": 0.2290779407634731,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5114522921633886,
+            "spatialSd": 0.06507001210413402,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.143787932643717,
+            "spatialSd": 7.833046258674546,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 2048,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8089010672781248,
+            "spatialSd": 0.2256362879281546,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5114445132019663,
+            "spatialSd": 0.057649489685622196,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.146261071421696,
+            "spatialSd": 7.831536352579646,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 2560,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8089360971924237,
+            "spatialSd": 0.22450808875060554,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5114701705950156,
+            "spatialSd": 0.05247701491591301,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.14733476412163,
+            "spatialSd": 7.832179276296447,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 3072,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8091791751315975,
+            "spatialSd": 0.2230215187611862,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5117278096007292,
+            "spatialSd": 0.04876111105026263,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.146960993965745,
+            "spatialSd": 7.83239796998873,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 3584,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8092811746522072,
+            "spatialSd": 0.22197533236836817,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5116452057052956,
+            "spatialSd": 0.04609961417745845,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.148772366805368,
+            "spatialSd": 7.831482444483345,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 4096,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8094978520879413,
+            "spatialSd": 0.22115892389126918,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5116147086293971,
+            "spatialSd": 0.04405803598724418,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.149428366658864,
+            "spatialSd": 7.832255337806951,
+            "pixels": 480
+          }
+        }
+      }
+    ],
+    "case": "calibrated8",
+    "capture": "calibrated8-01-neutral-interior.png"
+  },
+  {
+    "project": "Path-traced daylight calibration",
+    "architecture": "architecture/apartment.svg",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 155.52108933074646,
+      "elevation": 64.3198285880143
+    },
+    "direction": {
+      "x": 0.1795610073405245,
+      "y": 0.39439530549866436,
+      "z": 0.9012270455570401
+    },
+    "source": {
+      "sun": [
+        140.5085372327125,
+        128.060534704741,
+        113.43899270153014
+      ],
+      "zenith": [
+        0,
+        0,
+        0
+      ],
+      "horizon": [
+        0,
+        0,
+        0
+      ]
+    },
+    "path": {
+      "opaque": 8,
+      "total": 24,
+      "roulette": true
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 0,
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.4387154230698125,
+            "spatialSd": 0.18563158183206688,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.2668336563064342,
+            "spatialSd": 0.0877713522762913,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 12.62388477187816,
+            "spatialSd": 7.8366259167894246,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 1024,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.43929751041377546,
+            "spatialSd": 0.16810560379267994,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.2669772118223532,
+            "spatialSd": 0.06311087455422747,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 12.62622075330149,
+            "spatialSd": 7.840056752260713,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 1536,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.43952437497100616,
+            "spatialSd": 0.16132543925060308,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.26686596179895217,
+            "spatialSd": 0.052141124673286424,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 12.626535605203376,
+            "spatialSd": 7.838372081847191,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 2048,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.43960913130307966,
+            "spatialSd": 0.15776524102395983,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.2669419056175576,
+            "spatialSd": 0.04573273028017905,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 12.629160498717596,
+            "spatialSd": 7.837346140145479,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 2560,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.43978828477066517,
+            "spatialSd": 0.1566048985832448,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.26694377801539293,
+            "spatialSd": 0.04128930795257624,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 12.630736188112708,
+            "spatialSd": 7.837457527801713,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 3072,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.43989497850463005,
+            "spatialSd": 0.1550518736656596,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.26715450320792195,
+            "spatialSd": 0.03757263571640738,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 12.631148694796552,
+            "spatialSd": 7.8385193704915,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 3584,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.44004847047369194,
+            "spatialSd": 0.1540369267841025,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.2671080261343599,
+            "spatialSd": 0.035150883031569206,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 12.633650376000869,
+            "spatialSd": 7.8380932630231355,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 4096,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.4400959488090131,
+            "spatialSd": 0.15306267769291423,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.26714735168153064,
+            "spatialSd": 0.033272634432700655,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 12.633715247570203,
+            "spatialSd": 7.838314141631213,
+            "pixels": 480
+          }
+        }
+      }
+    ],
+    "case": "sun",
+    "capture": "sun-01-neutral-interior.png"
+  },
+  {
+    "project": "Path-traced daylight calibration",
+    "architecture": "architecture/apartment.svg",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 155.52108933074646,
+      "elevation": 64.3198285880143
+    },
+    "direction": {
+      "x": 0.1795610073405245,
+      "y": 0.39439530549866436,
+      "z": 0.9012270455570401
+    },
+    "source": {
+      "sun": [
+        0,
+        0,
+        0
+      ],
+      "zenith": [
+        1.319867680601879,
+        6.452686438498076,
+        19.06475538647159
+      ],
+      "horizon": [
+        5.279470722407516,
+        11.732157160905594,
+        23.464314321811187
+      ]
+    },
+    "path": {
+      "opaque": 8,
+      "total": 24,
+      "roulette": true
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 0,
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.3698723927603968,
+            "spatialSd": 0.10758758154556135,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.2449238387215784,
+            "spatialSd": 0.05658299668356057,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.5180444637871473,
+            "spatialSd": 0.06789233787532083,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 1024,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.36937270492963087,
+            "spatialSd": 0.09602719687366346,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.24501822725365302,
+            "spatialSd": 0.04131158319285476,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.5158242953784078,
+            "spatialSd": 0.0532466432369438,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 1536,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.3690871297910311,
+            "spatialSd": 0.09213139532824716,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.2445863303579108,
+            "spatialSd": 0.03384030188924635,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.5172531403222588,
+            "spatialSd": 0.047420729011802644,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 2048,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.36929193355637396,
+            "spatialSd": 0.09010651658988124,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.24450260897630377,
+            "spatialSd": 0.030427422724314108,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.5171023910607737,
+            "spatialSd": 0.04453107439642481,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 2560,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.3691478104254683,
+            "spatialSd": 0.08884611435409197,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.24452638988374104,
+            "spatialSd": 0.027570701838234082,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.5165995459125406,
+            "spatialSd": 0.04191469235331632,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 3072,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.3692842005228559,
+            "spatialSd": 0.08783916506876673,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.24457330704349364,
+            "spatialSd": 0.025717837408483882,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.515812521076547,
+            "spatialSd": 0.04009438110763639,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 3584,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.36923270355306226,
+            "spatialSd": 0.08714359335149283,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.24453718103546007,
+            "spatialSd": 0.024267439252453973,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.5151220064023322,
+            "spatialSd": 0.03878521414792052,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 4096,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.36940190170896736,
+            "spatialSd": 0.08667564167747184,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.24446736170608338,
+            "spatialSd": 0.023095901466752493,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 0.51571298169607,
+            "spatialSd": 0.037972017994043705,
+            "pixels": 480
+          }
+        }
+      }
+    ],
+    "case": "sky",
+    "capture": "sky-01-neutral-interior.png"
+  },
+  {
+    "project": "Path-traced daylight calibration",
+    "architecture": "architecture/apartment.svg",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 155.52108933074646,
+      "elevation": 64.3198285880143
+    },
+    "direction": {
+      "x": 0.1795610073405245,
+      "y": 0.39439530549866436,
+      "z": 0.9012270455570401
+    },
+    "source": {
+      "sun": [
+        140.5085372327125,
+        128.060534704741,
+        113.43899270153014
+      ],
+      "zenith": [
+        1.319867680601879,
+        6.452686438498076,
+        19.06475538647159
+      ],
+      "horizon": [
+        5.279470722407516,
+        11.732157160905594,
+        23.464314321811187
+      ]
+    },
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 0,
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8238812832489798,
+            "spatialSd": 0.2544392937281302,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5281946797440239,
+            "spatialSd": 0.11009536251399667,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.153464808622106,
+            "spatialSd": 7.836084366361762,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 1024,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8242279187670963,
+            "spatialSd": 0.23629765010586962,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5285439180698149,
+            "spatialSd": 0.0799272784723119,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.15370055113532,
+            "spatialSd": 7.835195710983273,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 1536,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8242585671507361,
+            "spatialSd": 0.22923106680559213,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5280555915878914,
+            "spatialSd": 0.06669380577142117,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.156199432039886,
+            "spatialSd": 7.832458890865868,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 2048,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8243673972857468,
+            "spatialSd": 0.2256628912695752,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5280621099366924,
+            "spatialSd": 0.0590067639836862,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.158433230695072,
+            "spatialSd": 7.830709919772795,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 2560,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8244497672757669,
+            "spatialSd": 0.22444347150277544,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.528115295858657,
+            "spatialSd": 0.053688596919868395,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.15954174229589,
+            "spatialSd": 7.831608383927091,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 3072,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8247401705804791,
+            "spatialSd": 0.22292077305202343,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5283479560646982,
+            "spatialSd": 0.04975781421308697,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.159192720702379,
+            "spatialSd": 7.831917185314376,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 3584,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8248925131363198,
+            "spatialSd": 0.22188649059340962,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5283092408624401,
+            "spatialSd": 0.04705769684365613,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.160896499648363,
+            "spatialSd": 7.8310252698018,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 4096,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8250783647606771,
+            "spatialSd": 0.22105747298373674,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5282736978441576,
+            "spatialSd": 0.04490645192866094,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.161642805436909,
+            "spatialSd": 7.831857527260021,
+            "pixels": 480
+          }
+        }
+      }
+    ],
+    "case": "path16",
+    "capture": "path16-01-neutral-interior.png"
+  },
+  {
+    "project": "Path-traced daylight calibration",
+    "architecture": "architecture/apartment.svg",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 155.52108933074646,
+      "elevation": 64.3198285880143
+    },
+    "direction": {
+      "x": 0.1795610073405245,
+      "y": 0.39439530549866436,
+      "z": 0.9012270455570401
+    },
+    "source": {
+      "sun": [
+        140.5085372327125,
+        128.060534704741,
+        113.43899270153014
+      ],
+      "zenith": [
+        1.319867680601879,
+        6.452686438498076,
+        19.06475538647159
+      ],
+      "horizon": [
+        5.279470722407516,
+        11.732157160905594,
+        23.464314321811187
+      ]
+    },
+    "path": {
+      "opaque": 32,
+      "total": 96,
+      "roulette": true
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 0,
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8240863188200787,
+            "spatialSd": 0.25446913690510803,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5284164876280322,
+            "spatialSd": 0.11015056981080207,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.153538981008435,
+            "spatialSd": 7.836134278046419,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 1024,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8244458972705802,
+            "spatialSd": 0.2363108536647951,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5287546518095075,
+            "spatialSd": 0.07998849605777043,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.153801633144791,
+            "spatialSd": 7.8352638075984204,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 1536,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8244693548134293,
+            "spatialSd": 0.22923521370351382,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5282806126330609,
+            "spatialSd": 0.06674406814421278,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.15629600090884,
+            "spatialSd": 7.8325239126725315,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 2048,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8245756611264072,
+            "spatialSd": 0.22567146029614424,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.528283040408618,
+            "spatialSd": 0.059035912346068066,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.158545033242842,
+            "spatialSd": 7.830784777972853,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 2560,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8246535941155015,
+            "spatialSd": 0.22444156301441942,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5283381569924719,
+            "spatialSd": 0.05370369527789697,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.159648806673356,
+            "spatialSd": 7.8316806167082555,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 3072,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8249462459459382,
+            "spatialSd": 0.22291432884279186,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5285637284114203,
+            "spatialSd": 0.04978059955922092,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.159320954040032,
+            "spatialSd": 7.831936179426024,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 3584,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8250944118935547,
+            "spatialSd": 0.2218823184570571,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5285238004038119,
+            "spatialSd": 0.04708110025464856,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.161022919497858,
+            "spatialSd": 7.831052693367918,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 4096,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8252784115721765,
+            "spatialSd": 0.2210528926211806,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5284886814383464,
+            "spatialSd": 0.04493486638936274,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.161771253869865,
+            "spatialSd": 7.831885291628144,
+            "pixels": 480
+          }
+        }
+      }
+    ],
+    "case": "path32",
+    "capture": "path32-01-neutral-interior.png"
+  },
+  {
+    "project": "Path-traced daylight calibration",
+    "architecture": "architecture/apartment.svg",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 155.52108933074646,
+      "elevation": 64.3198285880143
+    },
+    "direction": {
+      "x": 0.1795610073405245,
+      "y": 0.39439530549866436,
+      "z": 0.9012270455570401
+    },
+    "source": {
+      "sun": [
+        140.5085372327125,
+        128.060534704741,
+        113.43899270153014
+      ],
+      "zenith": [
+        1.319867680601879,
+        6.452686438498076,
+        19.06475538647159
+      ],
+      "horizon": [
+        5.279470722407516,
+        11.732157160905594,
+        23.464314321811187
+      ]
+    },
+    "path": {
+      "opaque": 32,
+      "total": 96,
+      "roulette": false
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 0,
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8263113699313086,
+            "spatialSd": 0.24112349505516997,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5285260487044374,
+            "spatialSd": 0.07705950980719764,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.154445733834807,
+            "spatialSd": 7.831416181347776,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 1024,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8253854577463523,
+            "spatialSd": 0.2288692630592352,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5282065299619771,
+            "spatialSd": 0.05733371007345281,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.154249328087406,
+            "spatialSd": 7.8323079581263,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 1536,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8248788598710028,
+            "spatialSd": 0.22411610400012746,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5279210321999956,
+            "spatialSd": 0.048794347835615086,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.15537735291081,
+            "spatialSd": 7.830450579216184,
+            "pixels": 480
+          }
+        }
+      },
+      {
+        "samples": 2048,
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.8249176862921586,
+            "spatialSd": 0.22194575739106354,
+            "pixels": 10812
+          },
+          "shadedFloor": {
+            "Y": 0.5278049121676217,
+            "spatialSd": 0.04420443077807014,
+            "pixels": 6336
+          },
+          "directFloor": {
+            "Y": 13.157419645781324,
+            "spatialSd": 7.829998448630781,
+            "pixels": 480
+          }
+        }
+      }
+    ],
+    "case": "no-roulette",
+    "capture": "no-roulette-01-neutral-interior.png"
+  }
+]

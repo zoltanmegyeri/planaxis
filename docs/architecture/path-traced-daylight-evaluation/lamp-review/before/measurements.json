@@ -1,0 +1,129 @@
+[
+  {
+    "case": "night",
+    "project": "Path-traced daylight calibration",
+    "architecture": "architecture/small-sealed.svg",
+    "design": "designs/19-small-point-560.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "timeZone": "Europe/Budapest",
+    "weather": "sunny",
+    "sun": {
+      "azimuth": 335.0783770747049,
+      "elevation": -15.197198775453185
+    },
+    "direction": {
+      "x": -0.4066422119514353,
+      "y": -0.8751706600950393,
+      "z": -0.26214199810037536
+    },
+    "source": {
+      "sun": [
+        0,
+        0,
+        0
+      ],
+      "zenith": [
+        0,
+        0,
+        0
+      ],
+      "horizon": [
+        0,
+        0,
+        0
+      ],
+      "lowerHemisphere": "horizon continuation"
+    },
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "sampling": {
+      "sunGuiding": true,
+      "reflectedSunRoughness": -1,
+      "proposal": "receiver-cosine mixture with reversed horizontal GGX"
+    },
+    "presentation": {
+      "toneMapping": "AgX",
+      "exposureEV": 0
+    },
+    "viewport": {
+      "width": 800,
+      "height": 450,
+      "DPR": 1
+    },
+    "lights": 1,
+    "effectiveLuminaires": [
+      {
+        "id": "reference-point",
+        "positionCm": {
+          "x": 150,
+          "y": 150,
+          "z": 230
+        },
+        "lumens": 560,
+        "kelvin": 5600,
+        "type": "point"
+      }
+    ],
+    "regions": {
+      "shadedWall": [
+        0.7,
+        0.25,
+        0.2,
+        0.15
+      ],
+      "shadedFloor": [
+        0.4,
+        0.82,
+        0.18,
+        0.1
+      ],
+      "directFloor": [
+        0.2,
+        0.596,
+        0.1,
+        0.014
+      ]
+    },
+    "checkpoints": [
+      {
+        "samples": 512,
+        "maximumY": 0.01804364597070962,
+        "maximumPixel": {
+          "x": 582,
+          "y": 15,
+          "rgb": [
+            0.020362449809908867,
+            0.017623618245124817,
+            0.015376417897641659
+          ]
+        },
+        "measurements": {
+          "shadedWall": {
+            "Y": 0.012367617501072872,
+            "spatialSd": 0.0007909080248064787,
+            "pixels": 10812,
+            "pixelNoiseRms": null
+          },
+          "shadedFloor": {
+            "Y": 0.006744396345246179,
+            "spatialSd": 0.0008532042154282454,
+            "pixels": 6336,
+            "pixelNoiseRms": null
+          },
+          "directFloor": {
+            "Y": 0.00931073851515249,
+            "spatialSd": 0.0005330296673517216,
+            "pixels": 480,
+            "pixelNoiseRms": null
+          }
+        }
+      }
+    ],
+    "captureSamples": 512
+  }
+]

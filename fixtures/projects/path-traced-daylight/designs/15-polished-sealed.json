@@ -1,0 +1,47 @@
+{
+  "schema": "planaxis-design/1.1",
+  "name": "15-polished-sealed",
+  "architecture": "architecture/sealed.svg",
+  "finishes": [
+    {
+      "target": "floor",
+      "material": "assets/materials/metal-polished.json"
+    },
+    {
+      "target": "ceiling",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-north:side-negative",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-north:side-positive",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-south:side-negative",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-south:side-positive",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-west:side-negative",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-west:side-positive",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-east:side-negative",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-east:side-positive",
+      "material": "assets/materials/neutral.json"
+    }
+  ]
+}

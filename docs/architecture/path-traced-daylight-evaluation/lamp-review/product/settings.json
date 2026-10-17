@@ -1,0 +1,27 @@
+{
+  "design": "designs/19-small-point-560.json",
+  "camera": "interior",
+  "instant": "2026-06-21T21:00:00.000Z",
+  "localTime": "23:00",
+  "timeZone": "Europe/Budapest",
+  "lighting": "Physical Sunny",
+  "toneMapping": "AgX",
+  "exposureEV": 0,
+  "GI": "Off",
+  "bloom": false,
+  "samples": "193 samples",
+  "canvas": [
+    {
+      "cssHeight": 666,
+      "cssWidth": 1280,
+      "height": 666,
+      "width": 1280
+    },
+    {
+      "cssHeight": 666,
+      "cssWidth": 1280,
+      "height": 666,
+      "width": 1280
+    }
+  ]
+}

@@ -105,3 +105,5 @@ export { DEFAULT_WEATHER, deriveDaylight } from "./daylight.js";
 export type { Weather, PhysicalSimulation, Daylight } from "./daylight.js";
 export { createCivilClock, daysInYear, formatCivilTime } from "./civil-time.js";
 export type { CivilTime, CivilResolution } from "./civil-time.js";
+export { calculateClearSkyReference, SUNNY_REFERENCE } from "./clear-sky.js";
+export type { ClearSkyReference } from "./clear-sky.js";

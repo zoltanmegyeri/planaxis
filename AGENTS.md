@@ -62,6 +62,15 @@ A separate experimental WebGL2 path-tracing view reuses physical architectural
 meshes and navigation, supporting Physical Sunny, Design 1.1 point/spot/linear/area luminaires,
 opaque metallic/roughness PBR finishes with all Material 1.0/1.1 map roles and thin clear panes. All effective sources use flux-normalized sampling
 and architectural ray occlusion; linear/area sources have renderer-owned one-sided emitting sheets.
+Sunny tracing uses a fixed clear-sky reference in `simulation` and renderer-owned angular/RGB
+normalization for its accepted Sunny appearance; lamps use Interactive-compatible photometric
+RGB coefficients without a radiometric /683 conversion. Interactive/VXGI source appearance is unchanged.
+The reference atmosphere, twilight extension, lower-hemisphere policy and measured evidence are
+documented in `docs/architecture/path-traced-daylight-evaluation/README.md`.
+The lower hemisphere continues calibrated horizon color for camera, reflection and lighting
+escapes, with actual architectural occlusion and no added exterior geometry.
+A bounded reflected-Sun angular proposal reduces smooth horizontal-metal variance without
+changing BSDFs or source energy; the raw image remains unfiltered.
 It progressively accumulates linear HDR with pause/resume and input invalidation; current
 tone mapping/exposure applies once, and raster GI/fill and bloom are excluded.
 Selection/pause/samples are session-only. The default interactive renderer is retained. See

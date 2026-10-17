@@ -94,15 +94,9 @@ mat3 shadingFrame(vec3 normal) {
   vec3 tangent = normalize(cross(abs(normal.y) < 0.9 ? vec3(0,1,0) : vec3(1,0,0), normal));
   return mat3(tangent, cross(normal,tangent), normal);
 }
-vec3 sampleBsdf(Surface s, vec3 view) {
-  mat3 frame = shadingFrame(s.normal);
-  float u = randomValue(), v = randomValue();
-  if (randomValue() >= specularProbability(s)) {
-    float r = sqrt(u), angle = 2.0*PI*v;
-    return frame * vec3(r*cos(angle), r*sin(angle), sqrt(1.0-u));
-  }
+vec3 sampleGgx(vec3 normal, vec3 view, float a, float u, float v) {
+  mat3 frame = shadingFrame(normal);
   // Isotropic visible-GGX sampling, Heitz 2018 §§3–4 (see UPSTREAM.md).
-  float a = alpha(s);
   vec3 localView = transpose(frame) * view;
   vec3 stretched = normalize(vec3(a*localView.xy, localView.z));
   float horizontal = dot(stretched.xy, stretched.xy);
@@ -114,6 +108,41 @@ vec3 sampleBsdf(Surface s, vec3 view) {
   vec3 hemisphere = side*x + up*y + stretched*sqrt(max(0.0,1.0-x*x-y*y));
   vec3 halfVector = frame * normalize(vec3(a*hemisphere.xy, max(0.0,hemisphere.z)));
   return reflect(-view, halfVector);
+}
+vec3 sampleBsdf(Surface s, vec3 view) {
+  float u = randomValue(), v = randomValue();
+  if (randomValue() >= specularProbability(s)) {
+    float r = sqrt(u), angle = 2.0*PI*v;
+    return shadingFrame(s.normal) * vec3(r*cos(angle), r*sin(angle), sqrt(1.0-u));
+  }
+  return sampleGgx(s.normal, view, alpha(s), u, v);
+}
+float sunGuideProbability(Surface s) {
+  bool eligible = sunGuiding && !legacyTransport && sunGuideRoughness >= 0.0 && sunDirection.y > 0.0
+    && max(sunIrradiance.r,max(sunIrradiance.g,sunIrradiance.b)) > 0.0
+    && s.metalness < 0.5 && s.roughness > 0.2;
+  // The receiver cosine predicts whether the main reflected lobe is useful here.
+  vec3 reflected = vec3(sunDirection.x,-sunDirection.y,sunDirection.z);
+  return eligible ? 0.5*clamp(dot(s.normal,reflected),0.0,1.0) : 0.0;
+}
+float continuationPdf(Surface s, vec3 direction, float bsdfPdf) {
+  float probability = sunGuideProbability(s);
+  if (probability == 0.0) return bsdfPdf;
+  Surface reflector;
+  reflector.color=vec3(1.0); reflector.normal=vec3(0,1,0);
+  reflector.roughness=sunGuideRoughness; reflector.metalness=1.0; reflector.ao=1.0;
+  float guidePdf;
+  evaluateBsdf(reflector,sunDirection,-direction,reflector.normal,guidePdf);
+  return (1.0-probability)*bsdfPdf+probability*guidePdf;
+}
+vec3 sampleContinuation(Surface s, vec3 view) {
+  float probability = sunGuideProbability(s);
+  if (probability > 0.0 && randomValue() < probability) {
+    vec3 direction = -sampleGgx(vec3(0,1,0),sunDirection,
+      max(${MIN_GGX_ALPHA},sunGuideRoughness*sunGuideRoughness),randomValue(),randomValue());
+    return direction.y < 0.0 ? direction : vec3(0.0);
+  }
+  return sampleBsdf(s,view);
 }
 float misWeight(float ownPdf, float otherPdf) {
   // Ratio form avoids squaring large polished-lobe densities.

@@ -1,0 +1,79 @@
+{
+  "schema": "planaxis-design/1.1",
+  "name": "pbr",
+  "architecture": "architecture/apartment.svg",
+  "finishes": [
+    {
+      "target": "floor",
+      "material": "assets/materials/wood.json"
+    },
+    {
+      "target": "ceiling",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-north:side-negative",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-north:side-positive",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-south:side-negative",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-south:side-positive",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-west:side-negative",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-west:side-positive",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-east:side-negative",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-east:side-positive",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-south:opening:window-left:reveal-top",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-south:opening:window-left:reveal-bottom",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-south:opening:window-left:reveal-start",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-south:opening:window-left:reveal-end",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-south:opening:window-right:reveal-top",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-south:opening:window-right:reveal-bottom",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-south:opening:window-right:reveal-start",
+      "material": "assets/materials/plaster.json"
+    },
+    {
+      "target": "wall:wall-south:opening:window-right:reveal-end",
+      "material": "assets/materials/plaster.json"
+    }
+  ]
+}

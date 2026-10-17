@@ -1,10 +1,8 @@
-import { MAX_GGX_COSINE_WEIGHT } from "./bsdf.js";
+import { MAX_GGX_COSINE_WEIGHT, TRACING_TRANSPORT_HEADROOM } from "./bsdf.js";
 import { Vector3 } from "three/webgpu";
 import { kelvinColor, luminaireFrame } from "../runtime-luminaires.js";
 import type { RuntimeLuminaire } from "../runtime-luminaires.js";
 
-/** One qualitative photometric-to-RGB policy, not a spectral efficacy measurement. */
-export const LUMENS_PER_TRANSPORT_UNIT = 683;
 export const LINEAR_EMITTER_WIDTH_METERS = 0.01;
 export const TRACING_LIGHT_TEXELS = 5;
 export const TRACING_RAY_OFFSET = 0.00001;
@@ -73,10 +71,11 @@ export function prepareTracingLights(inputs: readonly RuntimeLuminaire[]): Traci
           ? 4 * Math.PI * Math.sin(halfAngle / 2) ** 2
           : Math.PI * width * height;
     const color = kelvinColor(input.kelvin);
-    // Preserve photometric Y while retaining the existing approximate Kelvin chromaticity.
-    const luminance = 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
+    // Match Interactive's photometric RGB units: candela for point/spot, nits for
+    // rectangles, multiplied by the same Kelvin color. No radiometric /683 conversion
+    // or separate Y normalization belongs in this RGB renderer adapter.
     const emission = new Vector3(color.r, color.g, color.b).multiplyScalar(
-      input.lumens / (LUMENS_PER_TRANSPORT_UNIT * normalization * luminance),
+      input.lumens / normalization,
     );
     const type = input.type === "point" ? "point" : input.type === "spot" ? "spot" : "rectangle";
     const record = [
@@ -106,17 +105,17 @@ export function prepareTracingLights(inputs: readonly RuntimeLuminaire[]): Traci
   if (lights.length >= 2 ** 24)
     throw new Error("Luminaires exceed path tracing indexing capacity.");
   // Bound the largest possible NEE estimate above the numerical coincidence cutoff,
-  // with headroom for eight interactions and accumulation. Report failure, never clamp flux.
+  // with headroom for 32 engineering mixture steps and accumulation. Report failure, never clamp flux.
   const floatMaximum = 3.4028234663852886e38;
   if (
     lights.some((light) => {
       const inverseDensity = light.type === "rectangle" ? light.width * light.height : 1;
       const maximumEmission = Math.max(...light.emission.toArray());
       return (
-        maximumEmission > floatMaximum / 16 ||
+        maximumEmission > floatMaximum / TRACING_TRANSPORT_HEADROOM ||
         (maximumEmission * inverseDensity * lights.length * MAX_GGX_COSINE_WEIGHT) /
           TRACING_RAY_OFFSET ** 2 >
-          floatMaximum / 16
+          floatMaximum / TRACING_TRANSPORT_HEADROOM
       );
     })
   )

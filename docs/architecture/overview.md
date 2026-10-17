@@ -556,6 +556,16 @@ bounded conventional WebGL2/GLSL backend in `renderer-three`, without changing t
 interactive renderer. It reuses adapted physical surfaces and the navigation camera, tracing
 Physical Sunny Sun/sky and resolved Design 1.1 luminaire transport through clear panes with opaque metallic/roughness finishes and all Material 1.0/1.1 maps.
 Tracing retains physical UVs/tangent directions and owns native-pixel raw texture storage.
+Sunny tracing uses a fixed ASHRAE tau reference atmosphere with explicit irradiance/lux quantities
+in `simulation`, the separately accepted Sun/sky RGB render calibration, and calibrated horizon
+color continued below the horizon for consistent camera/reflection/lighting escapes. The latter
+is an explicit exterior boundary approximation. Interactive/VXGI retains its appearance scales.
+Lamp coefficients now use Interactive-compatible photometric RGB without the former `/683/Y`
+conversion. The retained Sunny calibration is separate; absolute daylight/lamp photometry is not claimed.
+See the
+[calibration contract and measurements](daylight-path-tracing.md#sunny-reference-calibration-2026-10-13).
+An angular proposal derived from actual horizontal smooth-metal surfaces reduces concentrated
+indirect-Sun variance while retaining the original BSDF and full-support mixture density.
 GGX visible-normal sampling and emitter MIS provide glossy reflections; AO attenuates
 indirect transport independently of direct Sun/lamp visibility. Opaque
 floor/ceiling/walls remain two-sided ray occluders. Session-only selection, pause and sample
@@ -1029,7 +1039,8 @@ This package has no dependency on `design`, `model-3d`, applications, filesystem
 
 ### `simulation`
 
-Owns pure runtime solar calculation and the PlanAxis Sun vector; see section 7.1. It has no
+Owns pure runtime solar calculation, the PlanAxis Sun vector and an explicit fixed clear-sky
+irradiance/illuminance reference for tracing; see section 7.1. It has no
 runtime dependencies. Neither simulation output nor lighting-mode selection is architectural
 or design persistence.
 

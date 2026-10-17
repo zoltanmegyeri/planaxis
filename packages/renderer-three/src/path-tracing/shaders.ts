@@ -2,6 +2,7 @@
  * CC0-1.0, upstream a930973667faf4502b427a01dd338a19522c8f6c.
  * See UPSTREAM.md and LICENSE-CC0.txt for provenance and substantive changes.
  */
+import { intersectionShader } from "./intersection.js";
 import { materialShader } from "./material-shader.js";
 import { TRACING_LIGHT_TEXELS, TRACING_RAY_OFFSET } from "./luminaires.js";
 
@@ -25,9 +26,16 @@ uniform mat4 cameraWorld;
 uniform mat4 inverseProjection;
 uniform float nearClipDepth;
 uniform vec3 sunDirection;
-uniform vec3 sunRadiance;
+uniform vec3 sunIrradiance;
 uniform vec3 zenith;
 uniform vec3 horizon;
+uniform bool upperSkyOnly;
+uniform int opaqueLimit;
+uniform int interactionLimit;
+uniform bool rouletteEnabled;
+uniform bool legacyTransport;
+uniform bool sunGuiding;
+uniform float sunGuideRoughness;
 const float PI = 3.141592653589793;
 const float FAR = 1e30;
 // 0.01 mm in renderer meters, independent of the domain's geometric EPSILON.
@@ -53,16 +61,26 @@ bool boxHit(vec3 origin, vec3 direction, vec3 low, vec3 high, float closest) {
       float a = (low[axis] - origin[axis]) / direction[axis];
       float b = (high[axis] - origin[axis]) / direction[axis];
       nearT = max(nearT, min(a, b));
-      farT = min(farT, max(a, b));
+      // Conservative BVH search only; actual triangle boundaries are never widened.
+      float exitT = max(a,b);
+      if (!legacyTransport && exitT > 0.0) exitT *= 1.0000009536743164;
+      farT = min(farT, exitT);
       if (nearT > farT) return false;
     }
   }
   return true;
 }
+${intersectionShader}
 float triangleHit(vec3 origin, vec3 direction, int index, out vec3 normal, out vec2 barycentric) {
   vec3 a = record(triangles, index * 7).xyz;
   vec3 e1 = record(triangles, index * 7 + 1).xyz - a;
   vec3 e2 = record(triangles, index * 7 + 2).xyz - a;
+  if (!legacyTransport) {
+    float distance = alignedTriangle(origin, direction, a, record(triangles,index*7+1).xyz, record(triangles,index*7+2).xyz, barycentric);
+    normal = normalize(cross(e1,e2));
+    if (dot(normal,direction)>0.0) normal=-normal;
+    return distance;
+  }
   vec3 p = cross(direction, e2);
   float determinant = dot(e1, p);
   if (abs(determinant) < 1e-10) return FAR;
@@ -178,6 +196,7 @@ vec3 sampleLocalLight(vec3 point, vec3 normal, Surface surface, vec3 view) {
   float transmission = visibility(origin, segment / segmentLength, segmentLength, index);
   float bsdfPdf;
   vec3 response = evaluateBsdf(surface, view, direction, normal, bsdfPdf);
+  bsdfPdf = continuationPdf(surface,direction,bsdfPdf);
   float sourcePdf = distanceSquared / (sourceFactor * inverseDensity * float(lightCount));
   float weight = source.w > 1.5 ? misWeight(sourcePdf, bsdfPdf) : 1.0;
   return record(lights, index * LIGHT_TEXELS + 4).rgb * response
@@ -188,9 +207,10 @@ vec3 radiance(vec3 origin, vec3 direction) {
   int surfaceBounces = 0;
   float previousPdf = 0.0, indirectAo = 1.0, emitterAo = 1.0;
   vec3 previousPoint = origin;
-  // Enough room for eight opaque interactions plus thin sheets. No denoising
+  // Audited production limit: 16 opaque hits, with bounded engineering references to 32. No denoising
   // or fill hides occlusion; roulette only after the third opaque bounce.
-  for (int bounce = 0; bounce < 24; bounce++) {
+  for (int bounce = 0; bounce < 96; bounce++) {
+    if (bounce >= interactionLimit) break;
     vec3 normal; vec4 finish;
     float distance = intersectScene(origin, direction, normal, finish);
     int emitter;
@@ -209,23 +229,40 @@ vec3 radiance(vec3 origin, vec3 direction) {
       break; // nonemitting backs absorb; no inferred housing or diffuse finish.
     }
     if (distance == FAR) {
-      // Match the existing procedural background's horizon continuation below
-      // the horizon, without inserting the upstream demo's fabricated ground box.
-      result += throughput * indirectAo * mix(horizon, zenith, smoothstep(0.0, 0.8, direction.y));
+      // Camera, reflection and diffuse escapes share the same environment.
+      // Continue horizon radiance below zero elevation, as in Interactive. This is an
+      // explicit exterior boundary approximation, with no ground mesh or second Sun disc.
+      // upperSkyOnly retains the earlier conservative boundary for matched diagnostics.
+      vec3 sky = upperSkyOnly && direction.y < 0.0 ? vec3(0.0)
+        : mix(horizon, zenith, smoothstep(0.0, 0.8, direction.y));
+      result += throughput * indirectAo * sky;
       break;
     }
+    // An uncertain near contact terminates, rather than skipping its actual occluder.
+    // Skipping it can escape a sealed enclosure or shade the opposite face from outside.
+    if (!legacyTransport && distance < RAY_OFFSET*0.25) break;
     vec3 point = origin + direction * distance;
+    if (!legacyTransport) {
+      // Keep scalar-hit roundoff within the actual triangle bounds at architectural contacts.
+      // Reconstructing position from rounded barycentrics can instead cross an adjacent face.
+      int index = int(finish.x)*7;
+      vec3 a = record(triangles,index).xyz, b = record(triangles,index+1).xyz, c = record(triangles,index+2).xyz;
+      point = clamp(point,min(a,min(b,c)),max(a,max(b,c)));
+    }
     if (finish.w > 0.5) {
       if (randomValue() < glassReflection(normal, direction)) {
         previousPdf = 0.0;
         emitterAo = indirectAo;
         direction = reflect(direction, normal);
-        origin = point + normal * RAY_OFFSET;
+        origin = point + normal*RAY_OFFSET;
       } else {
-        origin = point - normal * RAY_OFFSET;
+        origin = point - normal*RAY_OFFSET;
       }
       continue;
     }
+    // The last permitted opaque hit still has a complete BSDF-to-source estimator.
+    // A subsequent opaque hit terminates; panes, sky and emitter endpoints remain eligible.
+    if (surfaceBounces >= opaqueLimit) break;
     vec3 view = -direction;
     Surface surface = surfaceAt(finish, normal, view);
     result += throughput * indirectAo * sampleLocalLight(point, normal, surface, view);
@@ -233,22 +270,24 @@ vec3 radiance(vec3 origin, vec3 direction) {
     float cosine = max(0.0, dot(surface.normal, sunDirection));
     if (cosine > 0.0 && dot(normal, sunDirection) > 0.0) {
       float pdf;
-      result += throughput * indirectAo * sunRadiance * evaluateBsdf(surface, view, sunDirection, normal, pdf)
+      result += throughput * indirectAo * sunIrradiance * evaluateBsdf(surface, view, sunDirection, normal, pdf)
         * cosine * visibility(origin, sunDirection, FAR, -1);
     }
     surfaceBounces++;
-    if (surfaceBounces >= 8) break;
-    direction = sampleBsdf(surface, view);
+    if (legacyTransport && surfaceBounces >= opaqueLimit) break;
+    direction = sampleContinuation(surface, view);
     float pdf;
     vec3 response = evaluateBsdf(surface, view, direction, normal, pdf);
     // Reject below-geometric-surface samples without resampling (lost probability is absorption).
     if (pdf <= 0.0) break;
+    pdf = continuationPdf(surface,direction,pdf);
+    origin = point + normal * RAY_OFFSET;
     throughput *= response * max(0.0, dot(surface.normal, direction)) / pdf;
     previousPdf = pdf;
     previousPoint = point;
     emitterAo = indirectAo; // this endpoint is direct illumination, so current AO does not attenuate it
     indirectAo *= surface.ao;
-    if (surfaceBounces >= 3) {
+    if (rouletteEnabled && surfaceBounces >= 3) {
       float survive = clamp(max(throughput.r, max(throughput.g, throughput.b)), 0.1, 0.95);
       if (randomValue() >= survive) break;
       throughput /= survive;

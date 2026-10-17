@@ -8,5 +8,12 @@
     "types": ["vite/client", "node"],
     "jsx": "react-jsx"
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts", "test/**/*.tsx", "*.config.ts"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "test/**/*.ts",
+    "test/**/*.tsx",
+    "*.config.ts",
+    "evaluation/**/*.ts"
+  ]
 }

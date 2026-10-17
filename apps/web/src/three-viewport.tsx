@@ -523,7 +523,7 @@ export function ThreeViewport({
         <p>
           Experimental path tracing: Physical Sunny daylight and design luminaires, opaque PBR
           finishes, textures and clear windows. Mask/blend and other glazing are unavailable. Bloom
-          is bypassed.
+          is bypassed. Sunny daylight uses a fixed clear-sky reference.
         </p>
         {ready && !tracingStatus.available && <p>{tracingStatus.reason}</p>}
         <label>

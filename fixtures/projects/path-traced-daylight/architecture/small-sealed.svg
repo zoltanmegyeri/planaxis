@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" data-schema="apartment-svg" data-schema-version="2.2" data-unit="cm">
+  <metadata><![CDATA[
+{
+  "schema": "apartment-svg/2.2",
+  "project": {
+    "name": "Enclosed point-light reference",
+    "units": "cm"
+  },
+  "coordinateSystem": {
+    "x": "right",
+    "y": "down",
+    "z": "up",
+    "headingDegrees": {
+      "0": "+x",
+      "90": "+y",
+      "180": "-x",
+      "270": "-y"
+    }
+  },
+  "level": {
+    "id": "level-0",
+    "baseZ": 0,
+    "defaultCeilingHeight": 260
+  },
+  "location": {
+    "latitude": 47.4979,
+    "longitude": 19.0402,
+    "northHeading": 270,
+    "timeZone": "Europe/Budapest"
+  }
+}
+  ]]></metadata>
+  <g id="footprint"><polygon id="apartment-footprint" points="0,0 300,0 300,300 0,300" data-kind="footprint" /></g>
+  <g id="spaces" />
+  <g id="walls">
+    <rect id="wall-north" x="0" y="0" width="300" height="20" data-kind="wall" data-axis="x" data-class="exterior" data-status="fixed" />
+    <rect id="wall-south" x="0" y="280" width="300" height="20" data-kind="wall" data-axis="x" data-class="exterior" data-status="fixed" />
+    <rect id="wall-west" x="0" y="0" width="20" height="300" data-kind="wall" data-axis="y" data-class="exterior" data-status="fixed" />
+    <rect id="wall-east" x="280" y="0" width="20" height="300" data-kind="wall" data-axis="y" data-class="exterior" data-status="fixed" />
+  </g>
+  <g id="windows">
+
+  </g>
+  <g id="doors" />
+  <g id="fixed-elements" />
+  <g id="utilities" />
+  <g id="cameras">
+    <circle id="interior" cx="250" cy="50" r="4" data-kind="camera" data-z="160" data-heading="135" data-pitch="12" data-horizontal-fov="75" />
+  </g>
+  <g id="annotations" />
+</svg>

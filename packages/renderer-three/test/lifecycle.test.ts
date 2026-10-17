@@ -1938,3 +1938,63 @@ it("does not rebuild or reset identical mapped finishes after source upload book
   instance.dispose();
   source.dispose();
 });
+
+it("calibrates only tracing daylight and clears paused samples at day/night input changes", async () => {
+  const surface = navigationSurface(),
+    instance = createApartmentRenderer(surface.canvas, vi.fn());
+  instance.setModel(modelFixture("../projects/path-traced-daylight/architecture/apartment.svg"));
+  const noon = Date.UTC(2026, 5, 21, 10);
+  instance.setLightingMode("physical", noon, "sunny");
+  await instance.initialize();
+  const scene = gpu.pipelineRender.mock.calls.at(-1)![0] as Scene;
+  const raster = scene.children.find(
+    (item) => item instanceof DirectionalLight,
+  )! as DirectionalLight;
+  expect(raster.intensity).toBe(3);
+  const solar = simulation.calculateSolarPosition(47.4979, 19.0402, noon);
+  const reference = simulation.calculateClearSkyReference(solar.elevation);
+  const [, sun] = tracingGpu.setDaylight.mock.calls.at(-1)! as [Vector3, Color];
+  expect((0.2126 * sun.r + 0.7152 * sun.g + 0.0722 * sun.b) * 683).toBeCloseTo(
+    reference.directNormalLux,
+    7,
+  );
+  instance.setRenderingView("path-tracing");
+  surface.frame(16);
+  instance.setPathTracingPaused(true);
+  expect(instance.getPathTracingStatus().samples).toBe(1);
+  instance.setLightingMode("physical", Date.UTC(2026, 5, 21, 21), "sunny");
+  expect(instance.getPathTracingStatus().samples).toBe(0);
+  expect(instance.getPathTracingStatus().paused).toBe(true);
+  const [, night, zenith, horizon] = tracingGpu.setDaylight.mock.calls.at(-1)! as [
+    Vector3,
+    Color,
+    Color,
+    Color,
+  ];
+  expect([night, zenith, horizon].map((color) => color.toArray())).toEqual([
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+  ]);
+  expect(raster.intensity).toBe(0);
+  instance.dispose();
+});
+
+it("isolates daylight uniform failures from valid architecture and the Interactive backend", async () => {
+  const surface = navigationSurface(),
+    failure = vi.fn();
+  const instance = createApartmentRenderer(surface.canvas, failure);
+  instance.setModel(modelFixture("../projects/path-traced-daylight/architecture/apartment.svg"));
+  instance.setLightingMode("physical", Date.UTC(2026, 5, 21, 10), "sunny");
+  tracingGpu.setDaylight.mockImplementationOnce(() => {
+    throw new RangeError("Daylight numeric capacity");
+  });
+  await instance.initialize();
+  expect(instance.getPathTracingStatus().available).toBe(false);
+  expect(instance.getPathTracingStatus().error).toContain("Daylight numeric capacity");
+  expect(tracingGpu.dispose).toHaveBeenCalledOnce();
+  instance.setRenderingView("interactive");
+  expect(gpu.pipelineRender).toHaveBeenCalled();
+  expect(failure).not.toHaveBeenCalled();
+  instance.dispose();
+});

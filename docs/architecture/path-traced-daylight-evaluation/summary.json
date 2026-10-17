@@ -1,0 +1,4430 @@
+[
+  {
+    "phase": "baseline",
+    "case": "baseline",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 8,
+      "total": 24,
+      "roulette": true
+    },
+    "samples": 4096,
+    "captureSamples": null,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.03182842013562841,
+        "blockMeans": [
+          0.031807517882068065,
+          0.03177799402468853,
+          0.03181089089086313,
+          0.031811843071422555,
+          0.03177655545481661,
+          0.031881941113789614,
+          0.031862982438863346,
+          0.031897636208515406
+        ],
+        "standardError": 1.6421690859299968e-05,
+        "approximate95PercentHalfWidth": 3.883729888224443e-05,
+        "halfRunRelativeChange": 0.0008288352123013709
+      },
+      "shadedFloor": {
+        "Y": 0.02069036536630583,
+        "blockMeans": [
+          0.020699811029614764,
+          0.020693083466476015,
+          0.020656424694498472,
+          0.020685823962773194,
+          0.02064017288894203,
+          0.02074256840752156,
+          0.020688677346625425,
+          0.020716361133995193
+        ],
+        "standardError": 1.1332848759996633e-05,
+        "approximate95PercentHalfWidth": 2.680218731739204e-05,
+        "halfRunRelativeChange": 0.00031810317668878874
+      },
+      "directFloor": {
+        "Y": 0.29671306261582925,
+        "blockMeans": [
+          0.2965546098561417,
+          0.29657392885504985,
+          0.29671982397701835,
+          0.29682797933255545,
+          0.2967813091422671,
+          0.29660413326963386,
+          0.2969060224230269,
+          0.29673669407094083
+        ],
+        "standardError": 4.4727782179556964e-05,
+        "approximate95PercentHalfWidth": 0.00010578120485465223,
+        "halfRunRelativeChange": 0.0001482362429607864
+      }
+    },
+    "shadedFloorToDirect": 0.06973189917524726
+  },
+  {
+    "phase": "initial-source",
+    "case": "baseline-sun",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 8,
+      "total": 24,
+      "roulette": true
+    },
+    "samples": 2048,
+    "captureSamples": null,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.009386101513511231,
+        "blockMeans": [
+          0.009367019988848747,
+          0.009391876267093154,
+          0.00939397948972321,
+          0.009391530308379813
+        ],
+        "standardError": 6.383485759485042e-06,
+        "approximate95PercentHalfWidth": 2.0312251686681402e-05,
+        "halfRunRelativeChange": 0.0007093578907313436
+      },
+      "shadedFloor": {
+        "Y": 0.005699480882599723,
+        "blockMeans": [
+          0.0056971696559228804,
+          0.005703299811064282,
+          0.005693108711122474,
+          0.005704345352289256
+        ],
+        "standardError": 2.648798753916923e-06,
+        "approximate95PercentHalfWidth": 8.428477634963649e-06,
+        "halfRunRelativeChange": -0.00013224909659048656
+      },
+      "directFloor": {
+        "Y": 0.2696453855421843,
+        "blockMeans": [
+          0.26953277164118894,
+          0.26963251363371077,
+          0.26960276122702276,
+          0.2698134956668148
+        ],
+        "standardError": 5.9809017555473496e-05,
+        "approximate95PercentHalfWidth": 0.00019031229386151665,
+        "halfRunRelativeChange": 0.00023274089207170334
+      }
+    },
+    "shadedFloorToDirect": 0.021136949446175765
+  },
+  {
+    "phase": "initial-source",
+    "case": "baseline-sky",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 8,
+      "total": 24,
+      "roulette": true
+    },
+    "samples": 2048,
+    "captureSamples": null,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.022415959889119687,
+        "blockMeans": [
+          0.022440497828361917,
+          0.02238611782231867,
+          0.02241691162758471,
+          0.02242031227821345
+        ],
+        "standardError": 1.1226859571807979e-05,
+        "approximate95PercentHalfWidth": 3.5723867157492985e-05,
+        "halfRunRelativeChange": 0.00011832540739020736
+      },
+      "shadedFloor": {
+        "Y": 0.01498430484211026,
+        "blockMeans": [
+          0.015002641189537235,
+          0.014989783650381472,
+          0.014963316174233729,
+          0.014981478354288605
+        ],
+        "standardError": 8.239903871166338e-06,
+        "approximate95PercentHalfWidth": 2.6219374118051287e-05,
+        "halfRunRelativeChange": -0.00079403902236308
+      },
+      "directFloor": {
+        "Y": 0.02702368675885431,
+        "blockMeans": [
+          0.027021839383880513,
+          0.026941425178106115,
+          0.027117040191518914,
+          0.027014442281911702
+        ],
+        "standardError": 3.6021641881065525e-05,
+        "approximate95PercentHalfWidth": 0.00011462086446555049,
+        "halfRunRelativeChange": 0.0015586335705353171
+      }
+    },
+    "shadedFloorToDirect": 0.5544878082632694
+  },
+  {
+    "phase": "initial-source",
+    "case": "calibrated8",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 8,
+      "total": 24,
+      "roulette": true
+    },
+    "samples": 4096,
+    "captureSamples": null,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.8094978520879413,
+        "blockMeans": [
+          0.8085878190241423,
+          0.8087526272280164,
+          0.8084940822553301,
+          0.8097697406050104,
+          0.8090762168496188,
+          0.8103945648274671,
+          0.8098931717758653,
+          0.8110145941380802
+        ],
+        "standardError": 0.0003246880817848358,
+        "approximate95PercentHalfWidth": 0.0007678873134211368,
+        "halfRunRelativeChange": 0.000737772311049989
+      },
+      "shadedFloor": {
+        "Y": 0.5116147086293971,
+        "blockMeans": [
+          0.5117574988778578,
+          0.5122333874049535,
+          0.5103659902073545,
+          0.5114211763176992,
+          0.5115728001672131,
+          0.5130160046292969,
+          0.5111495823326941,
+          0.5114012290981074
+        ],
+        "standardError": 0.000274746887292295,
+        "approximate95PercentHalfWidth": 0.0006497763884462778,
+        "halfRunRelativeChange": 0.00033277398239217604
+      },
+      "directFloor": {
+        "Y": 13.149428366658864,
+        "blockMeans": [
+          13.141929003217713,
+          13.142160333880055,
+          13.14727446083338,
+          13.153680487755636,
+          13.151629534921376,
+          13.145092143186304,
+          13.159640603843116,
+          13.154020365633329
+        ],
+        "standardError": 0.0022392952304709384,
+        "approximate95PercentHalfWidth": 0.00529593322006377,
+        "halfRunRelativeChange": 0.00024092745610015953
+      }
+    },
+    "shadedFloorToDirect": 0.038907752821151206
+  },
+  {
+    "phase": "initial-source",
+    "case": "sun",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 8,
+      "total": 24,
+      "roulette": true
+    },
+    "samples": 4096,
+    "captureSamples": null,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.4400959488090131,
+        "blockMeans": [
+          0.4387154230698125,
+          0.43987959775773844,
+          0.43997810408546745,
+          0.43986340029930027,
+          0.44050489864100717,
+          0.4404284471744546,
+          0.44096942228806313,
+          0.4404282971562612
+        ],
+        "standardError": 0.00023799128708735755,
+        "approximate95PercentHalfWidth": 0.0005628493939616007,
+        "halfRunRelativeChange": 0.0011073871566098514
+      },
+      "shadedFloor": {
+        "Y": 0.26714735168153064,
+        "blockMeans": [
+          0.2668336563064342,
+          0.26712076733827217,
+          0.26664346175215015,
+          0.2671697370733739,
+          0.26695126760673427,
+          0.26820812917056713,
+          0.2668291636929876,
+          0.26742263051172577
+        ],
+        "standardError": 0.00017393746610309358,
+        "approximate95PercentHalfWidth": 0.00041136210733381634,
+        "halfRunRelativeChange": 0.0007696283710036944
+      },
+      "directFloor": {
+        "Y": 12.633715247570203,
+        "blockMeans": [
+          12.62388477187816,
+          12.628556734724821,
+          12.62716530900715,
+          12.637035179260252,
+          12.637038945693156,
+          12.633211228215778,
+          12.648660463226761,
+          12.634169348555545
+        ],
+        "standardError": 0.0027125331866378727,
+        "approximate95PercentHalfWidth": 0.006415140986398569,
+        "halfRunRelativeChange": 0.00036065333503909613
+      }
+    },
+    "shadedFloorToDirect": 0.021145589119788824
+  },
+  {
+    "phase": "initial-source",
+    "case": "sky",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 8,
+      "total": 24,
+      "roulette": true
+    },
+    "samples": 4096,
+    "captureSamples": null,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.36940190170896736,
+        "blockMeans": [
+          0.3698723927603968,
+          0.36887301709886494,
+          0.3685159795138314,
+          0.3699063448524027,
+          0.3685713179018457,
+          0.3699661510097938,
+          0.36892372173430044,
+          0.3705862888003031
+        ],
+        "standardError": 0.00027321097896467275,
+        "approximate95PercentHalfWidth": 0.0006461439652514511,
+        "halfRunRelativeChange": 0.0002977810848301399
+      },
+      "shadedFloor": {
+        "Y": 0.24446736170608338,
+        "blockMeans": [
+          0.2449238387215784,
+          0.24511261578572763,
+          0.2437225365664264,
+          0.24425144483148264,
+          0.24462151351349015,
+          0.24480789284225657,
+          0.2443204249872586,
+          0.24397862640044665
+        ],
+        "standardError": 0.00017041365173769055,
+        "approximate95PercentHalfWidth": 0.0004030282863596382,
+        "halfRunRelativeChange": -0.00014415907612586043
+      },
+      "directFloor": {
+        "Y": 0.51571298169607,
+        "blockMeans": [
+          0.5180444637871473,
+          0.5136041269696683,
+          0.5201108302099606,
+          0.5166501432763186,
+          0.5145881653196085,
+          0.5118773968965784,
+          0.5109789183570435,
+          0.5198498087522352
+        ],
+        "standardError": 0.001236383239259977,
+        "approximate95PercentHalfWidth": 0.002924046360849846,
+        "halfRunRelativeChange": -0.0026869134405923534
+      }
+    },
+    "shadedFloorToDirect": 0.4740376340771612
+  },
+  {
+    "phase": "initial-source",
+    "case": "path16",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true
+    },
+    "samples": 4096,
+    "captureSamples": null,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.8250783647606771,
+        "blockMeans": [
+          0.8238812832489798,
+          0.8245745542852129,
+          0.8243198639180156,
+          0.824693887690779,
+          0.8247792472358473,
+          0.8261921871040405,
+          0.8258065684713642,
+          0.8263793261311774
+        ],
+        "standardError": 0.0003263113085377596,
+        "approximate95PercentHalfWidth": 0.0007717262446918016,
+        "halfRunRelativeChange": 0.0008624400689196676
+      },
+      "shadedFloor": {
+        "Y": 0.5282736978441576,
+        "blockMeans": [
+          0.5281946797440239,
+          0.528893156395606,
+          0.5270789386240444,
+          0.5280816649830955,
+          0.5283280395465155,
+          0.5295112570949039,
+          0.5280769496488915,
+          0.5280248967161798
+        ],
+        "standardError": 0.00024962174041904726,
+        "approximate95PercentHalfWidth": 0.0005903554160910468,
+        "halfRunRelativeChange": 0.0004006875393700593
+      },
+      "directFloor": {
+        "Y": 13.161642805436909,
+        "blockMeans": [
+          13.153464808622106,
+          13.153936293648533,
+          13.16119719384902,
+          13.165134626660631,
+          13.163975788699155,
+          13.157447612734828,
+          13.171119173324271,
+          13.166866945956727
+        ],
+        "standardError": 0.0022312591985002867,
+        "approximate95PercentHalfWidth": 0.0052769280044531785,
+        "halfRunRelativeChange": 0.00024391769791787254
+      }
+    },
+    "shadedFloorToDirect": 0.040137367777974824
+  },
+  {
+    "phase": "initial-source",
+    "case": "path32",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 32,
+      "total": 96,
+      "roulette": true
+    },
+    "samples": 4096,
+    "captureSamples": null,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.8252784115721765,
+        "blockMeans": [
+          0.8240863188200787,
+          0.8248054757210816,
+          0.8245162698991275,
+          0.8248945800653411,
+          0.8249653260718786,
+          0.8264095050981224,
+          0.8259834075792529,
+          0.8265664093225293
+        ],
+        "standardError": 0.00032476069965145217,
+        "approximate95PercentHalfWidth": 0.0007680590546756844,
+        "halfRunRelativeChange": 0.0008522570807016905
+      },
+      "shadedFloor": {
+        "Y": 0.5284886814383464,
+        "blockMeans": [
+          0.5284164876280322,
+          0.5290928159909829,
+          0.5273325342801678,
+          0.528290323735289,
+          0.5285586233278878,
+          0.5296915855061624,
+          0.5282842323581609,
+          0.5282428486800881
+        ],
+        "standardError": 0.00024276369202838198,
+        "approximate95PercentHalfWidth": 0.0005741361316471235,
+        "halfRunRelativeChange": 0.00038926297836350265
+      },
+      "directFloor": {
+        "Y": 13.161771253869865,
+        "blockMeans": [
+          13.153538981008435,
+          13.154064285281148,
+          13.16128473643694,
+          13.165292130244843,
+          13.16406390039542,
+          13.157681690873403,
+          13.171234712244825,
+          13.16700959447391
+        ],
+        "standardError": 0.0022311870689192136,
+        "approximate95PercentHalfWidth": 0.005276757417993941,
+        "halfRunRelativeChange": 0.0002451806502066223
+      }
+    },
+    "shadedFloorToDirect": 0.04015331001007622
+  },
+  {
+    "phase": "initial-source",
+    "case": "no-roulette",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 32,
+      "total": 96,
+      "roulette": false
+    },
+    "samples": 2048,
+    "captureSamples": null,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.8249176862921586,
+        "blockMeans": [
+          0.8263113699313086,
+          0.824459545561396,
+          0.8238656641203039,
+          0.8250341655556257
+        ],
+        "standardError": 0.0005222200273918503,
+        "approximate95PercentHalfWidth": 0.0016617041271608675,
+        "halfRunRelativeChange": -0.0005667309131796028
+      },
+      "shadedFloor": {
+        "Y": 0.5278049121676217,
+        "blockMeans": [
+          0.5285260487044374,
+          0.5278870112195169,
+          0.5273500366760326,
+          0.5274565520704999
+        ],
+        "standardError": 0.00026693392271742613,
+        "approximate95PercentHalfWidth": 0.00084938374208685,
+        "halfRunRelativeChange": -0.0007603423501492124
+      },
+      "directFloor": {
+        "Y": 13.157419645781324,
+        "blockMeans": [
+          13.154445733834807,
+          13.154052922340005,
+          13.157633402557614,
+          13.16354652439287
+        ],
+        "standardError": 0.0021939939318511973,
+        "approximate95PercentHalfWidth": 0.00698128869115051,
+        "halfRunRelativeChange": 0.00024101091706918432
+      }
+    },
+    "shadedFloorToDirect": 0.0401146217402021
+  },
+  {
+    "phase": "transport",
+    "case": "old-one-hit-sky",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 1,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": true
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0,
+        "blockMeans": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "standardError": 0.0,
+        "approximate95PercentHalfWidth": 0.0,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "standardError": 0.0,
+        "approximate95PercentHalfWidth": 0.0,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "standardError": 0.0,
+        "approximate95PercentHalfWidth": 0.0,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": null
+  },
+  {
+    "phase": "transport",
+    "case": "one-hit-sky",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 1,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.22148324842936945,
+        "blockMeans": [
+          0.2218373954992406,
+          0.22146423278762536,
+          0.22085389152229135,
+          0.22177747390832048
+        ],
+        "standardError": 0.0002251740975852813,
+        "approximate95PercentHalfWidth": 0.0007165039785163651,
+        "halfRunRelativeChange": -0.0007559896168713998
+      },
+      "shadedFloor": {
+        "Y": 0.13386739492190328,
+        "blockMeans": [
+          0.13404316831795804,
+          0.13409572490330202,
+          0.1334769660500904,
+          0.13385372041626264
+        ],
+        "standardError": 0.00014013462670344284,
+        "approximate95PercentHalfWidth": 0.0004459083821703551,
+        "halfRunRelativeChange": -0.0015070673731768514
+      },
+      "directFloor": {
+        "Y": 0.41702700172368556,
+        "blockMeans": [
+          0.4183776764069526,
+          0.4155413108581371,
+          0.4173506694969259,
+          0.41683835013272663
+        ],
+        "standardError": 0.0005896290993920346,
+        "approximate95PercentHalfWidth": 0.001876199794265454,
+        "halfRunRelativeChange": 0.0001619056339323688
+      }
+    },
+    "shadedFloorToDirect": 0.3210041421025331
+  },
+  {
+    "phase": "transport",
+    "case": "path8",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 8,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 4096,
+    "captureSamples": 4096,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.8118182977484945,
+        "blockMeans": [
+          0.8108723191532571,
+          0.8110849678554878,
+          0.8108323724257804,
+          0.812074029085958,
+          0.8114236259920511,
+          0.8127072773258872,
+          0.8123126197433601,
+          0.8132391704061739
+        ],
+        "standardError": 0.0003184611246138714,
+        "approximate95PercentHalfWidth": 0.0007531605597118059,
+        "halfRunRelativeChange": 0.0007425589191984994
+      },
+      "shadedFloor": {
+        "Y": 0.5139484116174575,
+        "blockMeans": [
+          0.5140500178345485,
+          0.5145211297250195,
+          0.5125551569981153,
+          0.5138138561758065,
+          0.5140621673237318,
+          0.515333821277264,
+          0.5135959257167535,
+          0.5136552178884211
+        ],
+        "standardError": 0.00028158044443100456,
+        "approximate95PercentHalfWidth": 0.0006659377510793258,
+        "halfRunRelativeChange": 0.0004153336202430413
+      },
+      "directFloor": {
+        "Y": 13.151116931188234,
+        "blockMeans": [
+          13.143689382577262,
+          13.14425755554174,
+          13.149088284765941,
+          13.15526884023592,
+          13.15357770008302,
+          13.146332220472118,
+          13.161105025446304,
+          13.155616440383568
+        ],
+        "standardError": 0.002206037647702121,
+        "approximate95PercentHalfWidth": 0.005217279036815517,
+        "halfRunRelativeChange": 0.00023128215902978866
+      }
+    },
+    "shadedFloorToDirect": 0.03908021001612531
+  },
+  {
+    "phase": "transport",
+    "case": "path8-sun",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 8,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.43960819782077687,
+        "blockMeans": [
+          0.438716171215777,
+          0.4398786888783186,
+          0.43997657375652266,
+          0.4398613574324892
+        ],
+        "standardError": 0.0002984218902935603,
+        "approximate95PercentHalfWidth": 0.0009495784549141087,
+        "halfRunRelativeChange": 0.0007074199675964898
+      },
+      "shadedFloor": {
+        "Y": 0.2669402569112884,
+        "blockMeans": [
+          0.26683400283078346,
+          0.2671189255141449,
+          0.2666413941491703,
+          0.267166705151055
+        ],
+        "standardError": 0.00012376394034104064,
+        "approximate95PercentHalfWidth": 0.0003938168581651913,
+        "halfRunRelativeChange": -0.0001356196745206928
+      },
+      "directFloor": {
+        "Y": 12.629176126227744,
+        "blockMeans": [
+          12.62388477187816,
+          12.628547792338512,
+          12.62716530209698,
+          12.637106638597324
+        ],
+        "standardError": 0.0028185349985725048,
+        "approximate95PercentHalfWidth": 0.00896857836545771,
+        "halfRunRelativeChange": 0.0002344205146875833
+      }
+    },
+    "shadedFloorToDirect": 0.021136791049807126
+  },
+  {
+    "phase": "transport",
+    "case": "path8-sky",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 8,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.37160772479150517,
+        "blockMeans": [
+          0.37215614451405843,
+          0.37120626830784087,
+          0.3708558026190437,
+          0.37221268372507765
+        ],
+        "standardError": 0.0003407459666073105,
+        "approximate95PercentHalfWidth": 0.001084253665744462,
+        "halfRunRelativeChange": -0.00019770065899760159
+      },
+      "shadedFloor": {
+        "Y": 0.2467947846580828,
+        "blockMeans": [
+          0.24721601029648466,
+          0.24740219609210756,
+          0.24591376746363902,
+          0.24664716478009996
+        ],
+        "standardError": 0.00033470915408161025,
+        "approximate95PercentHalfWidth": 0.0010650445282876838,
+        "halfRunRelativeChange": -0.0020796587330197402
+      },
+      "directFloor": {
+        "Y": 0.5189016632208292,
+        "blockMeans": [
+          0.5198046669126676,
+          0.5157099471200431,
+          0.5219248491695063,
+          0.5181671896810998
+        ],
+        "standardError": 0.001312807805060467,
+        "approximate95PercentHalfWidth": 0.004177354435702406,
+        "halfRunRelativeChange": 0.0022102173913649548
+      }
+    },
+    "shadedFloorToDirect": 0.4756099318052373
+  },
+  {
+    "phase": "transport",
+    "case": "path16",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 4096,
+    "captureSamples": 4096,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.8251054374149754,
+        "blockMeans": [
+          0.8239129004686944,
+          0.8246029164537548,
+          0.8243483728995693,
+          0.8247240779365805,
+          0.8247960702170523,
+          0.8262268804791288,
+          0.8258239242265972,
+          0.8264083566384262
+        ],
+        "standardError": 0.0003262453564957098,
+        "approximate95PercentHalfWidth": 0.0007715702681123538,
+        "halfRunRelativeChange": 0.0008592588495679454
+      },
+      "shadedFloor": {
+        "Y": 0.5283071529830928,
+        "blockMeans": [
+          0.5282299981872763,
+          0.5289297101975162,
+          0.5271314838678753,
+          0.5281149553444999,
+          0.5283410655044132,
+          0.5295313061537312,
+          0.5281134357986015,
+          0.5280652688108289
+        ],
+        "standardError": 0.00024670700859921366,
+        "approximate95PercentHalfWidth": 0.0005834620753371404,
+        "halfRunRelativeChange": 0.00038934952738101103
+      },
+      "directFloor": {
+        "Y": 13.16166650463823,
+        "blockMeans": [
+          13.153464808622106,
+          13.153927314927232,
+          13.161197198678575,
+          13.165206071900819,
+          13.163975625221106,
+          13.157537437420743,
+          13.171119027294623,
+          13.166904553040638
+        ],
+        "standardError": 0.0022323923306393455,
+        "approximate95PercentHalfWidth": 0.0052796078619620525,
+        "halfRunRelativeChange": 0.00024453156622672445
+      }
+    },
+    "shadedFloorToDirect": 0.04013983736762476
+  },
+  {
+    "phase": "transport",
+    "case": "path32",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 32,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 3072,
+    "captureSamples": 3248,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.8249455965076559,
+        "blockMeans": [
+          0.8240869217943931,
+          0.8248045671249635,
+          0.8245147398795918,
+          0.8248936873937365,
+          0.824963224163858,
+          0.8264104386893925
+        ],
+        "standardError": 0.0003210200872059805,
+        "approximate95PercentHalfWidth": 0.0008253426442065758,
+        "halfRunRelativeChange": 0.0005783767774829585
+      },
+      "shadedFloor": {
+        "Y": 0.5285618228354245,
+        "blockMeans": [
+          0.5284153134740783,
+          0.5290891295258346,
+          0.5273304670857422,
+          0.5282872919627124,
+          0.5285585719096981,
+          0.5296901630544815
+        ],
+        "standardError": 0.0003247708802381964,
+        "approximate95PercentHalfWidth": 0.000834985933092403,
+        "halfRunRelativeChange": 0.0005366858183180057
+      },
+      "directFloor": {
+        "Y": 13.159331305600944,
+        "blockMeans": [
+          13.153538981008435,
+          13.154055306559851,
+          13.161284741266506,
+          13.165363575485024,
+          13.164063736917363,
+          13.157681492368482
+        ],
+        "standardError": 0.0020551493926809538,
+        "approximate95PercentHalfWidth": 0.005283789088582733,
+        "halfRunRelativeChange": 0.00023093860764022978
+      }
+    },
+    "shadedFloorToDirect": 0.04016631320851807
+  },
+  {
+    "phase": "transport",
+    "case": "no-roulette",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 32,
+      "total": 96,
+      "roulette": false,
+      "legacyTransport": false
+    },
+    "samples": 1024,
+    "captureSamples": 1024,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.8253847620207148,
+        "blockMeans": [
+          0.8263106666685655,
+          0.8244588573728641
+        ],
+        "standardError": 0.0009259046478506949,
+        "approximate95PercentHalfWidth": 0.01176454445559093,
+        "halfRunRelativeChange": -0.0011205284951526506
+      },
+      "shadedFloor": {
+        "Y": 0.5282050183186374,
+        "blockMeans": [
+          0.5285243730702642,
+          0.5278856635670106
+        ],
+        "standardError": 0.00031935475162681026,
+        "approximate95PercentHalfWidth": 0.004057721474170251,
+        "halfRunRelativeChange": -0.0006042384569165948
+      },
+      "directFloor": {
+        "Y": 13.15424514935969,
+        "blockMeans": [
+          13.154446254975227,
+          13.154044043744154
+        ],
+        "standardError": 0.00020110561553643436,
+        "approximate95PercentHalfWidth": 0.0025552479510059347,
+        "halfRunRelativeChange": -1.528803353922914e-05
+      }
+    },
+    "shadedFloorToDirect": 0.04015471905237747
+  },
+  {
+    "phase": "final",
+    "case": "final",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 4096,
+    "captureSamples": 4096,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.8251051545049823,
+        "blockMeans": [
+          0.8239129004686944,
+          0.8246029164537548,
+          0.8243483728995693,
+          0.8247221068754342,
+          0.8247960700625847,
+          0.8262268808818263,
+          0.825823924615845,
+          0.82640806378215
+        ],
+        "standardError": 0.0003262657479991946,
+        "approximate95PercentHalfWidth": 0.0007716184940180953,
+        "halfRunRelativeChange": 0.0008595139194129686
+      },
+      "shadedFloor": {
+        "Y": 0.5283063747342591,
+        "blockMeans": [
+          0.5282299981872763,
+          0.5289286460293153,
+          0.527131483895755,
+          0.5281149553665601,
+          0.5283410659556291,
+          0.5295272437897838,
+          0.5281134369386882,
+          0.5280641677110651
+        ],
+        "standardError": 0.0002463185642376395,
+        "approximate95PercentHalfWidth": 0.0005825434044220175,
+        "halfRunRelativeChange": 0.00038837979729655636
+      },
+      "directFloor": {
+        "Y": 13.16166650463823,
+        "blockMeans": [
+          13.153464808622106,
+          13.153927314927232,
+          13.161197198678575,
+          13.165206071900819,
+          13.163975625221106,
+          13.157537437420743,
+          13.171119027294623,
+          13.166904553040638
+        ],
+        "standardError": 0.0022323923306393455,
+        "approximate95PercentHalfWidth": 0.0052796078619620525,
+        "halfRunRelativeChange": 0.00024453156622672445
+      }
+    },
+    "shadedFloorToDirect": 0.040139778237663265
+  },
+  {
+    "phase": "matrix",
+    "case": "final",
+    "design": "designs/05-pbr.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 4096,
+    "captureSamples": 4096,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.40977081146095357,
+        "blockMeans": [
+          0.409540066830064,
+          0.4096869090212388,
+          0.40918144267486334,
+          0.41094406553163076,
+          0.4088719006757151,
+          0.40985358177055753,
+          0.4103760489051571,
+          0.4097124762784019
+        ],
+        "standardError": 0.0002302471601272004,
+        "approximate95PercentHalfWidth": 0.000544534533700829,
+        "halfRunRelativeChange": -0.00016423448684821373
+      },
+      "shadedFloor": {
+        "Y": 0.11395769048836354,
+        "blockMeans": [
+          0.11392261585886047,
+          0.11381537336108653,
+          0.11421102095530514,
+          0.11387846156765163,
+          0.11398236145205992,
+          0.11413649105008705,
+          0.1139618456725392,
+          0.1137533539893184
+        ],
+        "standardError": 5.449228474699838e-05,
+        "approximate95PercentHalfWidth": 0.00012887425342665118,
+        "halfRunRelativeChange": 7.218104994377583e-06
+      },
+      "directFloor": {
+        "Y": 4.168132968959282,
+        "blockMeans": [
+          4.173170902668764,
+          4.166809871082126,
+          4.168623976148162,
+          4.169170326830171,
+          4.162599423178175,
+          4.163491915594729,
+          4.171780336147197,
+          4.169417000024929
+        ],
+        "standardError": 0.0013063040275275743,
+        "approximate95PercentHalfWidth": 0.0030894090251027133,
+        "halfRunRelativeChange": -0.0003143825161313618
+      }
+    },
+    "shadedFloorToDirect": 0.027340224349132754
+  },
+  {
+    "phase": "matrix",
+    "case": "final",
+    "design": "designs/06-ao.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.6314739838619824,
+        "blockMeans": [
+          0.6319853073443421,
+          0.6317773519041711,
+          0.6310455261404571,
+          0.6310877500589593
+        ],
+        "standardError": 0.000239136718630121,
+        "approximate95PercentHalfWidth": 0.000760933038681045,
+        "halfRunRelativeChange": -0.0006446554806681659
+      },
+      "shadedFloor": {
+        "Y": 0.28640948478916384,
+        "blockMeans": [
+          0.286023243943182,
+          0.2865064713575348,
+          0.28677195603974825,
+          0.28633626781619026
+        ],
+        "standardError": 0.00015687960303493306,
+        "approximate95PercentHalfWidth": 0.000499190896857157,
+        "halfRunRelativeChange": 0.0005052214232390551
+      },
+      "directFloor": {
+        "Y": 9.485325309197693,
+        "blockMeans": [
+          9.483681844634884,
+          9.480539035413095,
+          9.485755421269364,
+          9.491324935473429
+        ],
+        "standardError": 0.002269175774612149,
+        "approximate95PercentHalfWidth": 0.007220517314815858,
+        "halfRunRelativeChange": 0.0003390457424048421
+      }
+    },
+    "shadedFloorToDirect": 0.030195009180279713
+  },
+  {
+    "phase": "matrix",
+    "case": "final",
+    "design": "designs/07-ao-zero.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.7110032609123839,
+        "blockMeans": [
+          0.7112378235260453,
+          0.7112892389302339,
+          0.7108763842318739,
+          0.7106095969613824
+        ],
+        "standardError": 0.00016017491605440013,
+        "approximate95PercentHalfWidth": 0.0005096765828851012,
+        "halfRunRelativeChange": -0.0003659266985139853
+      },
+      "shadedFloor": {
+        "Y": 0.4960708968117713,
+        "blockMeans": [
+          0.49563851960643546,
+          0.49629171292775787,
+          0.49621228368077064,
+          0.49614107103212124
+        ],
+        "standardError": 0.0001473726774486439,
+        "approximate95PercentHalfWidth": 0.00046893985964158484,
+        "halfRunRelativeChange": 0.00021328222732841517
+      },
+      "directFloor": {
+        "Y": 9.87347114049017,
+        "blockMeans": [
+          9.876041130506163,
+          9.870023394505175,
+          9.871252858225798,
+          9.87656717872354
+        ],
+        "standardError": 0.001658262896484154,
+        "approximate95PercentHalfWidth": 0.005276592536612578,
+        "halfRunRelativeChange": 4.445219795012889e-05
+      }
+    },
+    "shadedFloorToDirect": 0.050242806177599644
+  },
+  {
+    "phase": "matrix",
+    "case": "final",
+    "design": "designs/08-metal-rough.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.6496873665677325,
+        "blockMeans": [
+          0.6503747393021514,
+          0.6501806736606642,
+          0.648205138659022,
+          0.6499889146490925
+        ],
+        "standardError": 0.0005003135669000959,
+        "approximate95PercentHalfWidth": 0.0015919977698761053,
+        "halfRunRelativeChange": -0.0009078273909612911
+      },
+      "shadedFloor": {
+        "Y": 0.4047999348104376,
+        "blockMeans": [
+          0.4051326430935219,
+          0.40406189297073736,
+          0.40566030662960706,
+          0.40434489654788397
+        ],
+        "standardError": 0.0003654563410301599,
+        "approximate95PercentHalfWidth": 0.0011628820771579689,
+        "halfRunRelativeChange": 0.0005009099030590658
+      },
+      "directFloor": {
+        "Y": 9.268285564189828,
+        "blockMeans": [
+          9.258978253357547,
+          9.27274407418755,
+          9.265667286957648,
+          9.275752642256567
+        ],
+        "standardError": 0.003754075306115129,
+        "approximate95PercentHalfWidth": 0.01194546762405834,
+        "halfRunRelativeChange": 0.0002616486880635538
+      }
+    },
+    "shadedFloorToDirect": 0.043675815986343375
+  },
+  {
+    "phase": "matrix",
+    "case": "final",
+    "design": "designs/09-metal-polished.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.7009876866005028,
+        "blockMeans": [
+          0.6644081102439169,
+          0.7209060731137916,
+          0.6992798456766167,
+          0.719356717367686
+        ],
+        "standardError": 0.013150239350379045,
+        "approximate95PercentHalfWidth": 0.04184406161290612,
+        "halfRunRelativeChange": 0.012027011665262766
+      },
+      "shadedFloor": {
+        "Y": 0.3688261165170848,
+        "blockMeans": [
+          0.3454516351834016,
+          0.34932770731919205,
+          0.40511875816360243,
+          0.3754063654021431
+        ],
+        "standardError": 0.013805221994892095,
+        "approximate95PercentHalfWidth": 0.043928216387746646,
+        "halfRunRelativeChange": 0.06170720386871009
+      },
+      "directFloor": {
+        "Y": 0.28353609086960535,
+        "blockMeans": [
+          0.32436365519294413,
+          0.1853250990339393,
+          0.2680234065246635,
+          0.3564322027268745
+        ],
+        "standardError": 0.03749086047004759,
+        "approximate95PercentHalfWidth": 0.11929591801569144,
+        "halfRunRelativeChange": 0.11258523370673301
+      }
+    },
+    "shadedFloorToDirect": 1.3008083570098428
+  },
+  {
+    "phase": "matrix",
+    "case": "morning",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T06:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.2640360217822824,
+        "blockMeans": [
+          0.26447119690894977,
+          0.2636537771057981,
+          0.263526048751362,
+          0.2644930643630198
+        ],
+        "standardError": 0.0002589158158623131,
+        "approximate95PercentHalfWidth": 0.0008238701260738803,
+        "halfRunRelativeChange": -0.00010022334255599397
+      },
+      "shadedFloor": {
+        "Y": 0.17629365955431106,
+        "blockMeans": [
+          0.17653115755885004,
+          0.1766963716313554,
+          0.17578286530444104,
+          0.17616424372259776
+        ],
+        "standardError": 0.00020335550610439432,
+        "approximate95PercentHalfWidth": 0.0006470772204241827,
+        "halfRunRelativeChange": -0.0018124580579861327
+      },
+      "directFloor": {
+        "Y": 0.3672974884585557,
+        "blockMeans": [
+          0.3682006731208212,
+          0.3648693332788678,
+          0.3691207757814473,
+          0.3669991716530865
+        ],
+        "standardError": 0.0009185609074815325,
+        "approximate95PercentHalfWidth": 0.0029228608076062364,
+        "halfRunRelativeChange": 0.002080252232541824
+      }
+    },
+    "shadedFloorToDirect": 0.4799751294084966
+  },
+  {
+    "phase": "matrix",
+    "case": "afternoon",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T14:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.44820610579372017,
+        "blockMeans": [
+          0.4483743044442634,
+          0.44797331788833983,
+          0.44786366517961307,
+          0.44861313566266436
+        ],
+        "standardError": 0.00017450403131415734,
+        "approximate95PercentHalfWidth": 0.0005552718276416487,
+        "halfRunRelativeChange": 7.205826537370896e-05
+      },
+      "shadedFloor": {
+        "Y": 0.291586373771827,
+        "blockMeans": [
+          0.2922645628843445,
+          0.2923479270460217,
+          0.2907479500881629,
+          0.2909850550687789
+        ],
+        "standardError": 0.000418772244955241,
+        "approximate95PercentHalfWidth": 0.001332533283447577,
+        "halfRunRelativeChange": -0.002462729434473232
+      },
+      "directFloor": {
+        "Y": 0.6047425958046561,
+        "blockMeans": [
+          0.6072515825154378,
+          0.5979573354862505,
+          0.608587549288536,
+          0.6051739159284
+        ],
+        "standardError": 0.002368270751796108,
+        "approximate95PercentHalfWidth": 0.0075358375322152156,
+        "halfRunRelativeChange": 0.0035481596126205606
+      }
+    },
+    "shadedFloorToDirect": 0.4821660914820282
+  },
+  {
+    "phase": "matrix",
+    "case": "night",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 512,
+    "captureSamples": 512,
+    "regions": {
+      "shadedWall": {
+        "Y": 0,
+        "blockMeans": [
+          0.0
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": null
+  },
+  {
+    "phase": "matrix",
+    "case": "final",
+    "design": "designs/02-sealed.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0,
+        "blockMeans": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "standardError": 0.0,
+        "approximate95PercentHalfWidth": 0.0,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "standardError": 0.0,
+        "approximate95PercentHalfWidth": 0.0,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "standardError": 0.0,
+        "approximate95PercentHalfWidth": 0.0,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": null
+  },
+  {
+    "phase": "matrix",
+    "case": "final",
+    "design": "designs/03-blocked.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0,
+        "blockMeans": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "standardError": 0.0,
+        "approximate95PercentHalfWidth": 0.0,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "standardError": 0.0,
+        "approximate95PercentHalfWidth": 0.0,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "standardError": 0.0,
+        "approximate95PercentHalfWidth": 0.0,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": null
+  },
+  {
+    "phase": "matrix",
+    "case": "final",
+    "design": "designs/04-thin.json",
+    "camera": "sealed-side",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0,
+        "blockMeans": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "standardError": 0.0,
+        "approximate95PercentHalfWidth": 0.0,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "standardError": 0.0,
+        "approximate95PercentHalfWidth": 0.0,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "standardError": 0.0,
+        "approximate95PercentHalfWidth": 0.0,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": null
+  },
+  {
+    "phase": "matrix",
+    "case": "final",
+    "design": "designs/04-thin.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 1024,
+    "captureSamples": 1024,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.36051597218076803,
+        "blockMeans": [
+          0.3608585235121506,
+          0.3601734208493855
+        ],
+        "standardError": 0.0003425513313825568,
+        "approximate95PercentHalfWidth": 0.004352457216546766,
+        "halfRunRelativeChange": -0.0009492676743466655
+      },
+      "shadedFloor": {
+        "Y": 0.4269266154324457,
+        "blockMeans": [
+          0.42582669872338086,
+          0.42802653214151054
+        ],
+        "standardError": 0.001099916709064841,
+        "approximate95PercentHalfWidth": 0.013975541705377868,
+        "halfRunRelativeChange": 0.0025830149033923
+      },
+      "directFloor": {
+        "Y": 13.138319732118573,
+        "blockMeans": [
+          13.143488286603167,
+          13.133151177633978
+        ],
+        "standardError": 0.005168554484594523,
+        "approximate95PercentHalfWidth": 0.06567165328125801,
+        "halfRunRelativeChange": -0.00039324069622082014
+      }
+    },
+    "shadedFloorToDirect": 0.032494765246788765
+  },
+  {
+    "phase": "matrix",
+    "case": "night",
+    "design": "designs/10-point.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.0037360075619654216,
+        "blockMeans": [
+          0.003736233274459458,
+          0.0037388516675475178,
+          0.0037336528226051303,
+          0.0037352924832495804
+        ],
+        "standardError": 1.0876587132011532e-06,
+        "approximate95PercentHalfWidth": 3.4609300254060694e-06,
+        "halfRunRelativeChange": -0.0004106733368181015
+      },
+      "shadedFloor": {
+        "Y": 0.00639028557336157,
+        "blockMeans": [
+          0.0064048933188545504,
+          0.006386184477045597,
+          0.006377704574414599,
+          0.006392359923131533
+        ],
+        "standardError": 5.721230060429983e-06,
+        "approximate95PercentHalfWidth": 1.8204954052288208e-05,
+        "halfRunRelativeChange": -0.00082140452467383
+      },
+      "directFloor": {
+        "Y": 0.0031479070445281127,
+        "blockMeans": [
+          0.003144256424941367,
+          0.00312346312828939,
+          0.003157885031729265,
+          0.0031660235931524287
+        ],
+        "standardError": 9.303232534520787e-06,
+        "approximate95PercentHalfWidth": 2.9602885924845144e-05,
+        "halfRunRelativeChange": 0.004482417502389202
+      }
+    },
+    "shadedFloorToDirect": 2.030010887541791
+  },
+  {
+    "phase": "matrix",
+    "case": "night",
+    "design": "designs/11-spot.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.0024187225793093872,
+        "blockMeans": [
+          0.002418852797335417,
+          0.0024221904072014573,
+          0.0024154222954337013,
+          0.0024184248172669735
+        ],
+        "standardError": 1.3851390699534123e-06,
+        "approximate95PercentHalfWidth": 4.407512520591758e-06,
+        "halfRunRelativeChange": -0.0007432377208961283
+      },
+      "shadedFloor": {
+        "Y": 0.002728122406621726,
+        "blockMeans": [
+          0.0027326290934973703,
+          0.00272032825866634,
+          0.0027312579005583744,
+          0.0027282743737648187
+        ],
+        "standardError": 2.7524744198765016e-06,
+        "approximate95PercentHalfWidth": 8.758373604047028e-06,
+        "halfRunRelativeChange": 0.0006028767267796109
+      },
+      "directFloor": {
+        "Y": 0.0016636533439431998,
+        "blockMeans": [
+          0.0016956888185175143,
+          0.0016628404681461012,
+          0.0016611918055713625,
+          0.0016348922835378215
+        ],
+        "standardError": 1.2450536016108262e-05,
+        "approximate95PercentHalfWidth": 3.961760560325649e-05,
+        "halfRunRelativeChange": -0.009296509308761358
+      }
+    },
+    "shadedFloorToDirect": 1.6398382611100435
+  },
+  {
+    "phase": "matrix",
+    "case": "night",
+    "design": "designs/12-linear.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.005287956495708198,
+        "blockMeans": [
+          0.005300504862201966,
+          0.005274917491746582,
+          0.005285363263635146,
+          0.005291040365249099
+        ],
+        "standardError": 5.351886193226286e-06,
+        "approximate95PercentHalfWidth": 1.7029701866846044e-05,
+        "halfRunRelativeChange": 4.63941251165334e-05
+      },
+      "shadedFloor": {
+        "Y": 0.01358624943250847,
+        "blockMeans": [
+          0.013583196876227978,
+          0.013584090593669832,
+          0.013594758848194697,
+          0.013582951411941373
+        ],
+        "standardError": 2.8470127613398813e-06,
+        "approximate95PercentHalfWidth": 9.059194606583502e-06,
+        "halfRunRelativeChange": 0.00019182611163892638
+      },
+      "directFloor": {
+        "Y": 0.005804945213208902,
+        "blockMeans": [
+          0.005803374458642937,
+          0.005804609739432595,
+          0.005798596472628299,
+          0.005813200182131776
+        ],
+        "standardError": 3.041803623928028e-06,
+        "approximate95PercentHalfWidth": 9.679019131338984e-06,
+        "halfRunRelativeChange": 0.0001642170001048271
+      }
+    },
+    "shadedFloorToDirect": 2.3404612676780387
+  },
+  {
+    "phase": "matrix",
+    "case": "night",
+    "design": "designs/13-area.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.007908034278057948,
+        "blockMeans": [
+          0.007908818677194264,
+          0.00790159279309886,
+          0.007907554881882287,
+          0.00791417076005638
+        ],
+        "standardError": 2.5818959844388567e-06,
+        "approximate95PercentHalfWidth": 8.215593022484441e-06,
+        "halfRunRelativeChange": 0.0003578076278027975
+      },
+      "shadedFloor": {
+        "Y": 0.020521642278974263,
+        "blockMeans": [
+          0.020521496080693306,
+          0.02051857085552171,
+          0.020521769611453376,
+          0.020524732568228662
+        ],
+        "standardError": 1.259004805337261e-06,
+        "approximate95PercentHalfWidth": 4.006153290583165e-06,
+        "halfRunRelativeChange": 7.840196114972109e-05
+      },
+      "directFloor": {
+        "Y": 0.0085495910069815,
+        "blockMeans": [
+          0.00856102725221984,
+          0.00853983258479026,
+          0.008538625715388878,
+          0.00855887847552702
+        ],
+        "standardError": 6.003535073251743e-06,
+        "approximate95PercentHalfWidth": 1.9103248603087047e-05,
+        "halfRunRelativeChange": -9.811337342635618e-05
+      }
+    },
+    "shadedFloorToDirect": 2.4003068991506753
+  },
+  {
+    "phase": "matrix",
+    "case": "night",
+    "design": "designs/14-mixed.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.01904352145270488,
+        "blockMeans": [
+          0.019050515034769504,
+          0.019055722263912105,
+          0.019033873957957692,
+          0.019033974554180225
+        ],
+        "standardError": 5.6420106533195025e-06,
+        "approximate95PercentHalfWidth": 1.7952877898862655e-05,
+        "halfRunRelativeChange": -0.0005037073884098797
+      },
+      "shadedFloor": {
+        "Y": 0.105334760435598,
+        "blockMeans": [
+          0.10540453753318552,
+          0.10536267412202549,
+          0.10528902343856078,
+          0.10528280664862022
+        ],
+        "standardError": 2.94944713986441e-05,
+        "approximate95PercentHalfWidth": 9.385140799048553e-05,
+        "halfRunRelativeChange": -0.00046350086072599606
+      },
+      "directFloor": {
+        "Y": 0.021439941479142657,
+        "blockMeans": [
+          0.021477222128536685,
+          0.021410507953282018,
+          0.021448942396143963,
+          0.02142309343860796
+        ],
+        "standardError": 1.477907372084086e-05,
+        "approximate95PercentHalfWidth": 4.702701257971562e-05,
+        "halfRunRelativeChange": -0.00018296896381364558
+      }
+    },
+    "shadedFloorToDirect": 4.913015296150433
+  },
+  {
+    "phase": "matrix",
+    "case": "final",
+    "design": "designs/14-mixed.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.8393414028392121,
+        "blockMeans": [
+          0.8401034246720953,
+          0.8388080331791641,
+          0.8385460861312315,
+          0.8399080673743575
+        ],
+        "standardError": 0.00038931540656164616,
+        "approximate95PercentHalfWidth": 0.0012388016236791581,
+        "halfRunRelativeChange": -0.00013619072748949357
+      },
+      "shadedFloor": {
+        "Y": 0.6219569926253664,
+        "blockMeans": [
+          0.6217380420795294,
+          0.6209113211373022,
+          0.6222268809277947,
+          0.6229517263568394
+        ],
+        "standardError": 0.000428534624698955,
+        "approximate95PercentHalfWidth": 0.0013635971757920747,
+        "halfRunRelativeChange": 0.001017682116399632
+      },
+      "directFloor": {
+        "Y": 13.169636535511309,
+        "blockMeans": [
+          13.167437170962447,
+          13.164668660636288,
+          13.170850795933266,
+          13.175589514513234
+        ],
+        "standardError": 0.0023528240577787634,
+        "approximate95PercentHalfWidth": 0.007486686151852025,
+        "halfRunRelativeChange": 0.0002721863366994537
+      }
+    },
+    "shadedFloorToDirect": 0.04722658753324653
+  },
+  {
+    "phase": "regressions",
+    "case": "final",
+    "design": "designs/16-packed.json",
+    "camera": "finish-detail",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 1024,
+    "captureSamples": 1024,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.12090530816892772,
+        "blockMeans": [
+          0.12111209311936945,
+          0.120698523218486
+        ],
+        "standardError": 0.00020678495044172684,
+        "approximate95PercentHalfWidth": 0.0026274095803125812,
+        "halfRunRelativeChange": -0.0017073848293408522
+      },
+      "shadedFloor": {
+        "Y": 0.3554077372877484,
+        "blockMeans": [
+          0.3581857544211875,
+          0.35262972015430927
+        ],
+        "standardError": 0.0027780171334391146,
+        "approximate95PercentHalfWidth": 0.03529748569747739,
+        "halfRunRelativeChange": -0.007755800165554549
+      },
+      "directFloor": {
+        "Y": 0.4405910255487725,
+        "blockMeans": [
+          0.32636362025911286,
+          0.5548184308384321
+        ],
+        "standardError": 0.1142274052896596,
+        "approximate95PercentHalfWidth": 1.4513734116104149,
+        "halfRunRelativeChange": 0.3500004234509042
+      }
+    },
+    "shadedFloorToDirect": 0.8066613178175267
+  },
+  {
+    "phase": "regressions",
+    "case": "final",
+    "design": "designs/17-separate.json",
+    "camera": "finish-detail",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 1024,
+    "captureSamples": 1024,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.12090530816892772,
+        "blockMeans": [
+          0.12111209311936945,
+          0.120698523218486
+        ],
+        "standardError": 0.00020678495044172684,
+        "approximate95PercentHalfWidth": 0.0026274095803125812,
+        "halfRunRelativeChange": -0.0017073848293408522
+      },
+      "shadedFloor": {
+        "Y": 0.3554077372877484,
+        "blockMeans": [
+          0.3581857544211875,
+          0.35262972015430927
+        ],
+        "standardError": 0.0027780171334391146,
+        "approximate95PercentHalfWidth": 0.03529748569747739,
+        "halfRunRelativeChange": -0.007755800165554549
+      },
+      "directFloor": {
+        "Y": 0.4405910255487725,
+        "blockMeans": [
+          0.32636362025911286,
+          0.5548184308384321
+        ],
+        "standardError": 0.1142274052896596,
+        "approximate95PercentHalfWidth": 1.4513734116104149,
+        "halfRunRelativeChange": 0.3500004234509042
+      }
+    },
+    "shadedFloorToDirect": 0.8066613178175267
+  },
+  {
+    "phase": "regressions",
+    "case": "final",
+    "design": "designs/05-metal-polished.json",
+    "camera": "window-reflection",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 1024,
+    "captureSamples": 1024,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.2421145211729687,
+        "blockMeans": [
+          0.22864361201477804,
+          0.2555854303311593
+        ],
+        "standardError": 0.013470909158190644,
+        "approximate95PercentHalfWidth": 0.1711613717639703,
+        "halfRunRelativeChange": 0.058916621546898806
+      },
+      "shadedFloor": {
+        "Y": 0.5196919092273751,
+        "blockMeans": [
+          0.5198849267871156,
+          0.5194988916676345
+        ],
+        "standardError": 0.00019301755974054924,
+        "approximate95PercentHalfWidth": 0.0024524811140634187,
+        "halfRunRelativeChange": -0.0003712697748968763
+      },
+      "directFloor": {
+        "Y": 0.2421796723241112,
+        "blockMeans": [
+          0.1863160035188774,
+          0.298043341129345
+        ],
+        "standardError": 0.0558636688052338,
+        "approximate95PercentHalfWidth": 0.7098037758393007,
+        "halfRunRelativeChange": 0.2998329061924825
+      }
+    },
+    "shadedFloorToDirect": 2.145894014307967
+  },
+  {
+    "phase": "regressions",
+    "case": "night",
+    "design": "designs/29-concealed.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.04416143496376781,
+        "blockMeans": [
+          0.04414950489730192,
+          0.04413827435405979,
+          0.04410924902151868,
+          0.04424871158219085
+        ],
+        "standardError": 3.0303081553584118e-05,
+        "approximate95PercentHalfWidth": 9.642440550350466e-05,
+        "halfRunRelativeChange": 0.00039745790948031434
+      },
+      "shadedFloor": {
+        "Y": 0.004889029627642668,
+        "blockMeans": [
+          0.004881523992843169,
+          0.004917236755455417,
+          0.0048508383316365825,
+          0.0049065194306355045
+        ],
+        "standardError": 1.4766078560168716e-05,
+        "approximate95PercentHalfWidth": 4.698566197845686e-05,
+        "halfRunRelativeChange": -0.0021126644016534746
+      },
+      "directFloor": {
+        "Y": 0.012158364797594445,
+        "blockMeans": [
+          0.01207328176477997,
+          0.01214458109615896,
+          0.01189808664420662,
+          0.012517509685232228
+        ],
+        "standardError": 0.00013043481141471373,
+        "approximate95PercentHalfWidth": 0.0004150435699216191,
+        "halfRunRelativeChange": 0.004082388888634103
+      }
+    },
+    "shadedFloorToDirect": 0.40211243115603607
+  },
+  {
+    "phase": "regressions",
+    "case": "night",
+    "design": "designs/16-packed.json",
+    "camera": "emitter-front",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 1024,
+    "captureSamples": 1024,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.20187797277312233,
+        "blockMeans": [
+          0.20190070602159516,
+          0.2018552395246495
+        ],
+        "standardError": 2.2733248472822654e-05,
+        "approximate95PercentHalfWidth": 0.00028884865509568464,
+        "halfRunRelativeChange": -0.00011259618116632453
+      },
+      "shadedFloor": {
+        "Y": 0.027464199222690774,
+        "blockMeans": [
+          0.027466692926422457,
+          0.02746170551895909
+        ],
+        "standardError": 2.4937037316832833e-06,
+        "approximate95PercentHalfWidth": 3.1684999614767795e-05,
+        "halfRunRelativeChange": -9.079009760526446e-05
+      },
+      "directFloor": {
+        "Y": 0.05043541351685608,
+        "blockMeans": [
+          0.050612570235510766,
+          0.05025825679820139
+        ],
+        "standardError": 0.00017715671865468907,
+        "approximate95PercentHalfWidth": 0.002250953267226479,
+        "halfRunRelativeChange": -0.0035002513768880306
+      }
+    },
+    "shadedFloorToDirect": 0.544541965805672
+  },
+  {
+    "phase": "regressions",
+    "case": "night",
+    "design": "designs/16-packed.json",
+    "camera": "emitter-back",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 1024,
+    "captureSamples": 1024,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.2984469718097868,
+        "blockMeans": [
+          0.29844678381190126,
+          0.29844715980767234
+        ],
+        "standardError": 1.8799788553680585e-07,
+        "approximate95PercentHalfWidth": 2.3887011336306553e-06,
+        "halfRunRelativeChange": 6.299209631688285e-07
+      },
+      "shadedFloor": {
+        "Y": 0.06050867319625808,
+        "blockMeans": [
+          0.0606211169505713,
+          0.06039622944194486
+        ],
+        "standardError": 0.00011244375431321979,
+        "approximate95PercentHalfWidth": 0.0014287103423037705,
+        "halfRunRelativeChange": -0.0018548611435995621
+      },
+      "directFloor": {
+        "Y": 0.07433596980823597,
+        "blockMeans": [
+          0.07417070577106831,
+          0.07450123384540362
+        ],
+        "standardError": 0.00016526403716765614,
+        "approximate95PercentHalfWidth": 0.002099844856252239,
+        "halfRunRelativeChange": 0.0022281578077165687
+      }
+    },
+    "shadedFloorToDirect": 0.8139891542728497
+  },
+  {
+    "phase": "noise",
+    "case": "unguided",
+    "design": "designs/09-metal-polished.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.7009876866005028,
+        "blockMeans": [
+          0.6644081102439169,
+          0.7209060731137916,
+          0.6992798456766167,
+          0.719356717367686
+        ],
+        "standardError": 0.013150239350379045,
+        "approximate95PercentHalfWidth": 0.04184406161290612,
+        "halfRunRelativeChange": 0.012027011665262766
+      },
+      "shadedFloor": {
+        "Y": 0.3688261165170848,
+        "blockMeans": [
+          0.3454516351834016,
+          0.34932770731919205,
+          0.40511875816360243,
+          0.3754063654021431
+        ],
+        "standardError": 0.013805221994892095,
+        "approximate95PercentHalfWidth": 0.043928216387746646,
+        "halfRunRelativeChange": 0.06170720386871009
+      },
+      "directFloor": {
+        "Y": 0.28353609086960535,
+        "blockMeans": [
+          0.32436365519294413,
+          0.1853250990339393,
+          0.2680234065246635,
+          0.3564322027268745
+        ],
+        "standardError": 0.03749086047004759,
+        "approximate95PercentHalfWidth": 0.11929591801569144,
+        "halfRunRelativeChange": 0.11258523370673301
+      }
+    },
+    "shadedFloorToDirect": 1.3008083570098428
+  },
+  {
+    "phase": "noise",
+    "case": "final",
+    "design": "designs/09-metal-polished.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.7111437362062752,
+        "blockMeans": [
+          0.7138804829779323,
+          0.7108912700118718,
+          0.7082880839256984,
+          0.7115151079095985
+        ],
+        "standardError": 0.0011491369573541034,
+        "approximate95PercentHalfWidth": 0.003656553798300757,
+        "halfRunRelativeChange": -0.0017436340747495338
+      },
+      "shadedFloor": {
+        "Y": 0.38463938071221443,
+        "blockMeans": [
+          0.3824827225906731,
+          0.3860075011456208,
+          0.38350809435360056,
+          0.3865592047589632
+        ],
+        "standardError": 0.0009784537533431216,
+        "approximate95PercentHalfWidth": 0.003113439843137813,
+        "halfRunRelativeChange": 0.0010260868177360827
+      },
+      "directFloor": {
+        "Y": 0.30293660699070585,
+        "blockMeans": [
+          0.2930909851559492,
+          0.3029121643272915,
+          0.32075772772825784,
+          0.2949855507513248
+        ],
+        "standardError": 0.006309704869095415,
+        "approximate95PercentHalfWidth": 0.02007748089346161,
+        "halfRunRelativeChange": 0.016560423391602352
+      }
+    },
+    "shadedFloorToDirect": 1.2697025444799257
+  },
+  {
+    "phase": "noise",
+    "case": "final",
+    "design": "designs/09-metal-polished.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 8192,
+    "captureSamples": 8192,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.7095168603912704,
+        "blockMeans": [
+          0.7138804829779323,
+          0.7108912700118718,
+          0.7082880839256984,
+          0.7115151079095985,
+          0.7090051903674586,
+          0.7059130664929967,
+          0.7091789516084877,
+          0.7079316597711856,
+          0.7114630302122738,
+          0.7102571099966823,
+          0.7098817355618241,
+          0.7102096002861806,
+          0.709049786587256,
+          0.7064117079132277,
+          0.7092057940720569,
+          0.7091871885655952
+        ],
+        "standardError": 0.0004887203238102404,
+        "approximate95PercentHalfWidth": 0.0010414630100396222,
+        "halfRunRelativeChange": -8.260747984334404e-05
+      },
+      "shadedFloor": {
+        "Y": 0.38413376129054294,
+        "blockMeans": [
+          0.3824827225906731,
+          0.3860075011456208,
+          0.38350809435360056,
+          0.3865592047589632,
+          0.3869837088874488,
+          0.3865951583723377,
+          0.38516911742293214,
+          0.3862930073791562,
+          0.38190725583434393,
+          0.3840695129498237,
+          0.37949620039885623,
+          0.38503139294814126,
+          0.3819008448716481,
+          0.3829931570375811,
+          0.3824725347997493,
+          0.3846707668978109
+        ],
+        "standardError": 0.0005363268520807992,
+        "approximate95PercentHalfWidth": 0.001142912521784183,
+        "halfRunRelativeChange": -0.003414330541242294
+      },
+      "directFloor": {
+        "Y": 0.29283041892748035,
+        "blockMeans": [
+          0.2930909851559492,
+          0.3029121643272915,
+          0.32075772772825784,
+          0.2949855507513248,
+          0.282115281095088,
+          0.2899287352966895,
+          0.2914887344365975,
+          0.2975309736793683,
+          0.2973146812187122,
+          0.28098883666381536,
+          0.30560893724890015,
+          0.2809193475243079,
+          0.2944915526713987,
+          0.278013314407874,
+          0.29779285772483544,
+          0.27734702290927515
+        ],
+        "standardError": 0.002876326554831797,
+        "approximate95PercentHalfWidth": 0.006129451888346559,
+        "halfRunRelativeChange": -0.012713533368573282
+      }
+    },
+    "shadedFloorToDirect": 1.31179596265125
+  },
+  {
+    "phase": "noise",
+    "case": "sun",
+    "design": "designs/09-metal-polished.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.3486335025494625,
+        "blockMeans": [
+          0.3507485275489933,
+          0.3484229248716427,
+          0.34702611274616113,
+          0.3483364450310529
+        ],
+        "standardError": 0.0007740380511769239,
+        "approximate95PercentHalfWidth": 0.002462989078844972,
+        "halfRunRelativeChange": -0.0027238631027017846
+      },
+      "shadedFloor": {
+        "Y": 0.3230072620560256,
+        "blockMeans": [
+          0.32101849747778993,
+          0.3246280246136584,
+          0.32158897898897953,
+          0.3247935471436745
+        ],
+        "standardError": 0.000990975827509418,
+        "approximate95PercentHalfWidth": 0.003153285083134968,
+        "halfRunRelativeChange": 0.0005699744488838476
+      },
+      "directFloor": {
+        "Y": 0.23841391493174208,
+        "blockMeans": [
+          0.22873940943752966,
+          0.2376297418752711,
+          0.2573911665366658,
+          0.2298953418775017
+        ],
+        "standardError": 0.006626419025996447,
+        "approximate95PercentHalfWidth": 0.021085265340720694,
+        "halfRunRelativeChange": 0.022425751191396115
+      }
+    },
+    "shadedFloorToDirect": 1.3548171554856712
+  },
+  {
+    "phase": "noise",
+    "case": "sky",
+    "design": "designs/09-metal-polished.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.36181764445985376,
+        "blockMeans": [
+          0.3625126397381527,
+          0.36177156704514374,
+          0.3608490848697288,
+          0.36213728618638985
+        ],
+        "standardError": 0.0003565365897504066,
+        "approximate95PercentHalfWidth": 0.0011344994285857938,
+        "halfRunRelativeChange": -0.0008959436882807204
+      },
+      "shadedFloor": {
+        "Y": 0.06147660078529169,
+        "blockMeans": [
+          0.06149224593205304,
+          0.06170006854262939,
+          0.06135538961372278,
+          0.06135869905276156
+        ],
+        "standardError": 8.102241245145255e-05,
+        "approximate95PercentHalfWidth": 0.000257813316420522,
+        "halfRunRelativeChange": -0.0019409725770529462
+      },
+      "directFloor": {
+        "Y": 0.06421872272738724,
+        "blockMeans": [
+          0.06397128978021152,
+          0.0628400781990811,
+          0.06495114738121546,
+          0.06511237554904087
+        ],
+        "standardError": 0.0005241616352139058,
+        "approximate95PercentHalfWidth": 0.0016678823232506481,
+        "halfRunRelativeChange": 0.012822805253132952
+      }
+    },
+    "shadedFloorToDirect": 0.9573002727921569
+  },
+  {
+    "phase": "noise",
+    "case": "final",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.8243965741743632,
+        "blockMeans": [
+          0.8239129004686944,
+          0.8246029164537548,
+          0.8243483728995693,
+          0.8247221068754342
+        ],
+        "standardError": 0.00017907454038712428,
+        "approximate95PercentHalfWidth": 0.0005698151875118294,
+        "halfRunRelativeChange": 0.00016823097687646005
+      },
+      "shadedFloor": {
+        "Y": 0.5281012708697267,
+        "blockMeans": [
+          0.5282299981872763,
+          0.5289286460293153,
+          0.527131483895755,
+          0.5281149553665601
+        ],
+        "standardError": 0.0003698867413734612,
+        "approximate95PercentHalfWidth": 0.0011769796110503534,
+        "halfRunRelativeChange": -0.0009044077559871022
+      },
+      "directFloor": {
+        "Y": 13.158448848532183,
+        "blockMeans": [
+          13.153464808622106,
+          13.153927314927232,
+          13.161197198678575,
+          13.165206071900819
+        ],
+        "standardError": 0.0028649958718230594,
+        "approximate95PercentHalfWidth": 0.009116416864140975,
+        "halfRunRelativeChange": 0.00036132709279534936
+      }
+    },
+    "shadedFloorToDirect": 0.0401340064432166
+  },
+  {
+    "phase": "noise",
+    "case": "final",
+    "design": "designs/15-polished-sealed.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 1024,
+    "captureSamples": 1024,
+    "regions": {
+      "shadedWall": {
+        "Y": 0,
+        "blockMeans": [
+          0.0,
+          0.0
+        ],
+        "standardError": 0.0,
+        "approximate95PercentHalfWidth": 0.0,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0,
+          0.0
+        ],
+        "standardError": 0.0,
+        "approximate95PercentHalfWidth": 0.0,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0,
+          0.0
+        ],
+        "standardError": 0.0,
+        "approximate95PercentHalfWidth": 0.0,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": null
+  },
+  {
+    "phase": "noise",
+    "case": "final",
+    "design": "designs/16-polished-blocked.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 1024,
+    "captureSamples": 1024,
+    "regions": {
+      "shadedWall": {
+        "Y": 0,
+        "blockMeans": [
+          0.0,
+          0.0
+        ],
+        "standardError": 0.0,
+        "approximate95PercentHalfWidth": 0.0,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0,
+          0.0
+        ],
+        "standardError": 0.0,
+        "approximate95PercentHalfWidth": 0.0,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0,
+          0.0
+        ],
+        "standardError": 0.0,
+        "approximate95PercentHalfWidth": 0.0,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": null
+  },
+  {
+    "phase": "noise",
+    "case": "final",
+    "design": "designs/17-polished-thin.json",
+    "camera": "sealed-side",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 1024,
+    "captureSamples": 1024,
+    "regions": {
+      "shadedWall": {
+        "Y": 0,
+        "blockMeans": [
+          0.0,
+          0.0
+        ],
+        "standardError": 0.0,
+        "approximate95PercentHalfWidth": 0.0,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0,
+          0.0
+        ],
+        "standardError": 0.0,
+        "approximate95PercentHalfWidth": 0.0,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0,
+          0.0
+        ],
+        "standardError": 0.0,
+        "approximate95PercentHalfWidth": 0.0,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": null
+  },
+  {
+    "phase": "noise",
+    "case": "final",
+    "design": "designs/17-polished-thin.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 512,
+    "captureSamples": 512,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.28647450061853846,
+        "blockMeans": [
+          0.28647450061853846
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 0.42117841898012104,
+        "blockMeans": [
+          0.42117841898012104
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 0.28445894085096973,
+        "blockMeans": [
+          0.28445894085096973
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": 1.480629920508562
+  },
+  {
+    "phase": "noise",
+    "case": "final",
+    "design": "designs/18-polished-mixed.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 1024,
+    "captureSamples": 1024,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.7215728810839535,
+        "blockMeans": [
+          0.7211780584589431,
+          0.7219677037089638
+        ],
+        "standardError": 0.00039482262501033816,
+        "approximate95PercentHalfWidth": 0.005016616273381356,
+        "halfRunRelativeChange": 0.0005474689924067633
+      },
+      "shadedFloor": {
+        "Y": 0.3875659700393073,
+        "blockMeans": [
+          0.38497699082849496,
+          0.3901549492501197
+        ],
+        "standardError": 0.002588979210812359,
+        "approximate95PercentHalfWidth": 0.03289556985258183,
+        "halfRunRelativeChange": 0.006725023241624717
+      },
+      "directFloor": {
+        "Y": 0.2980419447447857,
+        "blockMeans": [
+          0.2939744623022742,
+          0.30210942718729716
+        ],
+        "standardError": 0.004067482442511483,
+        "approximate95PercentHalfWidth": 0.0516814319145509,
+        "halfRunRelativeChange": 0.013836176144882861
+      }
+    },
+    "shadedFloorToDirect": 1.3003739133804852
+  },
+  {
+    "phase": "noise",
+    "case": "night",
+    "design": "designs/18-polished-mixed.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 512,
+    "captureSamples": 512,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.018824337836305563,
+        "blockMeans": [
+          0.018824337836305563
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 0.007739663135770151,
+        "blockMeans": [
+          0.007739663135770151
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 0.01843934402575485,
+        "blockMeans": [
+          0.01843934402575485
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": 0.41973635965357037
+  },
+  {
+    "phase": "noise-regressions",
+    "case": "final",
+    "design": "designs/16-packed.json",
+    "camera": "finish-detail",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 1024,
+    "captureSamples": 1024,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.12179670524424668,
+        "blockMeans": [
+          0.12238539049759287,
+          0.1212080199909005
+        ],
+        "standardError": 0.0005886852533461828,
+        "approximate95PercentHalfWidth": 0.007479834829016599,
+        "halfRunRelativeChange": -0.004810094170167867
+      },
+      "shadedFloor": {
+        "Y": 0.35819811897120196,
+        "blockMeans": [
+          0.35956391889077777,
+          0.35683231905162616
+        ],
+        "standardError": 0.0013657999195758053,
+        "approximate95PercentHalfWidth": 0.01735385377813018,
+        "halfRunRelativeChange": -0.0037984899146420448
+      },
+      "directFloor": {
+        "Y": 0.35987087298575476,
+        "blockMeans": [
+          0.35689463377184577,
+          0.36284711219966376
+        ],
+        "standardError": 0.0029762392139089933,
+        "approximate95PercentHalfWidth": 0.03781609545192767,
+        "halfRunRelativeChange": 0.008339265800817897
+      }
+    },
+    "shadedFloorToDirect": 0.9953517938235057
+  },
+  {
+    "phase": "noise-regressions",
+    "case": "final",
+    "design": "designs/17-separate.json",
+    "camera": "finish-detail",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 1024,
+    "captureSamples": 1024,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.12179670524424668,
+        "blockMeans": [
+          0.12238539049759287,
+          0.1212080199909005
+        ],
+        "standardError": 0.0005886852533461828,
+        "approximate95PercentHalfWidth": 0.007479834829016599,
+        "halfRunRelativeChange": -0.004810094170167867
+      },
+      "shadedFloor": {
+        "Y": 0.35819811897120196,
+        "blockMeans": [
+          0.35956391889077777,
+          0.35683231905162616
+        ],
+        "standardError": 0.0013657999195758053,
+        "approximate95PercentHalfWidth": 0.01735385377813018,
+        "halfRunRelativeChange": -0.0037984899146420448
+      },
+      "directFloor": {
+        "Y": 0.35987087298575476,
+        "blockMeans": [
+          0.35689463377184577,
+          0.36284711219966376
+        ],
+        "standardError": 0.0029762392139089933,
+        "approximate95PercentHalfWidth": 0.03781609545192767,
+        "halfRunRelativeChange": 0.008339265800817897
+      }
+    },
+    "shadedFloorToDirect": 0.9953517938235057
+  },
+  {
+    "phase": "noise-regressions",
+    "case": "final",
+    "design": "designs/05-metal-polished.json",
+    "camera": "window-reflection",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 1024,
+    "captureSamples": 1024,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.2389900269833249,
+        "blockMeans": [
+          0.23939525361919753,
+          0.23858480034745225
+        ],
+        "standardError": 0.00040522663587264085,
+        "approximate95PercentHalfWidth": 0.005148809635397774,
+        "halfRunRelativeChange": -0.0016927095660685954
+      },
+      "shadedFloor": {
+        "Y": 0.5290495956799041,
+        "blockMeans": [
+          0.5291370354798489,
+          0.5289621558799592
+        ],
+        "standardError": 8.743979994485507e-05,
+        "approximate95PercentHalfWidth": 0.0011110100980993285,
+        "halfRunRelativeChange": -0.00016524982014454181
+      },
+      "directFloor": {
+        "Y": 0.18425671805155774,
+        "blockMeans": [
+          0.18384251225422216,
+          0.18467092384889333
+        ],
+        "standardError": 0.00041420579733558727,
+        "approximate95PercentHalfWidth": 0.005262898860945972,
+        "halfRunRelativeChange": 0.002253046872873421
+      }
+    },
+    "shadedFloorToDirect": 2.8712635353239504
+  },
+  {
+    "phase": "noise-regressions",
+    "case": "night",
+    "design": "designs/29-concealed.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.04416143496376781,
+        "blockMeans": [
+          0.04414950489730192,
+          0.04413827435405979,
+          0.04410924902151868,
+          0.04424871158219085
+        ],
+        "standardError": 3.0303081553584118e-05,
+        "approximate95PercentHalfWidth": 9.642440550350466e-05,
+        "halfRunRelativeChange": 0.00039745790948031434
+      },
+      "shadedFloor": {
+        "Y": 0.004889029627642668,
+        "blockMeans": [
+          0.004881523992843169,
+          0.004917236755455417,
+          0.0048508383316365825,
+          0.0049065194306355045
+        ],
+        "standardError": 1.4766078560168716e-05,
+        "approximate95PercentHalfWidth": 4.698566197845686e-05,
+        "halfRunRelativeChange": -0.0021126644016534746
+      },
+      "directFloor": {
+        "Y": 0.012158364797594445,
+        "blockMeans": [
+          0.01207328176477997,
+          0.01214458109615896,
+          0.01189808664420662,
+          0.012517509685232228
+        ],
+        "standardError": 0.00013043481141471373,
+        "approximate95PercentHalfWidth": 0.0004150435699216191,
+        "halfRunRelativeChange": 0.004082388888634103
+      }
+    },
+    "shadedFloorToDirect": 0.40211243115603607
+  },
+  {
+    "phase": "noise-regressions",
+    "case": "night",
+    "design": "designs/16-packed.json",
+    "camera": "emitter-front",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 1024,
+    "captureSamples": 1024,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.20187797277312233,
+        "blockMeans": [
+          0.20190070602159516,
+          0.2018552395246495
+        ],
+        "standardError": 2.2733248472822654e-05,
+        "approximate95PercentHalfWidth": 0.00028884865509568464,
+        "halfRunRelativeChange": -0.00011259618116632453
+      },
+      "shadedFloor": {
+        "Y": 0.027464199222690774,
+        "blockMeans": [
+          0.027466692926422457,
+          0.02746170551895909
+        ],
+        "standardError": 2.4937037316832833e-06,
+        "approximate95PercentHalfWidth": 3.1684999614767795e-05,
+        "halfRunRelativeChange": -9.079009760526446e-05
+      },
+      "directFloor": {
+        "Y": 0.05043541351685608,
+        "blockMeans": [
+          0.050612570235510766,
+          0.05025825679820139
+        ],
+        "standardError": 0.00017715671865468907,
+        "approximate95PercentHalfWidth": 0.002250953267226479,
+        "halfRunRelativeChange": -0.0035002513768880306
+      }
+    },
+    "shadedFloorToDirect": 0.544541965805672
+  },
+  {
+    "phase": "noise-regressions",
+    "case": "night",
+    "design": "designs/16-packed.json",
+    "camera": "emitter-back",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 1024,
+    "captureSamples": 1024,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.2984469718097868,
+        "blockMeans": [
+          0.29844678381190126,
+          0.29844715980767234
+        ],
+        "standardError": 1.8799788553680585e-07,
+        "approximate95PercentHalfWidth": 2.3887011336306553e-06,
+        "halfRunRelativeChange": 6.299209631688285e-07
+      },
+      "shadedFloor": {
+        "Y": 0.06050867319625808,
+        "blockMeans": [
+          0.0606211169505713,
+          0.06039622944194486
+        ],
+        "standardError": 0.00011244375431321979,
+        "approximate95PercentHalfWidth": 0.0014287103423037705,
+        "halfRunRelativeChange": -0.0018548611435995621
+      },
+      "directFloor": {
+        "Y": 0.07433596980823597,
+        "blockMeans": [
+          0.07417070577106831,
+          0.07450123384540362
+        ],
+        "standardError": 0.00016526403716765614,
+        "approximate95PercentHalfWidth": 0.002099844856252239,
+        "halfRunRelativeChange": 0.0022281578077165687
+      }
+    },
+    "shadedFloorToDirect": 0.8139891542728497
+  },
+  {
+    "phase": "sky-review",
+    "case": "upper-only",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.8243965741743632,
+        "blockMeans": [
+          0.8239129004686944,
+          0.8246029164537548,
+          0.8243483728995693,
+          0.8247221068754342
+        ],
+        "standardError": 0.00017907454038712428,
+        "approximate95PercentHalfWidth": 0.0005698151875118294,
+        "halfRunRelativeChange": 0.00016823097687646005
+      },
+      "shadedFloor": {
+        "Y": 0.5281012708697267,
+        "blockMeans": [
+          0.5282299981872763,
+          0.5289286460293153,
+          0.527131483895755,
+          0.5281149553665601
+        ],
+        "standardError": 0.0003698867413734612,
+        "approximate95PercentHalfWidth": 0.0011769796110503534,
+        "halfRunRelativeChange": -0.0009044077559871022
+      },
+      "directFloor": {
+        "Y": 13.158448848532183,
+        "blockMeans": [
+          13.153464808622106,
+          13.153927314927232,
+          13.161197198678575,
+          13.165206071900819
+        ],
+        "standardError": 0.0028649958718230594,
+        "approximate95PercentHalfWidth": 0.009116416864140975,
+        "halfRunRelativeChange": 0.00036132709279534936
+      }
+    },
+    "shadedFloorToDirect": 0.0401340064432166
+  },
+  {
+    "phase": "sky-review",
+    "case": "final",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 1024,
+    "captureSamples": 1024,
+    "regions": {
+      "shadedWall": {
+        "Y": 1.1188477021618108,
+        "blockMeans": [
+          1.1186359957898337,
+          1.119059408533788
+        ],
+        "standardError": 0.00021170637197709397,
+        "approximate95PercentHalfWidth": 0.0026899411623409557,
+        "halfRunRelativeChange": 0.00018925403149361308
+      },
+      "shadedFloor": {
+        "Y": 0.7305807220325836,
+        "blockMeans": [
+          0.730652138692807,
+          0.7305093053723603
+        ],
+        "standardError": 7.141666022336679e-05,
+        "approximate95PercentHalfWidth": 0.0009074200847980984,
+        "halfRunRelativeChange": -9.774372295845435e-05
+      },
+      "directFloor": {
+        "Y": 13.4345862857297,
+        "blockMeans": [
+          13.433722789113922,
+          13.43544978234548
+        ],
+        "standardError": 0.0008634966157785584,
+        "approximate95PercentHalfWidth": 0.010971588000082362,
+        "halfRunRelativeChange": 6.427828155564086e-05
+      }
+    },
+    "shadedFloorToDirect": 0.05438058950937782
+  },
+  {
+    "phase": "sky-review",
+    "case": "final",
+    "design": "designs/09-metal-polished.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 2048,
+    "captureSamples": 2048,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.982488437956808,
+        "blockMeans": [
+          0.9865856590899166,
+          0.9817632228334193,
+          0.9789066974860612,
+          0.9826981724178347
+        ],
+        "standardError": 0.001586033084267974,
+        "approximate95PercentHalfWidth": 0.0050467572741406935,
+        "halfRunRelativeChange": -0.0017131139914714488
+      },
+      "shadedFloor": {
+        "Y": 0.7831205488497477,
+        "blockMeans": [
+          0.7810381080847243,
+          0.7832675672625441,
+          0.7814039266601553,
+          0.786772593391567
+        ],
+        "standardError": 0.0013115637940630768,
+        "approximate95PercentHalfWidth": 0.00417339599270871,
+        "halfRunRelativeChange": 0.0012372405104248418
+      },
+      "directFloor": {
+        "Y": 0.3955546946789851,
+        "blockMeans": [
+          0.3857469726632721,
+          0.39611218219246697,
+          0.4110891370102291,
+          0.3892704868499721
+        ],
+        "standardError": 0.005607378844330643,
+        "approximate95PercentHalfWidth": 0.017842679482660107,
+        "halfRunRelativeChange": 0.011831075257970003
+      }
+    },
+    "shadedFloorToDirect": 1.9798034491419554
+  },
+  {
+    "phase": "sky-review",
+    "case": "sun",
+    "design": "designs/09-metal-polished.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 512,
+    "captureSamples": 512,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.3507485275489933,
+        "blockMeans": [
+          0.3507485275489933
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 0.32101849747778993,
+        "blockMeans": [
+          0.32101849747778993
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 0.22873940943752966,
+        "blockMeans": [
+          0.22873940943752966
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": 1.4034245269198455
+  },
+  {
+    "phase": "sky-review",
+    "case": "sky",
+    "design": "designs/09-metal-polished.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 1024,
+    "captureSamples": 1024,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.6327942711729245,
+        "blockMeans": [
+          0.6330839328567469,
+          0.6325046094891021
+        ],
+        "standardError": 0.0002896616838223842,
+        "approximate95PercentHalfWidth": 0.003680441354647214,
+        "halfRunRelativeChange": -0.0004575407284707067
+      },
+      "shadedFloor": {
+        "Y": 0.45921713146401844,
+        "blockMeans": [
+          0.45873815426432446,
+          0.4596961086637124
+        ],
+        "standardError": 0.0004789771996939751,
+        "approximate95PercentHalfWidth": 0.006085884299311647,
+        "halfRunRelativeChange": 0.0010441189494301284
+      },
+      "directFloor": {
+        "Y": 0.1553124051074481,
+        "blockMeans": [
+          0.1566715421208064,
+          0.1539532680940898
+        ],
+        "standardError": 0.001359137013358297,
+        "approximate95PercentHalfWidth": 0.01726919489173052,
+        "halfRunRelativeChange": -0.008675072670889294
+      }
+    },
+    "shadedFloorToDirect": 2.9567318279974044
+  },
+  {
+    "phase": "sky-review",
+    "case": "final",
+    "design": "designs/15-polished-sealed.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 512,
+    "captureSamples": 512,
+    "regions": {
+      "shadedWall": {
+        "Y": 0,
+        "blockMeans": [
+          0.0
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": null
+  },
+  {
+    "phase": "sky-review",
+    "case": "final",
+    "design": "designs/16-polished-blocked.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 512,
+    "captureSamples": 512,
+    "regions": {
+      "shadedWall": {
+        "Y": 0,
+        "blockMeans": [
+          0.0
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": null
+  },
+  {
+    "phase": "sky-review",
+    "case": "final",
+    "design": "designs/17-polished-thin.json",
+    "camera": "sealed-side",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 512,
+    "captureSamples": 512,
+    "regions": {
+      "shadedWall": {
+        "Y": 0,
+        "blockMeans": [
+          0.0
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": null
+  },
+  {
+    "phase": "sky-review",
+    "case": "morning",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T06:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 512,
+    "captureSamples": 600,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.4721139483497827,
+        "blockMeans": [
+          0.4721139483497827
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 0.31914465170079603,
+        "blockMeans": [
+          0.31914465170079603
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 0.5656523904869614,
+        "blockMeans": [
+          0.5656523904869614
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": 0.5642063165790732
+  },
+  {
+    "phase": "sky-review",
+    "case": "afternoon",
+    "design": "designs/01-neutral.json",
+    "camera": "interior",
+    "instant": "2026-06-21T14:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 512,
+    "captureSamples": 512,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.7049305574381085,
+        "blockMeans": [
+          0.7049305574381085
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 0.4684728979053743,
+        "blockMeans": [
+          0.4684728979053743
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 0.8512161735640221,
+        "blockMeans": [
+          0.8512161735640221
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": 0.5503571389437882
+  },
+  {
+    "phase": "sky-review",
+    "case": "night",
+    "design": "designs/18-polished-mixed.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 512,
+    "captureSamples": 512,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.018824337836305563,
+        "blockMeans": [
+          0.018824337836305563
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 0.007739663135770151,
+        "blockMeans": [
+          0.007739663135770151
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 0.01843934402575485,
+        "blockMeans": [
+          0.01843934402575485
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": 0.41973635965357037
+  },
+  {
+    "phase": "sky-review",
+    "case": "final",
+    "design": "designs/18-polished-mixed.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 512,
+    "captureSamples": 512,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.9897497982842337,
+        "blockMeans": [
+          0.9897497982842337
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 0.7815470320049357,
+        "blockMeans": [
+          0.7815470320049357
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 0.38427173718499,
+        "blockMeans": [
+          0.38427173718499
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": 2.033839484866137
+  },
+  {
+    "phase": "lamps-before",
+    "case": "night",
+    "design": "designs/19-small-point-560.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 512,
+    "captureSamples": 512,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.012367617501072872,
+        "blockMeans": [
+          0.012367617501072872
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 0.006744396345246179,
+        "blockMeans": [
+          0.006744396345246179
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 0.00931073851515249,
+        "blockMeans": [
+          0.00931073851515249
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": 0.7243674961196909
+  },
+  {
+    "phase": "lamps",
+    "case": "lamp-before-night",
+    "design": "designs/19-small-point-560.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 512,
+    "captureSamples": 512,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.0123957924452724,
+        "blockMeans": [
+          0.0123957924452724
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 0.006681563103063119,
+        "blockMeans": [
+          0.006681563103063119
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 0.009316195004851714,
+        "blockMeans": [
+          0.009316195004851714
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": 0.7171987168134069
+  },
+  {
+    "phase": "lamps",
+    "case": "night",
+    "design": "designs/19-small-point-560.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 1024,
+    "captureSamples": 1024,
+    "regions": {
+      "shadedWall": {
+        "Y": 7.501634952588128,
+        "blockMeans": [
+          7.5022090045476455,
+          7.50106090062861
+        ],
+        "standardError": 0.0005740519595178739,
+        "approximate95PercentHalfWidth": 0.007293904197634106,
+        "halfRunRelativeChange": -7.651772420225189e-05
+      },
+      "shadedFloor": {
+        "Y": 4.040349177308489,
+        "blockMeans": [
+          4.043830485005718,
+          4.036867869611259
+        ],
+        "standardError": 0.003481307697229319,
+        "approximate95PercentHalfWidth": 0.04423349560099572,
+        "halfRunRelativeChange": -0.0008608935785359151
+      },
+      "directFloor": {
+        "Y": 5.625089386339185,
+        "blockMeans": [
+          5.638368500003022,
+          5.611810272675347
+        ],
+        "standardError": 0.013279113663837272,
+        "approximate95PercentHalfWidth": 0.16872441821271636,
+        "halfRunRelativeChange": -0.0023551340540850507
+      }
+    },
+    "shadedFloorToDirect": 0.718272884182193
+  },
+  {
+    "phase": "lamps",
+    "case": "one-hit-night",
+    "design": "designs/19-small-point-560.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 1,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 512,
+    "captureSamples": 512,
+    "regions": {
+      "shadedWall": {
+        "Y": 2.827875718934037,
+        "blockMeans": [
+          2.827875718934037
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 0.876067070232486,
+        "blockMeans": [
+          0.876067070232486
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 1.506274016823372,
+        "blockMeans": [
+          1.506274016823372
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": 0.5816120177655664
+  },
+  {
+    "phase": "lamps",
+    "case": "night",
+    "design": "designs/20-small-point-10000.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 512,
+    "captureSamples": 512,
+    "regions": {
+      "shadedWall": {
+        "Y": 133.96801771393913,
+        "blockMeans": [
+          133.96801771393913
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 72.21125823993107,
+        "blockMeans": [
+          72.21125823993107
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 100.68514860850019,
+        "blockMeans": [
+          100.68514860850019
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": 0.7171987054487473
+  },
+  {
+    "phase": "lamps",
+    "case": "night",
+    "design": "designs/21-small-spot.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 512,
+    "captureSamples": 512,
+    "regions": {
+      "shadedWall": {
+        "Y": 4.325177425960335,
+        "blockMeans": [
+          4.325177425960335
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 6.850399916097851,
+        "blockMeans": [
+          6.850399916097851
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 5.5012985787232696,
+        "blockMeans": [
+          5.5012985787232696
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": 1.2452332513985596
+  },
+  {
+    "phase": "lamps",
+    "case": "night",
+    "design": "designs/22-small-linear.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 512,
+    "captureSamples": 512,
+    "regions": {
+      "shadedWall": {
+        "Y": 9.761488336367162,
+        "blockMeans": [
+          9.761488336367162
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 6.362798083503924,
+        "blockMeans": [
+          6.362798083503924
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 8.772741182750861,
+        "blockMeans": [
+          8.772741182750861
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": 0.7252918957662383
+  },
+  {
+    "phase": "lamps",
+    "case": "night",
+    "design": "designs/23-small-area.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 512,
+    "captureSamples": 512,
+    "regions": {
+      "shadedWall": {
+        "Y": 9.926578362747652,
+        "blockMeans": [
+          9.926578362747652
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 6.25168571329903,
+        "blockMeans": [
+          6.25168571329903
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 8.623627861256596,
+        "blockMeans": [
+          8.623627861256596
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": 0.7249484571784458
+  },
+  {
+    "phase": "lamps",
+    "case": "night",
+    "design": "designs/25-small-dimmed.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 512,
+    "captureSamples": 512,
+    "regions": {
+      "shadedWall": {
+        "Y": 3.7511045022738227,
+        "blockMeans": [
+          3.7511045022738227
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 2.021915242502859,
+        "blockMeans": [
+          2.021915242502859
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 2.819184250001511,
+        "blockMeans": [
+          2.819184250001511
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": 0.7171986869966996
+  },
+  {
+    "phase": "lamps",
+    "case": "night",
+    "design": "designs/26-small-polished-point.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 1024,
+    "captureSamples": 1024,
+    "regions": {
+      "shadedWall": {
+        "Y": 7.179668528735487,
+        "blockMeans": [
+          7.196373596402544,
+          7.16296346106843
+        ],
+        "standardError": 0.016705067667056817,
+        "approximate95PercentHalfWidth": 0.2122545897776239,
+        "halfRunRelativeChange": -0.002321317458477634
+      },
+      "shadedFloor": {
+        "Y": 1.982502640224992,
+        "blockMeans": [
+          1.9861641469527458,
+          1.978841133497238
+        ],
+        "standardError": 0.0036615067277538937,
+        "approximate95PercentHalfWidth": 0.04652310448284097,
+        "halfRunRelativeChange": -0.0018435066071309514
+      },
+      "directFloor": {
+        "Y": 5.295950186791421,
+        "blockMeans": [
+          5.259346459761857,
+          5.332553913820985
+        ],
+        "standardError": 0.03660372702956405,
+        "approximate95PercentHalfWidth": 0.4650869556376408,
+        "halfRunRelativeChange": 0.006959748194877768
+      }
+    },
+    "shadedFloorToDirect": 0.37434314340220437
+  },
+  {
+    "phase": "lamps",
+    "case": "night",
+    "design": "designs/27-partition-point.json",
+    "camera": "sealed-side",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 512,
+    "captureSamples": 512,
+    "regions": {
+      "shadedWall": {
+        "Y": 0,
+        "blockMeans": [
+          0.0
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 0,
+        "blockMeans": [
+          0.0
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": null
+  },
+  {
+    "phase": "lamps",
+    "case": "night",
+    "design": "designs/27-partition-point.json",
+    "camera": "interior",
+    "instant": "2026-06-21T21:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 512,
+    "captureSamples": 512,
+    "regions": {
+      "shadedWall": {
+        "Y": 2.633763408569605,
+        "blockMeans": [
+          2.633763408569605
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "shadedFloor": {
+        "Y": 3.3670333720932746,
+        "blockMeans": [
+          3.3670333720932746
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      },
+      "directFloor": {
+        "Y": 1.2875310016726451,
+        "blockMeans": [
+          1.2875310016726451
+        ],
+        "standardError": null,
+        "approximate95PercentHalfWidth": null,
+        "halfRunRelativeChange": null
+      }
+    },
+    "shadedFloorToDirect": 2.6151085820218123
+  },
+  {
+    "phase": "lamps",
+    "case": "final",
+    "design": "designs/09-metal-polished.json",
+    "camera": "interior",
+    "instant": "2026-06-21T10:00:00.000Z",
+    "path": {
+      "opaque": 16,
+      "total": 96,
+      "roulette": true,
+      "legacyTransport": false
+    },
+    "samples": 1024,
+    "captureSamples": 1024,
+    "regions": {
+      "shadedWall": {
+        "Y": 0.9842290873844203,
+        "blockMeans": [
+          0.9815678819326438,
+          0.9868902928361968
+        ],
+        "standardError": 0.002661205451776505,
+        "approximate95PercentHalfWidth": 0.03381327647027227,
+        "halfRunRelativeChange": 0.002711178208619325
+      },
+      "shadedFloor": {
+        "Y": 0.787191492620283,
+        "blockMeans": [
+          0.7961647585068566,
+          0.7782182267337093
+        ],
+        "standardError": 0.008973265886573656,
+        "approximate95PercentHalfWidth": 0.11401431635480487,
+        "halfRunRelativeChange": -0.011270614267582357
+      },
+      "directFloor": {
+        "Y": 0.36967992729277643,
+        "blockMeans": [
+          0.3966382415535674,
+          0.34272161303198545
+        ],
+        "standardError": 0.026958314260790983,
+        "approximate95PercentHalfWidth": 0.3425323409976102,
+        "halfRunRelativeChange": -0.06796700730418648
+      }
+    },
+    "shadedFloorToDirect": 2.129386624762152
+  }
+]

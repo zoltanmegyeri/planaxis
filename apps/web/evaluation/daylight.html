@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Daylight transport evaluation</title>
+    <style>
+      canvas {
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
+      #measurements {
+        max-width: 1000px;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body style="margin: 0; background: #222; color: white; font: 14px monospace">
+    <div id="controls">
+      <button id="run">Run case</button><button id="audit">Run source and path audit</button>
+      <button id="matrix">Run material and occlusion matrix</button
+      ><button id="regressions">Run existing PBR regressions</button
+      ><button id="noise">Run reflected-Sun noise audit</button
+      ><button id="sky-review">Run lower-sky review</button
+      ><button id="lamps">Run lamp-unit review</button><button id="pause">Pause / resume</button
+      ><button id="agx">AgX / Neutral redraw</button
+      ><label
+        >Case
+        <select id="case">
+          <option>baseline</option>
+          <option>baseline-sun</option>
+          <option>baseline-sky</option>
+          <option>final</option>
+          <option>upper-only</option>
+          <option>unguided</option>
+          <option>sun</option>
+          <option>sky</option>
+          <option>path8</option>
+          <option>path8-sun</option>
+          <option>path8-sky</option>
+          <option>one-hit-sky</option>
+          <option>old-one-hit-sky</option>
+          <option>path16</option>
+          <option>path32</option>
+          <option>no-roulette</option>
+          <option>morning</option>
+          <option>afternoon</option>
+          <option>night</option>
+          <option>lamp-before-night</option>
+          <option>one-hit-night</option>
+        </select></label
+      ><label>Design <input id="design" value="designs/01-neutral.json" size="32" /></label
+      ><label>Camera <input id="camera" value="interior" /></label
+      ><label>Samples <input id="samples" type="number" value="4096" /></label>
+    </div>
+    <div style="position: relative; width: 800px; height: 450px">
+      <canvas id="input" style="width: 800px; height: 450px"></canvas>
+    </div>
+    <div id="captures"></div>
+    <pre id="status">Ready</pre>
+    <pre id="measurements"></pre>
+    <pre id="archive"></pre>
+    <script type="module" src="./daylight.ts"></script>
+  </body>
+</html>

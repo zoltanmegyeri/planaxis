@@ -1,0 +1,68 @@
+{
+  "schema": "planaxis-design/1.1",
+  "name": "22 small linear",
+  "architecture": "architecture/small-sealed.svg",
+  "finishes": [
+    {
+      "target": "floor",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "ceiling",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-north:side-negative",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-north:side-positive",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-south:side-negative",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-south:side-positive",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-west:side-negative",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-west:side-positive",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-east:side-negative",
+      "material": "assets/materials/neutral.json"
+    },
+    {
+      "target": "wall:wall-east:side-positive",
+      "material": "assets/materials/neutral.json"
+    }
+  ],
+  "luminaires": [
+    {
+      "id": "reference-point",
+      "type": "linear",
+      "position": {
+        "x": 150,
+        "y": 150,
+        "z": 230
+      },
+      "luminousFluxLumens": 560,
+      "colorTemperatureKelvin": 5600,
+      "enabled": true,
+      "dimming": 1,
+      "orientation": {
+        "headingDegrees": 0,
+        "pitchDegrees": 90,
+        "rollDegrees": 0
+      },
+      "lengthCm": 120
+    }
+  ]
+}
